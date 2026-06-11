@@ -1,0 +1,217 @@
+/* N1KO-STATE — English (base). Keys are the English text itself. */
+
+/* Card titles */
+"Memory" = "Memory";
+"Disk" = "Disk";
+"Network" = "Network";
+"Sensors" = "Sensors";
+
+/* CPU card */
+"Load 1m" = "Load 1m";
+"Load 5m" = "Load 5m";
+"Uptime" = "Uptime";
+"Freq" = "Freq";
+"Top Processes" = "Top Processes";
+
+/* Memory card */
+"USED" = "USED";
+"App" = "App";
+"Wired" = "Wired";
+"Compressed" = "Compressed";
+"Free" = "Free";
+"Pressure" = "Pressure";
+"Swap Used" = "Swap Used";
+"Swap Total" = "Swap Total";
+"Total RAM" = "Total RAM";
+"Low" = "Low";
+"Medium" = "Medium";
+"High" = "High";
+
+/* GPU card */
+"VRAM" = "VRAM";
+"Chip" = "Chip";
+"VRAM Used" = "VRAM Used";
+"VRAM Total" = "VRAM Total";
+
+/* Disk card */
+"Read" = "Read";
+"Write" = "Write";
+"%@ free" = "%@ free";
+
+/* Battery card */
+"Health" = "Health";
+"Cycles" = "Cycles";
+"Temp" = "Temp";
+"Wattage" = "Power";
+"Fully charged" = "Fully charged";
+"Charging" = "Charging";
+"On AC power" = "On AC power";
+"On battery" = "On battery";
+"%@ to full" = "%@ to full";
+"%@ left" = "%@ left";
+"Battery level" = "Battery level";
+"Low battery" = "Low battery";
+"Battery at %@." = "Battery at %@.";
+
+/* Network card */
+"Download" = "Download";
+"Upload" = "Upload";
+"Local IP" = "Local IP";
+"Connected" = "Connected";
+"Disconnected" = "Disconnected";
+"Offline" = "Offline";
+
+/* Sensors card — bucket labels */
+"SoC" = "SoC";
+"Battery" = "Battery";
+"SSD" = "SSD";
+"Display" = "Display";
+"Airflow" = "Airflow";
+"Power" = "Power";
+"Other" = "Other";
+"Fans" = "Fans";
+"No temperature sensors available." = "No temperature sensors available.";
+"Sensors unavailable" = "Sensors unavailable";
+
+/* Header / menu actions */
+"Settings" = "Settings";
+"Settings…" = "Settings…";
+"Quit N1KO-STATE" = "Quit N1KO-STATE";
+
+/* Settings — tabs */
+"General" = "General";
+"Menu Bar" = "Menu Bar";
+"Modules" = "Modules";
+"Alerts" = "Alerts";
+"About" = "About";
+
+/* Settings — alerts */
+"Get a notification when a metric crosses a limit." = "Get a notification when a metric crosses a limit.";
+"Enable alerts" = "Enable alerts";
+"Thresholds" = "Thresholds";
+"Temperature" = "Temperature";
+"Low disk space" = "Low disk space";
+
+/* Alert notifications */
+"High CPU usage" = "High CPU usage";
+"High memory usage" = "High memory usage";
+"High temperature" = "High temperature";
+"CPU at %@." = "CPU at %@.";
+"Memory at %@." = "Memory at %@.";
+"Sensor peak %@." = "Sensor peak %@.";
+"Only %@ free on the startup disk." = "Only %@ free on the startup disk.";
+
+/* Settings — content */
+"Refresh Interval" = "Refresh Interval";
+"Accent Color" = "Accent Color";
+"Language" = "Language";
+"System" = "System";
+"Startup" = "Startup";
+"Launch at login" = "Launch at login";
+"Choose which metrics appear in the menu bar widget." = "Choose which metrics appear in the menu bar widget.";
+"Metrics" = "Metrics";
+"Layout" = "Layout";
+"Compact (combine into one readout)" = "Compact (combine into one readout)";
+"CPU usage" = "CPU usage";
+"GPU usage" = "GPU usage";
+"Memory usage" = "Memory usage";
+"Network speed" = "Network speed";
+"Show or hide cards in the dropdown panel." = "Show or hide cards in the dropdown panel.";
+"Drag rows to reorder, and toggle each card on or off." = "Drag rows to reorder, and toggle each card on or off.";
+"Drag with the arrows to reorder, and toggle each card on or off." = "Drag rows to reorder, and toggle each card on or off.";
+"Display" = "Display";
+"Custom" = "Custom";
+"Show temperatures in Fahrenheit" = "Show temperatures in Fahrenheit";
+"Show individual sensors" = "Show individual sensors";
+"Fan Control" = "Fan Control";
+"Manual" = "Manual";
+"Auto" = "Auto";
+"CPU" = "CPU";
+"GPU" = "GPU";
+"Current" = "Current";
+"Target" = "Target";
+"System automatic fan control" = "System automatic fan control";
+"CPU die" = "CPU die";
+"CPU calibration" = "CPU calibration";
+"CPU device" = "CPU device";
+"GPU die" = "GPU die";
+"Display panel" = "Display panel";
+"Ambient" = "Ambient";
+"Neural Engine" = "Neural Engine";
+"Power stage" = "Power stage";
+"Other sensor" = "Other sensor";
+"Temperature high — fans returned to automatic." = "Temperature high — fans returned to automatic.";
+"Fan helper not found in app bundle." = "Fan helper not found in app bundle.";
+"Authorization cancelled." = "Authorization cancelled.";
+"Fan control failed." = "Fan control failed.";
+"P-cores" = "P-cores";
+"E-cores" = "E-cores";
+"A modern macOS system monitor." = "A modern macOS system monitor.";
+"Includes SMCKit (MIT, © 2014–2017 beltex)." = "Includes SMCKit (MIT, © 2014–2017 beltex).";
+"Open Log Folder" = "Open Log Folder";
+"Fan helper needs an update — one administrator password will be requested." = "Fan helper needs an update — one administrator password will be requested.";
+"Helper installed but the daemon did not start. Try reinstalling, or run: %@" = "Helper installed but the daemon did not start. Try reinstalling, or run: %@";
+"Install timed out." = "Install timed out.";
+"Curve control (%@)" = "Curve control (%@)";
+"Helper status" = "Helper status";
+"Install / Reinstall Helper" = "Install / Reinstall Helper";
+"Uninstall Helper" = "Uninstall Helper";
+"Installed (v%d) ✓" = "Installed (v%d) ✓";
+"Installed ✓" = "Installed ✓";
+"Installing…" = "Installing…";
+"Not installed" = "Not installed";
+"Authorization skipped" = "Authorization skipped";
+"Checking…" = "Checking…";
+"Fan control needs authorization." = "Fan control needs authorization.";
+"Authorize" = "Authorize";
+"Retry" = "Retry";
+"Welcome to N1KO-STATE" = "Welcome to N1KO-STATE";
+"N1KO-STATE lives in your menu bar. Left-click the icon for the monitoring panel; right-click for the menu." = "N1KO-STATE lives in your menu bar. Left-click the icon for the monitoring panel; right-click for the menu.";
+"CPU, GPU, Memory" = "CPU, GPU, Memory";
+"Network & Disk" = "Network & Disk";
+"Sensors & Fans" = "Sensors & Fans";
+"Fan Control Authorization" = "Fan Control Authorization";
+"Manual fan control installs a small system helper. You only need to enter your administrator password once; without it, fan speeds are read-only." = "Manual fan control installs a small system helper. You only need to enter your administrator password once; without it, fan speeds are read-only.";
+"Authorize Now" = "Authorize Now";
+"Skip" = "Skip";
+"Installed" = "Installed";
+"Skipped" = "Skipped";
+"Startup & Notifications" = "Startup & Notifications";
+"Alert notifications require permission. You will be asked when the first threshold is crossed." = "Alert notifications require permission. You will be asked when the first threshold is crossed.";
+"Back" = "Back";
+"Continue" = "Continue";
+"Get Started" = "Get Started";
+"About N1KO-STATE" = "About N1KO-STATE";
+"Active" = "Active";
+"Appearance" = "Appearance";
+"Applied" = "Applied";
+"Apply" = "Apply";
+"Cards" = "Cards";
+"Dark" = "Dark";
+"Gauges" = "Gauges";
+"Light" = "Light";
+"Popover Style" = "Popover Style";
+"No discrete GPU metrics on this device." = "No discrete GPU metrics on this device.";
+"No fan sensors on this device." = "No fan sensors on this device.";
+"Loading…" = "Loading…";
+"Error" = "Error";
+"Use Auto/Manual in the Sensors card. Adjust the slider to set a target RPM, then tap Apply to confirm. Quitting the app restores automatic control." = "Use Auto/Manual in the Sensors card. Adjust the slider to set a target RPM, then tap Apply to confirm. Quitting the app restores automatic control.";
+"Average runnable threads over the last minute." = "Average runnable threads over the last minute.";
+"Average runnable threads over the last five minutes." = "Average runnable threads over the last five minutes.";
+"CPU usage chart" = "CPU usage chart";
+"Memory usage chart" = "Memory usage chart";
+"Network throughput chart" = "Network throughput chart";
+"Memory that cannot be paged out." = "Memory that cannot be paged out.";
+"Memory compressed to free physical RAM." = "Memory compressed to free physical RAM.";
+"Temperature at %@." = "Temperature at %@.";
+"Quit process" = "Quit process";
+"Could not terminate “%@” — permission denied." = "Could not terminate “%@” — permission denied.";
+"Export Diagnostic Report" = "Export Diagnostic Report";
+"Saved to %@" = "Saved to %@";
+"Fan Curve" = "Fan Curve";
+"Automatic fan curve" = "Automatic fan curve";
+"Adjust fan speed from peak temperature. Manual control is disabled while the curve is active." = "Adjust fan speed from peak temperature. Manual control is disabled while the curve is active.";
+"Low temp" = "Low temp";
+"Mid temp" = "Mid temp";
+"High temp" = "High temp";
+"This device does not support manual fan control." = "This device does not support manual fan control.";

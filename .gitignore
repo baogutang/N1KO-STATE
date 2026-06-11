@@ -1,0 +1,24 @@
+# Build artifacts
+.build/
+build/
+*.dmg
+*.dSYM/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE / local tooling
+.claude/
+*.xcuserstate
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# SwiftPM
+.swiftpm/xcode/
+Package.resolved
+
+# Logs & temp
+*.log
+/tmp/

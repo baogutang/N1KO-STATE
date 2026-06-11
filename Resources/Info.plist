@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string>
+        <string>zh-Hans</string>
+        <string>zh-Hant</string>
+    </array>
+    <key>CFBundleExecutable</key>
+    <string>N1KOState</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.n1ko.state.monitor</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>N1KO-STATE</string>
+    <key>CFBundleDisplayName</key>
+    <string>N1KO-STATE</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.1</string>
+    <key>CFBundleVersion</key>
+    <string>101</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>12.0</string>
+    <!-- Dock icon hidden dynamically via NSApp.setActivationPolicy(.accessory) -->
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>N1KO-STATE. Includes SMCKit (MIT, © 2014-2017 beltex).</string>
+</dict>
+</plist>
