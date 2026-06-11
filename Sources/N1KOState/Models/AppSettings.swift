@@ -104,6 +104,7 @@ final class AppSettings: ObservableObject {
     }
     @Published var fanCurve: [FanCurvePoint] {
         didSet {
+            guard fanCurve != oldValue else { return }
             if let data = try? JSONEncoder().encode(fanCurve) {
                 d.set(data, forKey: K.fanCurve)
             }

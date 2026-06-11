@@ -14,6 +14,7 @@ final class GPUMonitor: ObservableObject {
 
     let historyCapacity = 300
     private let device: MTLDevice?
+    /// main thread only (tick-driven)
     private var cachedService: io_service_t = 0
     /// Rediscovery is a full IORegistry sweep — never retry it more often than
     /// this, or machines with no usable accelerator pay the sweep every tick.

@@ -500,7 +500,7 @@ struct SettingsView: View {
     private var aboutPage: some View {
         VStack(alignment: .leading, spacing: 12) {
             SettingsHeader(title: "About")
-            Text(verbatim: "N1KO-STATE \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.1")")
+            Text(verbatim: "N1KO-STATE \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.2")")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(Theme.textPrimary)
             Text(loc: "A modern macOS system monitor.")

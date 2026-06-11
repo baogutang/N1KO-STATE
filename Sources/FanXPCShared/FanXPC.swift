@@ -36,7 +36,8 @@ public enum FanXPC {
     /// changes so the client can detect a stale daemon and reinstall.
     /// v2: Apple Silicon manual mode rework — Ftst unlock, verified mode engage,
     /// periodic re-assert against thermalmonitord reclaim.
-    public static let version = 2
+    /// v3: `setFanSpeedV2` error codes + LaunchDaemon stderr logging.
+    public static let version = 3
 }
 
 /// The privileged operations the daemon exposes over XPC. Every signature is
@@ -47,6 +48,9 @@ public enum FanXPC {
     /// Force `fanIndex` to `rpm` (clamped to the fan's min/max). Replies `true`
     /// on success.
     func setFanSpeed(_ fanIndex: Int, rpm: Int, reply: @escaping (Bool) -> Void)
+
+    /// reply(code): 0 = success; 1 = fanModeRejected; 2 = SMC key missing; 3 = other SMC error.
+    func setFanSpeedV2(_ fanIndex: Int, rpm: Int, reply: @escaping (Int) -> Void)
 
     /// Switch global fan mode: `manual == false` returns *all* fans to automatic
     /// (writes `FS! = 0`). Manual mode is engaged per-fan via `setFanSpeed`.

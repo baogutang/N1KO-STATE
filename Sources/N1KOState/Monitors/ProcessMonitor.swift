@@ -21,9 +21,9 @@ final class ProcessMonitor: ObservableObject {
     private let minInterval: TimeInterval = 5.0
     private var inFlight = false
 
-    func refresh() {
+    func refresh(force: Bool = false) {
         let now = Date()
-        guard now.timeIntervalSince(lastRun) >= minInterval, !inFlight else { return }
+        guard force || now.timeIntervalSince(lastRun) >= minInterval, !inFlight else { return }
         lastRun = now
         inFlight = true
         queue.async { [weak self] in

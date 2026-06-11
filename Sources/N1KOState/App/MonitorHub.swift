@@ -22,9 +22,6 @@ struct MonitorVisibility {
         popoverOpen || menuBarHasBattery
     }
 
-    func needsDiskIO(menuBarHasDisk: Bool) -> Bool {
-        popoverOpen || menuBarHasDisk
-    }
 }
 
 /// Owns every monitor and drives them from a single timer so sampling stays
@@ -95,6 +92,7 @@ final class MonitorHub: ObservableObject {
         if visible {
             disk.refreshVolumesNow()
             battery.refreshSmartBattery(force: true)
+            processes.refresh(force: true)
             tick(full: true)
         }
     }

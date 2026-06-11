@@ -33,6 +33,7 @@ final class BatteryMonitor: ObservableObject {
 
     private var desktopConfirmed = false
     private var notificationInstalled = false
+    private var powerRunLoopSource: CFRunLoopSource?
     private var lastSmartBatteryRead = Date.distantPast
     private let smartBatteryInterval: TimeInterval = 300
 
@@ -41,6 +42,12 @@ final class BatteryMonitor: ObservableObject {
     var conditionOK: Bool? {
         guard let h = healthFraction else { return nil }
         return h >= 0.80
+    }
+
+    deinit {
+        if let src = powerRunLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), src, .defaultMode)
+        }
     }
 
     func start() {
@@ -95,6 +102,7 @@ final class BatteryMonitor: ObservableObject {
             monitor.readPowerSources()
             DispatchQueue.main.async { monitor.objectWillChange.send() }
         }, context)?.takeRetainedValue() else { return }
+        powerRunLoopSource = src
         CFRunLoopAddSource(CFRunLoopGetMain(), src, .defaultMode)
     }
 

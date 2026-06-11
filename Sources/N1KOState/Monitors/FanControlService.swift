@@ -50,6 +50,8 @@ final class FanControlService: ObservableObject {
     @Published private(set) var installedHelperVersion: Int?
     @Published private(set) var mode: FanMode = .auto
     @Published private(set) var curveTargets: [Int: Int] = [:]
+    /// Fan IDs with a privileged write in flight (engage can take ~6 s on Apple Silicon).
+    @Published private(set) var pendingFanIDs: Set<Int> = []
 
     private let queue = smcAccessQueue
     /// Serial queue for all privileged work (install + XPC calls) so the
@@ -155,11 +157,7 @@ final class FanControlService: ObservableObject {
         }
 
         if forcedIDs.isEmpty {
-            manualFanIDs.removeAll()
-            manualTargets.removeAll()
-            appliedFanIDs.removeAll()
-            curveTargets.removeAll()
-            if mode != .auto { mode = .auto }
+            clearAllManualState()
         } else {
             switch mode {
             case .auto:
@@ -232,6 +230,15 @@ final class FanControlService: ObservableObject {
         mode = .curve
         manualFanIDs.removeAll()
         manualTargets.removeAll()
+        appliedFanIDs.removeAll()
+    }
+
+    private func clearAllManualState() {
+        manualFanIDs.removeAll()
+        manualTargets.removeAll()
+        appliedFanIDs.removeAll()
+        curveTargets.removeAll()
+        if mode != .auto { mode = .auto }
     }
 
     func disableCurve() {
@@ -241,11 +248,7 @@ final class FanControlService: ObservableObject {
     private func stopCurveMode(disableSetting: Bool) {
         guard mode == .curve || AppSettings.shared.fanCurveEnabled else { return }
         let hadApplied = !appliedFanIDs.isEmpty
-        mode = .auto
-        curveTargets.removeAll()
-        manualFanIDs.removeAll()
-        manualTargets.removeAll()
-        appliedFanIDs.removeAll()
+        clearAllManualState()
         if disableSetting, AppSettings.shared.fanCurveEnabled {
             AppSettings.shared.fanCurveEnabled = false
         }
@@ -361,13 +364,9 @@ final class FanControlService: ObservableObject {
     }
 
     func resetAllFans() {
-        mode = .auto
-        curveTargets.removeAll()
         let hadForced = fans.contains { $0.forced }
-        manualFanIDs.removeAll()
-        manualTargets.removeAll()
         let hadApplied = !appliedFanIDs.isEmpty
-        appliedFanIDs.removeAll()
+        clearAllManualState()
         guard hadApplied || hadForced else { return }
         performAutoAll()
     }
@@ -395,11 +394,17 @@ final class FanControlService: ObservableObject {
         let work = DispatchWorkItem { [weak self] in
             guard let self, let p = self.pendingApply else { return }
             self.pendingApply = nil
+            self.pendingFanIDs.insert(p.id)
             self.controlQueue.async {
-                let ok = self.callSetSpeed(id: p.id, rpm: p.rpm)
+                let code = self.callSetSpeed(id: p.id, rpm: p.rpm)
                 DispatchQueue.main.async {
-                    if ok { self.isAuthorized = true; self.lastError = nil }
-                    else { self.lastError = self.lastError ?? "Fan control failed.".loc }
+                    self.pendingFanIDs.remove(p.id)
+                    if code == 0 {
+                        self.isAuthorized = true
+                        self.lastError = nil
+                    } else {
+                        self.lastError = self.fanControlErrorMessage(code: code, fanId: p.id, rpm: p.rpm)
+                    }
                 }
             }
         }
@@ -408,12 +413,31 @@ final class FanControlService: ObservableObject {
     }
 
     private func performAutoAll() {
+        let pending = appliedFanIDs.union(manualFanIDs)
+        if !pending.isEmpty {
+            DispatchQueue.main.async { [weak self] in
+                self?.pendingFanIDs.formUnion(pending)
+            }
+        }
         controlQueue.async { [weak self] in
             guard let self else { return }
             let ok = self.callAuto()
             DispatchQueue.main.async {
+                self.pendingFanIDs.subtract(pending)
                 if ok { self.isAuthorized = true; self.lastError = nil }
             }
+        }
+    }
+
+    private func fanControlErrorMessage(code: Int, fanId: Int, rpm: Int) -> String {
+        switch code {
+        case 1:
+            return "System rejected manual fan control (your macOS version may restrict this feature).".loc
+        case 2, 3:
+            DiagLog.log("FanHelper", "setFanSpeed fan=\(fanId) rpm=\(rpm) code=\(code)")
+            return "Fan control failed.".loc
+        default:
+            return "Fan control failed.".loc
         }
     }
 
@@ -581,8 +605,9 @@ final class FanControlService: ObservableObject {
             return true
         }
 
-        let cmd = "launchctl print system/\(FanXPC.helperLabel)"
-        let msg = String(format: "Helper installed but the daemon did not start. Try reinstalling, or run: %@".loc, cmd)
+        let diag = "launchctl print system/\(FanXPC.helperLabel)"
+        DiagLog.log("FanHelper", "daemon did not start after install; try: \(diag)")
+        let msg = "Fan helper could not start. Tap Retry or reinstall.".loc
         DispatchQueue.main.async {
             self.installingStartedAt = nil
             self.helperState = .failed(msg)
@@ -592,13 +617,29 @@ final class FanControlService: ObservableObject {
         return false
     }
 
-    private func callSetSpeed(id: Int, rpm: Int) -> Bool {
-        guard ensureHelperInstalled() else { return false }
+    private func callSetSpeed(id: Int, rpm: Int) -> Int {
+        guard ensureHelperInstalled() else { return 3 }
         // First engage on Apple Silicon can take ~6 s (thermalmonitord yield +
         // verified retry loop in the daemon) — give the XPC reply headroom.
-        return xpcCall(timeout: 12) { proxy, done in
-            proxy.setFanSpeed(id, rpm: rpm) { done($0) }
+        return xpcCallSetSpeed(timeout: 12, id: id, rpm: rpm)
+    }
+
+    private func xpcCallSetSpeed(timeout: TimeInterval, id: Int, rpm: Int) -> Int {
+        let sem = DispatchSemaphore(value: 0)
+        var code = 3
+        var finished = false
+        let lock = NSLock()
+        func finish(_ v: Int) {
+            lock.lock(); defer { lock.unlock() }
+            guard !finished else { return }
+            finished = true
+            code = v
+            sem.signal()
         }
+        guard let p = proxy(timeoutFired: { finish(3) }) else { return 3 }
+        p.setFanSpeedV2(id, rpm: rpm) { finish($0) }
+        _ = sem.wait(timeout: .now() + timeout)
+        return code
     }
 
     private func callAuto(allowInstall: Bool = true, probeTimeout: TimeInterval = 2) -> Bool {
@@ -689,6 +730,8 @@ final class FanControlService: ObservableObject {
             \(teamBlock)
             <key>KeepAlive</key>
             <false/>
+            <key>StandardErrorPath</key>
+            <string>/Library/Logs/N1KO-STATE-helper.log</string>
         </dict>
         </plist>
         """

@@ -36,6 +36,7 @@ final class HistoryStore {
     private var lastPersist = Date.distantPast
     private let persistInterval: TimeInterval = 300
     private let ioQueue = DispatchQueue(label: "com.n1ko.state.monitor.history", qos: .utility)
+    private var diskLoaded = false
 
     private init() {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -43,12 +44,18 @@ final class HistoryStore {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         persistURL = dir.appendingPathComponent("history.json")
         for s in Series.allCases { buffers[s] = [] }
-        loadFromDisk()
+        ioQueue.async { [weak self] in
+            self?.loadFromDisk()
+            self?.lock.lock()
+            self?.diskLoaded = true
+            self?.lock.unlock()
+        }
     }
 
     func record(cpu: Double, memory: Double, netDown: Double, netUp: Double) {
         lock.lock()
         defer { lock.unlock() }
+        guard diskLoaded else { return }
         let now = Date()
         guard now.timeIntervalSince(lastRecord) >= sampleInterval else { return }
         lastRecord = now

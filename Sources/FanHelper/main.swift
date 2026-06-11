@@ -48,6 +48,19 @@ private func clearFanDirty() {
     }
 }
 
+private func fanDirtyMarkerExists() -> Bool {
+    FileManager.default.fileExists(atPath: fanDirtyPath)
+}
+
+private func smcErrorCode(_ error: Error) -> Int {
+    guard let err = error as? SMCKit.SMCError else { return 3 }
+    switch err {
+    case .fanModeRejected: return 1
+    case .keyNotFound: return 2
+    default: return 3
+    }
+}
+
 private func recoverDirtyFansIfNeeded() {
     guard FileManager.default.fileExists(atPath: fanDirtyPath) else { return }
     log("dirty marker found — returning fans to automatic")
@@ -70,6 +83,10 @@ final class HelperService: NSObject, FanControlHelperProtocol {
     private var reassertFailures = 0
 
     func setFanSpeed(_ fanIndex: Int, rpm: Int, reply: @escaping (Bool) -> Void) {
+        setFanSpeedV2(fanIndex, rpm: rpm) { reply($0 == 0) }
+    }
+
+    func setFanSpeedV2(_ fanIndex: Int, rpm: Int, reply: @escaping (Int) -> Void) {
         smcQueue.async {
             do {
                 markFanDirty()
@@ -77,10 +94,11 @@ final class HelperService: NSObject, FanControlHelperProtocol {
                 self.didForce = true
                 self.forcedTargets[fanIndex] = Double(rpm)
                 self.startReassertLocked()
-                reply(true)
+                reply(0)
             } catch {
-                log("setFanSpeed(\(fanIndex), \(rpm)) failed: \(error)")
-                reply(false)
+                let code = smcErrorCode(error)
+                log("setFanSpeedV2(\(fanIndex), \(rpm)) failed (\(code)): \(error)")
+                reply(code)
             }
         }
     }
@@ -136,8 +154,8 @@ final class HelperService: NSObject, FanControlHelperProtocol {
 
     func setFanMode(_ manual: Bool, reply: @escaping (Bool) -> Void) {
         // Engaging manual without a target is meaningless on the FS! model, so
-        // `manual == true` is a no-op success; the real manual write happens via
-        // setFanSpeed. `manual == false` returns everything to automatic.
+        // `manual == true` is a protocol-compat no-op; the real manual write
+        // happens via setFanSpeed. `manual == false` returns everything to auto.
         if manual {
             reply(true)
             return
@@ -291,7 +309,7 @@ private func scheduleIdleExitIfNeeded() {
     timer.schedule(deadline: .now() + 300)
     timer.setEventHandler {
         guard activeConnections == 0 else { return }
-        if SMCKit.readFloatFans().contains(where: { $0.forced }) {
+        if SMCKit.readFloatFans().contains(where: { $0.forced }) || fanDirtyMarkerExists() {
             log("idle timeout deferred — forced fans still active")
             scheduleIdleExitIfNeeded()
             return

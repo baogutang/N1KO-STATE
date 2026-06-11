@@ -102,7 +102,7 @@ final class SensorMonitor: ObservableObject {
             } else {
                 // Intel SMC fallback: discover present keys once, then read.
                 if self.presentSensors == nil {
-                    if let cached = Self.loadCachedSensors() {
+                    if Self.currentModel() != "unknown", let cached = Self.loadCachedSensors() {
                         self.presentSensors = cached
                     } else if let discovered = try? SMCKit.allKnownTemperatureSensors(), !discovered.isEmpty {
                         self.presentSensors = discovered
@@ -261,6 +261,7 @@ final class SensorMonitor: ObservableObject {
     }
 
     private static func saveCachedSensors(_ sensors: [TemperatureSensor]) {
+        guard currentModel() != "unknown" else { return }
         let payload = SensorCacheFile(
             model: currentModel(),
             sensors: sensors.map { CachedSensor(name: $0.name, code: $0.code.toString()) }

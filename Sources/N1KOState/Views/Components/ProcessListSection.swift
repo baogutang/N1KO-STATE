@@ -29,7 +29,7 @@ struct ProcessListSection: View {
             .buttonStyle(.plain)
 
             VStack(spacing: 4) {
-                ForEach(sorted) { p in
+                ForEach(sorted, id: \.id) { p in
                     ProcessRow(name: p.name,
                                value: value(for: p),
                                fraction: fraction(for: p),

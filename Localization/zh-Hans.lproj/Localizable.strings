@@ -162,9 +162,12 @@
 "Includes SMCKit (MIT, © 2014–2017 beltex)." = "内含 SMCKit（MIT 许可，© 2014–2017 beltex）。";
 "Open Log Folder" = "打开日志文件夹";
 "Fan helper needs an update — one administrator password will be requested." = "风扇组件需要更新，将请求一次管理员密码。";
-"Helper installed but the daemon did not start. Try reinstalling, or run: %@" = "组件已安装但未能启动。请尝试重新安装，或运行：%@";
+"Fan helper could not start. Tap Retry or reinstall." = "风扇组件未能启动，请点击重试或重新安装。";
+"Taking over fan control…" = "正在接管风扇控制…";
+"System rejected manual fan control (your macOS version may restrict this feature)." = "系统拒绝了手动风扇控制（当前 macOS 版本可能限制此功能）。";
 "Install timed out." = "安装超时。";
 "Curve control (%@)" = "曲线控制中（%@）";
+"Curve active · target %@" = "曲线控制中 · 目标 %@";
 "Helper status" = "组件状态";
 "Install / Reinstall Helper" = "安装/重新安装组件";
 "Uninstall Helper" = "卸载组件";

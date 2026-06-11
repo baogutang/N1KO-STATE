@@ -150,9 +150,12 @@
 "Includes SMCKit (MIT, © 2014–2017 beltex)." = "Includes SMCKit (MIT, © 2014–2017 beltex).";
 "Open Log Folder" = "Open Log Folder";
 "Fan helper needs an update — one administrator password will be requested." = "Fan helper needs an update — one administrator password will be requested.";
-"Helper installed but the daemon did not start. Try reinstalling, or run: %@" = "Helper installed but the daemon did not start. Try reinstalling, or run: %@";
+"Fan helper could not start. Tap Retry or reinstall." = "Fan helper could not start. Tap Retry or reinstall.";
+"Taking over fan control…" = "Taking over fan control…";
+"System rejected manual fan control (your macOS version may restrict this feature)." = "System rejected manual fan control (your macOS version may restrict this feature).";
 "Install timed out." = "Install timed out.";
 "Curve control (%@)" = "Curve control (%@)";
+"Curve active · target %@" = "Curve active · target %@";
 "Helper status" = "Helper status";
 "Install / Reinstall Helper" = "Install / Reinstall Helper";
 "Uninstall Helper" = "Uninstall Helper";

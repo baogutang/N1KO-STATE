@@ -15,6 +15,7 @@ final class SettingsWindowController {
         if let fans { self.fans = fans }
         if let hub { self.hub = hub }
         if let window {
+            window.deminiaturize(nil)
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             self.fans?.refreshHelperStatus()
@@ -33,6 +34,7 @@ final class SettingsWindowController {
         w.center()
         window = w
 
+        w.deminiaturize(nil)
         w.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }

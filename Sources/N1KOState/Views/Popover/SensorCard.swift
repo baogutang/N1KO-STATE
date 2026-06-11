@@ -31,7 +31,7 @@ struct SensorCard: View {
                 } else {
                     if !temps.isEmpty {
                         VStack(spacing: 4) {
-                            ForEach(temps) { t in
+                            ForEach(temps, id: \.id) { t in
                                 HStack(spacing: 8) {
                                     HStack(spacing: 3) {
                                         Text(loc: t.label)
@@ -69,7 +69,7 @@ struct SensorCard: View {
                             FanHelperBanner(controller: fans)
                         }
                         VStack(spacing: 11) {
-                            ForEach(fans.fans) { fan in
+                            ForEach(fans.fans, id: \.id) { fan in
                                 FanRow(fan: fan, controller: fans)
                             }
                         }
@@ -148,6 +148,11 @@ private struct FanRow: View {
     }
     private var isApplied: Bool { controller.appliedFanIDs.contains(fan.id) }
     private var isCurveActive: Bool { controller.mode == .curve }
+    private var isPending: Bool { controller.pendingFanIDs.contains(fan.id) }
+    private var helperFailed: Bool {
+        if case .failed = controller.helperState { return true }
+        return false
+    }
 
     private var effectiveMode: FanControlMode {
         if let um = userMode { return um }
@@ -185,8 +190,34 @@ private struct FanRow: View {
             .frame(height: 4)
 
             if canControl {
+                if helperFailed {
+                    HStack(spacing: 6) {
+                        Text(controller.lastError ?? "Fan helper could not start. Tap Retry or reinstall.".loc)
+                            .font(.system(size: 9.5))
+                            .foregroundColor(Theme.danger)
+                            .lineLimit(2)
+                        Spacer(minLength: 4)
+                        Button(action: { controller.warmAuthorization() }) {
+                            Text(loc: "Retry")
+                        }
+                        .font(.system(size: 9.5, weight: .semibold))
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .disabled(controller.helperState == .installing)
+                    }
+                }
+
+                if isPending {
+                    HStack(spacing: 6) {
+                        ProgressView().controlSize(.small)
+                        Text(loc: "Taking over fan control…")
+                            .font(.system(size: 9.5, weight: .medium))
+                            .foregroundColor(Theme.info)
+                    }
+                }
+
                 if isCurveActive, let pct = controller.curvePercent(for: fan) {
-                    Text("Curve control (%@)".locf(Formatters.percent(pct)))
+                    Text("Curve active · target %@".locf(Formatters.percent(pct)))
                         .font(.system(size: 9.5, weight: .semibold))
                         .foregroundColor(Theme.info)
                 }
@@ -207,7 +238,7 @@ private struct FanRow: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .disabled(isCurveActive)
+                .disabled(isCurveActive || isPending || controller.helperState == .installing)
 
                 if effectiveMode == .manual || isCurveActive {
                     HStack(spacing: 6) {
@@ -256,7 +287,7 @@ private struct FanRow: View {
                                 )
                         }
                         .buttonStyle(.plain)
-                        .disabled(!needsApply)
+                        .disabled(!needsApply || isPending || controller.helperState == .installing)
                     }
                 } else {
                     Text(loc: "System automatic fan control")
