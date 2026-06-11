@@ -1,0 +1,219 @@
+/* N1KO-STATE — 繁體中文 */
+
+/* 卡片標題 */
+"Memory" = "記憶體";
+"Disk" = "磁碟";
+"Network" = "網路";
+"Sensors" = "感測器";
+
+/* CPU 卡片 */
+"Load 1m" = "負載 1分";
+"Load 5m" = "負載 5分";
+"Uptime" = "運行時間";
+"Freq" = "頻率";
+"Top Processes" = "佔用最高程序";
+
+/* 記憶體卡片 */
+"USED" = "已用";
+"App" = "應用";
+"Wired" = "已聯動";
+"Compressed" = "已壓縮";
+"Free" = "空閒";
+"Pressure" = "記憶體壓力";
+"Swap Used" = "交換已用";
+"Swap Total" = "交換總量";
+"Total RAM" = "記憶體總量";
+"Low" = "低";
+"Medium" = "中";
+"High" = "高";
+
+/* GPU 卡片 */
+"VRAM" = "顯示記憶體";
+"Chip" = "晶片";
+"VRAM Used" = "顯存已用";
+"VRAM Total" = "顯存總量";
+
+/* 磁碟卡片 */
+"Read" = "讀取";
+"Write" = "寫入";
+"%@ free" = "%@ 可用";
+
+/* 電池卡片 */
+"Health" = "健康度";
+"Cycles" = "循環次數";
+"Temp" = "溫度";
+"Wattage" = "功率";
+"Fully charged" = "已充滿";
+"Charging" = "充電中";
+"On AC power" = "已接通電源";
+"On battery" = "使用電池";
+"%@ to full" = "%@ 充滿";
+"%@ left" = "剩餘 %@";
+"Battery level" = "電池電量";
+"Low battery" = "電池電量低";
+"Battery at %@." = "電池電量 %@。";
+
+/* 網路卡片 */
+"Download" = "下載";
+"Upload" = "上傳";
+"Local IP" = "本機 IP";
+"Connected" = "已連接";
+"Disconnected" = "未連接";
+"Offline" = "離線";
+
+/* 感測器卡片 — 分組標籤 */
+"SoC" = "晶片";
+"Battery" = "電池";
+"SSD" = "固態硬碟";
+"Display" = "顯示器";
+"Airflow" = "氣流";
+"Power" = "電源";
+"Other" = "其他";
+"Fans" = "風扇";
+"No temperature sensors available." = "此 Mac 未提供溫度感測器。";
+"Sensors unavailable" = "感測器不可用";
+
+/* 標題列 / 選單操作 */
+"Settings" = "設定";
+"Settings…" = "設定…";
+"Quit N1KO-STATE" = "結束 N1KO-STATE";
+
+/* 設定 — 標籤頁 */
+"General" = "一般";
+"Menu Bar" = "選單列";
+"Modules" = "模組";
+"Alerts" = "警示";
+"About" = "關於";
+
+/* 設定 — 警示 */
+"Get a notification when a metric crosses a limit." = "當某項指標超過閾值時傳送通知。";
+"Enable alerts" = "啟用警示";
+"Thresholds" = "閾值";
+"Temperature" = "溫度";
+"Low disk space" = "磁碟空間不足";
+
+/* 警示通知 */
+"High CPU usage" = "CPU 佔用過高";
+"High memory usage" = "記憶體佔用過高";
+"High temperature" = "溫度過高";
+"CPU at %@." = "CPU 佔用 %@。";
+"Memory at %@." = "記憶體佔用 %@。";
+"Sensor peak %@." = "感測器峰值 %@。";
+"Only %@ free on the startup disk." = "啟動磁碟僅剩 %@ 可用空間。";
+
+/* 設定 — 內容 */
+"Refresh Interval" = "重新整理間隔";
+"Accent Color" = "強調色";
+"Language" = "語言";
+"System" = "跟隨系統";
+"Startup" = "啟動";
+"Launch at login" = "登入時啟動";
+"Choose which metrics appear in the menu bar widget." = "選擇選單列中顯示的指標。";
+"Metrics" = "指標";
+"Layout" = "版面";
+"Compact (combine into one readout)" = "緊湊（合併為一個讀數）";
+"CPU usage" = "CPU 佔用";
+"GPU usage" = "GPU 佔用";
+"Memory usage" = "記憶體佔用";
+"Network speed" = "網路速度";
+"Show or hide cards in the dropdown panel." = "顯示或隱藏面板中的卡片。";
+"Drag rows to reorder, and toggle each card on or off." = "拖動列以調整順序，並開關每個卡片。";
+"Drag with the arrows to reorder, and toggle each card on or off." = "拖動列以調整順序，並開關每個卡片。";
+"Display" = "顯示";
+"Custom" = "自訂";
+"Show temperatures in Fahrenheit" = "以華氏度顯示溫度";
+"Show individual sensors" = "顯示每個獨立感測器";
+"Fan Control" = "風扇控制";
+"Use Auto/Manual in the Sensors card. Adjust the slider to set a target RPM, then tap Apply to confirm. Quitting the app restores automatic control." = "在感測器卡片中用「自動/手動」切換。拖動滑桿設定目標轉速，然後點擊「套用」確認。退出應用會恢復自動控制。";
+"Manual" = "手動";
+"Auto" = "自動";
+"CPU" = "CPU";
+"GPU" = "GPU";
+"Current" = "目前";
+"Target" = "目標";
+"Apply" = "套用";
+"Applied" = "已套用";
+"Active" = "生效中";
+
+/* 外觀與樣式 */
+"Appearance" = "外觀";
+"Light" = "淺色";
+"Dark" = "深色";
+"Popover Style" = "彈窗樣式";
+"Cards" = "卡片";
+"Gauges" = "儀表盤";
+"System automatic fan control" = "系統自動控制風扇";
+"CPU die" = "CPU 核心";
+"CPU calibration" = "CPU 校準";
+"CPU device" = "CPU 器件";
+"GPU die" = "GPU 核心";
+"Display panel" = "顯示器";
+"Ambient" = "環境";
+"Neural Engine" = "神經網路引擎";
+"Power stage" = "供電";
+"Other sensor" = "其他";
+"Temperature high — fans returned to automatic." = "溫度過高，已恢復風扇自動控制。";
+"Fan helper not found in app bundle." = "未找到風扇控制元件。";
+"Authorization cancelled." = "已取消授權。";
+"Fan control failed." = "風扇控制失敗。";
+"P-cores" = "效能核心";
+"E-cores" = "節能核心";
+"A modern macOS system monitor." = "現代化的 macOS 系統監視器。";
+"Includes SMCKit (MIT, © 2014–2017 beltex)." = "內含 SMCKit（MIT 授權，© 2014–2017 beltex）。";
+"Open Log Folder" = "打開日誌資料夾";
+"Fan helper needs an update — one administrator password will be requested." = "風扇元件需要更新，將請求一次管理員密碼。";
+"Helper installed but the daemon did not start. Try reinstalling, or run: %@" = "元件已安裝但未能啟動。請嘗試重新安裝，或執行：%@";
+"Install timed out." = "安裝逾時。";
+"Curve control (%@)" = "曲線控制中（%@）";
+"Helper status" = "元件狀態";
+"Install / Reinstall Helper" = "安裝/重新安裝元件";
+"Uninstall Helper" = "卸載元件";
+"Installed (v%d) ✓" = "已安裝（v%d）✓";
+"Installed ✓" = "已安裝 ✓";
+"Installing…" = "安裝中…";
+"Not installed" = "未安裝";
+"Authorization skipped" = "已跳過授權";
+"Checking…" = "檢查中…";
+"Fan control needs authorization." = "風扇控制需要授權。";
+"Authorize" = "授權";
+"Retry" = "重試";
+"Welcome to N1KO-STATE" = "歡迎使用 N1KO-STATE";
+"N1KO-STATE lives in your menu bar. Left-click the icon for the monitoring panel; right-click for the menu." = "N1KO-STATE 位於選單列。左鍵點擊圖示開啟監控面板，右鍵開啟選單。";
+"CPU, GPU, Memory" = "CPU、GPU、記憶體";
+"Network & Disk" = "網路與磁碟";
+"Sensors & Fans" = "感測器與風扇";
+"Fan Control Authorization" = "風扇控制授權";
+"Manual fan control installs a small system helper. You only need to enter your administrator password once; without it, fan speeds are read-only." = "手動風扇控制需安裝一個系統輔助元件，僅需輸入一次管理員密碼；不安裝則風扇功能為唯讀。";
+"Authorize Now" = "立即授權安裝";
+"Skip" = "跳過";
+"Installed" = "已安裝";
+"Skipped" = "已跳過";
+"Startup & Notifications" = "啟動與通知";
+"Alert notifications require permission. You will be asked when the first threshold is crossed." = "告警通知需要系統權限，首次觸發閾值時會請求授權。";
+"Back" = "上一步";
+"Continue" = "繼續";
+"Get Started" = "開始使用";
+"About N1KO-STATE" = "關於 N1KO-STATE";
+"No discrete GPU metrics on this device." = "此裝置不提供獨立 GPU 指標。";
+"No fan sensors on this device." = "此裝置不提供風扇感測器。";
+"Loading…" = "載入中…";
+"Error" = "異常";
+"Average runnable threads over the last minute." = "過去一分鐘內可執行緒的平均數。";
+"Average runnable threads over the last five minutes." = "過去五分鐘內可執行緒的平均數。";
+"CPU usage chart" = "CPU 使用率圖表";
+"Memory usage chart" = "記憶體使用率圖表";
+"Network throughput chart" = "網路吞吐量圖表";
+"Memory that cannot be paged out." = "無法換出到磁碟的已聯動記憶體。";
+"Memory compressed to free physical RAM." = "為釋放實體記憶體而壓縮的記憶體。";
+"Temperature at %@." = "溫度：%@。";
+"Quit process" = "結束程序";
+"Could not terminate “%@” — permission denied." = "無法結束「%@」——權限不足。";
+"Export Diagnostic Report" = "匯出診斷報告";
+"Saved to %@" = "已儲存到 %@";
+"Fan Curve" = "風扇曲線";
+"Automatic fan curve" = "自動風扇曲線";
+"Adjust fan speed from peak temperature. Manual control is disabled while the curve is active." = "根據峰值溫度調節風扇轉速。曲線啟用時禁用手動控制。";
+"Low temp" = "低溫點";
+"Mid temp" = "中溫點";
+"High temp" = "高溫點";
+"This device does not support manual fan control." = "此裝置不支援手動風扇控制。";

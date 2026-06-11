@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build universal DMG
+        run: ./build_app.sh --dmg
+
+      - name: Verify DMG
+        run: |
+          test -f build/N1KO-STATE.dmg
+          hdiutil verify build/N1KO-STATE.dmg
+          lipo -archs build/N1KO-STATE.app/Contents/MacOS/N1KOState | tr ' ' '\n' | sort | uniq -c
+
+      - name: Resolve release notes
+        id: notes
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          NOTES=".github/release-notes/v${TAG}.md"
+          if [[ ! -f "$NOTES" ]]; then
+            echo "::error::Missing release notes file: $NOTES"
+            exit 1
+          fi
+          echo "path=$NOTES" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: N1KO-STATE ${{ github.ref_name }}
+          files: build/N1KO-STATE.dmg
+          body_path: ${{ steps.notes.outputs.path }}
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: true
