@@ -165,61 +165,15 @@ N1KO-STATE 安装说明 / Installation Notes
 
 解决方法（任选其一）：
 1. 推荐：打开「终端」，执行：xattr -cr /Applications/N1KO-STATE.app
-2. 或：右键同目录下的「修复打不开.app」→ 打开（首次可能被系统询问）
-3. 或：右键主应用 N1KO-STATE.app → 打开（仅首次需要）
+2. 或：右键主应用 N1KO-STATE.app → 打开（仅首次需要）
 
 【English】
 If macOS says the app is "damaged" or won't open, this is due to ad-hoc signing (not notarized).
 
 Fix (pick one):
 1. Recommended: open Terminal and run: xattr -cr /Applications/N1KO-STATE.app
-2. Or: right-click "修复打不开.app" in this DMG → Open (first launch may be prompted)
-3. Or: right-click N1KO-STATE.app → Open (first launch only)
+2. Or: right-click N1KO-STATE.app → Open (first launch only)
 EOF
-
-    FIX_APP="$DMG_TMP/修复打不开.app"
-    FIX_EXE="$FIX_APP/Contents/MacOS/repair-quarantine"
-    mkdir -p "$FIX_APP/Contents/MacOS" "$FIX_APP/Contents/Resources"
-    cat > "$FIX_APP/Contents/Info.plist" <<'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleExecutable</key>
-    <string>repair-quarantine</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.n1ko.state.monitor.quarantinefix</string>
-    <key>CFBundleName</key>
-    <string>修复打不开</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
-    <key>CFBundleVersion</key>
-    <string>1</string>
-</dict>
-</plist>
-EOF
-    cat > "$FIX_EXE" <<'EOF'
-#!/bin/bash
-APP="/Applications/N1KO-STATE.app"
-if [[ ! -d "$APP" ]]; then
-    /usr/bin/osascript -e 'display dialog "未找到 /Applications/N1KO-STATE.app" & return & return & "请先把 N1KO-STATE 拖入「应用程序」后再运行。" & return & return & "N1KO-STATE was not found in Applications. Please drag it to Applications first." buttons {"OK"} default button "OK" with title "N1KO-STATE"'
-    exit 1
-fi
-
-/usr/bin/xattr -cr "$APP" 2>/dev/null
-if [[ $? -eq 0 ]]; then
-    /usr/bin/osascript -e 'display dialog "完成 / Done" & return & return & "现在可以打开 N1KO-STATE。" & return & return & "You can now open N1KO-STATE." buttons {"OK"} default button "OK" with title "N1KO-STATE"'
-else
-    /usr/bin/osascript -e 'display dialog "修复失败 / Repair Failed" & return & return & "请打开「终端」执行：" & return & return & "xattr -cr /Applications/N1KO-STATE.app" buttons {"OK"} default button "OK" with title "N1KO-STATE"'
-    exit 1
-fi
-EOF
-    chmod +x "$FIX_EXE"
-    codesign "${SIGN_ARGS[@]}" -i "${BUNDLE_ID}.quarantinefix" "$FIX_APP" 2>/dev/null || \
-        echo "   (fix app codesign skipped/failed)"
 
     hdiutil create -volname "$APP_NAME" \
         -srcfolder "$DMG_TMP" \
@@ -238,7 +192,7 @@ EOF
     echo ""
     echo "Distribution:"
     echo "   Share $DMG_PATH — recipients open the DMG and drag to Applications."
-    echo "   First launch: right-click → Open (bypasses Gatekeeper for ad-hoc signed apps)."
+    echo "   First launch note: see 安装必读.txt; Terminal xattr -cr is the recommended ad-hoc signing fix."
 fi
 
 if $RUN_SMOKE; then

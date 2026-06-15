@@ -5,6 +5,7 @@ import SwiftUI
 enum SettingsTab: String, CaseIterable, Identifiable {
     case general = "General"
     case menuBar = "Menu Bar"
+    case popover = "Popover"
     case modules = "Modules"
     case sensors = "Sensors"
     case alerts = "Alerts"
@@ -15,6 +16,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general: return "gearshape"
         case .menuBar: return "macwindow"
+        case .popover: return "rectangle.on.rectangle"
         case .modules: return "square.grid.2x2"
         case .sensors: return "thermometer"
         case .alerts: return "bell.badge"
@@ -25,11 +27,13 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 
 struct SettingsView: View {
     @ObservedObject var settings = AppSettings.shared
+    @ObservedObject private var chartRange = ChartRangeStore.shared
     @ObservedObject var fans: FanControlService
     var hub: MonitorHub?
     @State private var tab: SettingsTab
     @State private var exportMessage: String?
     @State private var launchAtLogin = LoginItem.isEnabled
+    @State private var moduleFilter = ""
 
     init(fans: FanControlService, hub: MonitorHub? = nil, initialTab: SettingsTab? = nil) {
         self.fans = fans
@@ -54,13 +58,15 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     page
                 }
-                .padding(22)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 24)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .background(.ultraThinMaterial)
+            .background(Theme.surface)
         }
-        .frame(width: 640, height: 460)
-        .background(.ultraThinMaterial)
+        .frame(width: 760, height: 540)
+        .controlSize(.small)
+        .background(Theme.surfaceMaterial)
         .id(settings.language)
         .id(settings.appTheme)
     }
@@ -69,14 +75,16 @@ struct SettingsView: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 5) {
-                Text("N1KO").font(.system(size: 14, weight: .heavy, design: .rounded))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("N1KO-STATE")
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(Theme.textPrimary)
-                Text("STATE").font(.system(size: 14, weight: .heavy, design: .rounded))
-                    .foregroundColor(settings.accent)
+                Text(loc: "Settings")
+                    .font(.system(size: 11))
+                    .foregroundColor(Theme.textSecondary)
             }
             .padding(.horizontal, 12)
-            .padding(.top, 16)
+            .padding(.top, 22)
             .padding(.bottom, 14)
 
             ForEach(SettingsTab.allCases) { t in
@@ -91,10 +99,10 @@ struct SettingsView: View {
                     }
                     .foregroundColor(tab == t ? Theme.textPrimary : Theme.textSecondary)
                     .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
+                    .padding(.vertical, 6)
                     .background(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(tab == t ? settings.accent.opacity(0.18) : Color.clear)
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .fill(tab == t ? settings.accent.opacity(0.16) : Color.clear)
                     )
                 }
                 .buttonStyle(.plain)
@@ -102,7 +110,7 @@ struct SettingsView: View {
             }
             Spacer()
         }
-        .frame(width: 176)
+        .frame(width: 188)
         .background(.thinMaterial)
     }
 
@@ -112,6 +120,7 @@ struct SettingsView: View {
         switch tab {
         case .general: generalPage
         case .menuBar: menuBarPage
+        case .popover: popoverPage
         case .modules: modulesPage
         case .sensors: sensorsPage
         case .alerts: alertsPage
@@ -121,81 +130,82 @@ struct SettingsView: View {
 
     private var generalPage: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SettingsHeader(title: "General")
+            SettingsHeader(title: "General",
+                           subtitle: "Set the app language, appearance, refresh rate, and startup behavior.")
 
-            SettingGroup(title: "Language") {
-                HStack(spacing: 8) {
-                    ForEach(languages, id: \.code) { lang in
-                        SegmentChip(label: lang.code == LocalizationManager.system ? "System".loc : lang.label,
-                                    selected: settings.language == lang.code,
-                                    accent: settings.accent) {
-                            settings.language = lang.code
+            SettingGroup(title: "Basics") {
+                VStack(spacing: 0) {
+                    SettingsRow(label: "Language") {
+                        Picker("", selection: $settings.language) {
+                            ForEach(languages, id: \.code) { lang in
+                                Text(lang.code == LocalizationManager.system ? "System".loc : lang.label)
+                                    .tag(lang.code)
+                            }
                         }
+                        .labelsHidden()
+                        .frame(width: 170)
                     }
-                }
-            }
-
-            SettingGroup(title: "Appearance") {
-                HStack(spacing: 8) {
-                    SegmentChip(label: "System".loc, selected: settings.appTheme == "system",
-                                accent: settings.accent) { settings.appTheme = "system" }
-                    SegmentChip(label: "Light".loc, selected: settings.appTheme == "light",
-                                accent: settings.accent) { settings.appTheme = "light" }
-                    SegmentChip(label: "Dark".loc, selected: settings.appTheme == "dark",
-                                accent: settings.accent) { settings.appTheme = "dark" }
-                }
-            }
-
-            SettingGroup(title: "Popover Style") {
-                HStack(spacing: 8) {
-                    SegmentChip(label: "Cards".loc, selected: settings.popoverStyle == "cards",
-                                accent: settings.accent) { settings.popoverStyle = "cards" }
-                    SegmentChip(label: "Gauges".loc, selected: settings.popoverStyle == "gauges",
-                                accent: settings.accent) { settings.popoverStyle = "gauges" }
-                }
-            }
-
-            SettingGroup(title: "Refresh Interval") {
-                HStack(spacing: 8) {
-                    ForEach([0.5, 1.0, 2.0, 3.0], id: \.self) { v in
-                        SegmentChip(label: v < 1 ? "0.5s" : "\(Int(v))s",
-                                    selected: abs(settings.refreshInterval - v) < 0.01,
-                                    accent: settings.accent) {
-                            settings.refreshInterval = v
+                    SettingsDivider()
+                    SettingsRow(label: "Appearance") {
+                        Picker("", selection: $settings.appTheme) {
+                            Text(loc: "System").tag("system")
+                            Text(loc: "Light").tag("light")
+                            Text(loc: "Dark").tag("dark")
                         }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                        .frame(width: 210)
+                    }
+                    SettingsDivider()
+                    SettingsRow(label: "Refresh Interval") {
+                        Picker("", selection: $settings.refreshInterval) {
+                            Text("0.5s").tag(0.5)
+                            Text("1s").tag(1.0)
+                            Text("2s").tag(2.0)
+                            Text("3s").tag(3.0)
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                        .frame(width: 220)
                     }
                 }
             }
 
             SettingGroup(title: "Accent Color") {
-                HStack(spacing: 10) {
-                    ForEach(AppSettings.accentPalette, id: \.self) { hex in
-                        Circle()
-                            .fill(Color(hex: hex))
-                            .frame(width: 24, height: 24)
-                            .overlay(
-                                Circle().strokeBorder(Color.white,
-                                                      lineWidth: settings.accentHex == hex ? 2.5 : 0)
-                            )
-                            .onTapGesture { settings.accentHex = hex }
+                SettingsRow(label: "Accent Color") {
+                    HStack(spacing: 10) {
+                        ForEach(AppSettings.accentPalette, id: \.self) { hex in
+                            Circle()
+                                .fill(Color(hex: hex))
+                                .frame(width: 22, height: 22)
+                                .overlay(
+                                    Circle().strokeBorder(Theme.textPrimary.opacity(0.85),
+                                                          lineWidth: settings.accentHex == hex ? 2 : 0)
+                                )
+                                .onTapGesture { settings.accentHex = hex }
+                                .help("#\(String(format: "%06X", hex))")
+                        }
+                        Divider().frame(height: 20).overlay(Theme.stroke)
+                        ColorPicker("", selection: Binding(
+                            get: { Color(hex: settings.accentHex) },
+                            set: { if let hex = $0.toHexInt() { settings.accentHex = hex } }
+                        ), supportsOpacity: false)
+                        .labelsHidden()
+                        Text(loc: "Custom")
+                            .font(.system(size: 11)).foregroundColor(Theme.textSecondary)
                     }
-                    Divider().frame(height: 22).overlay(Theme.stroke)
-                    ColorPicker("", selection: Binding(
-                        get: { Color(hex: settings.accentHex) },
-                        set: { if let hex = $0.toHexInt() { settings.accentHex = hex } }
-                    ), supportsOpacity: false)
-                    .labelsHidden()
-                    Text(loc: "Custom")
-                        .font(.system(size: 11)).foregroundColor(Theme.textSecondary)
                 }
             }
 
             if LoginItem.isAvailable {
                 SettingGroup(title: "Startup") {
-                    ToggleRow(label: "Launch at login",
-                              isOn: Binding(get: { launchAtLogin },
-                                            set: { launchAtLogin = $0; LoginItem.set($0) }),
-                              accent: settings.accent)
+                    SettingsRow(label: "Launch at login") {
+                        Toggle("", isOn: Binding(get: { launchAtLogin },
+                                                 set: { launchAtLogin = $0; LoginItem.set($0) }))
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .tint(settings.accent)
+                    }
                 }
             }
         }
@@ -203,7 +213,10 @@ struct SettingsView: View {
 
     private var menuBarPage: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SettingsHeader(title: "Menu Bar", subtitle: "Choose which metrics appear in the menu bar widget.")
+            SettingsHeader(title: "Menu Bar", subtitle: "Choose what appears in the menu bar and preview its real width.")
+            SettingGroup(title: nil) {
+                MenuBarPreviewView(hub: hub)
+            }
             SettingGroup(title: "Metrics") {
                 List {
                     ForEach(settings.orderedMenuBarMetrics) { m in
@@ -230,16 +243,42 @@ struct SettingsView: View {
             }
             SettingGroup(title: "Layout") {
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 8) {
-                        ForEach(MenuBarLayout.allCases) { layout in
-                            SegmentChip(label: layout.title.loc,
-                                        selected: settings.resolvedMenuBarLayout == layout,
-                                        accent: settings.accent) {
-                                settings.menuBarLayout = layout.rawValue
+                    SettingsRow(label: "Layout") {
+                        Picker("", selection: $settings.menuBarLayout) {
+                            ForEach(MenuBarLayout.allCases) { layout in
+                                Text(loc: layout.title).tag(layout.rawValue)
                             }
                         }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                        .frame(width: 300)
                     }
-                    MenuBarPreviewView(hub: hub)
+                    SettingsDivider()
+                    SettingsRow(label: "Font Style") {
+                        Picker("", selection: $settings.menuBarFontStyle) {
+                            ForEach(MenuBarFontStyle.allCases) { style in
+                                Text(loc: style.title).tag(style.rawValue)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                        .frame(width: 260)
+                    }
+                    SettingsDivider()
+                    SettingsRow(label: "Font Size",
+                                detail: "Keep the preview within the recommended width.") {
+                        HStack(spacing: 10) {
+                            Slider(value: $settings.menuBarFontSize,
+                                   in: AppSettings.menuBarFontSizeRange,
+                                   step: 0.5)
+                                .frame(width: 150)
+                                .tint(settings.accent)
+                            Text(String(format: "%.1f", settings.menuBarFontSize))
+                                .font(.metric(11))
+                                .foregroundColor(Theme.textSecondary)
+                                .frame(width: 34, alignment: .trailing)
+                        }
+                    }
                     HStack {
                         Spacer()
                         Button(action: resetMenuBarDefaults) {
@@ -260,6 +299,8 @@ struct SettingsView: View {
         settings.menuBattery = false
         settings.menuBarLayout = MenuBarLayout.standard.rawValue
         settings.menuBarOrder = MenuBarMetric.allCases.map(\.rawValue)
+        settings.menuBarFontStyle = MenuBarFontStyle.rounded.rawValue
+        settings.menuBarFontSize = 11.0
     }
 
     private func menuBarBinding(_ m: MenuBarMetric) -> Binding<Bool> {
@@ -272,15 +313,70 @@ struct SettingsView: View {
         }
     }
 
+    private var popoverPage: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            SettingsHeader(title: "Popover",
+                           subtitle: "Tune the click-open monitoring panel without changing the menu-bar readout.")
+            SettingGroup(title: "Display") {
+                VStack(spacing: 0) {
+                    SettingsRow(label: "Popover Style") {
+                        Picker("", selection: $settings.popoverStyle) {
+                            Text(loc: "Cards").tag("cards")
+                            Text(loc: "Gauges").tag("gauges")
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                        .frame(width: 180)
+                    }
+                    SettingsDivider()
+                    SettingsRow(label: "Chart Range") {
+                        Picker("", selection: $chartRange.range) {
+                            ForEach(HistoryStore.Range.allCases) { range in
+                                Text(range.rawValue.uppercased()).tag(range.rawValue)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                        .frame(width: 240)
+                    }
+                }
+            }
+            SettingGroup(title: "Behavior") {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label {
+                        Text(loc: "The popover opens only when you click the menu-bar item.")
+                            .font(.system(size: 12))
+                            .foregroundColor(Theme.textSecondary)
+                    } icon: {
+                        Image(systemName: "cursorarrow.click")
+                            .foregroundColor(settings.accent)
+                    }
+                    Label {
+                        Text(loc: "Clicking outside the panel closes it automatically.")
+                            .font(.system(size: 12))
+                            .foregroundColor(Theme.textSecondary)
+                    } icon: {
+                        Image(systemName: "rectangle.and.hand.point.up.left")
+                            .foregroundColor(settings.accent)
+                    }
+                }
+            }
+        }
+    }
+
     private var modulesPage: some View {
         VStack(alignment: .leading, spacing: 18) {
             SettingsHeader(title: "Modules",
                            subtitle: "Drag rows to reorder, and toggle each card on or off.")
+            TextField("Search modules".loc, text: $moduleFilter)
+                .textFieldStyle(.roundedBorder)
+                .frame(maxWidth: 260)
             List {
-                ForEach(settings.orderedModules) { m in
+                ForEach(filteredModules) { m in
                     ModuleListRow(module: m, isOn: visibilityBinding(m), accent: settings.accent)
                 }
                 .onMove { source, destination in
+                    guard moduleFilter.isEmpty else { return }
                     var order = settings.orderedModules.map(\.rawValue)
                     order.move(fromOffsets: source, toOffset: destination)
                     settings.moduleOrder = order
@@ -296,6 +392,13 @@ struct SettingsView: View {
                 RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.stroke, lineWidth: 1)
             )
         }
+    }
+
+    private var filteredModules: [Module] {
+        let modules = settings.orderedModules
+        let query = moduleFilter.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !query.isEmpty else { return modules }
+        return modules.filter { $0.localizedTitle.lowercased().contains(query) || $0.rawValue.contains(query) }
     }
 
     private func visibilityBinding(_ m: Module) -> Binding<Bool> {
@@ -352,7 +455,7 @@ struct SettingsView: View {
                             .foregroundColor(Theme.danger)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    Text(loc: "Use Auto/Manual in the Sensors card. Adjust the slider to set a target RPM, then tap Apply to confirm. Quitting the app restores automatic control.")
+                    Text(loc: "Use Auto/Manual in the Sensors card. Adjust the slider to set a target RPM; manual changes are applied automatically. Quitting the app restores automatic control.")
                         .font(.system(size: 11))
                         .foregroundColor(Theme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -528,7 +631,7 @@ struct SettingsView: View {
     private var aboutPage: some View {
         VStack(alignment: .leading, spacing: 12) {
             SettingsHeader(title: "About")
-            Text(verbatim: "N1KO-STATE \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.4")")
+            Text(verbatim: "N1KO-STATE \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.5")")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(Theme.textPrimary)
             Text(loc: "A modern macOS system monitor.")
@@ -594,12 +697,46 @@ struct SettingGroup<Content: View>: View {
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.card)
+                    RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.card)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.stroke, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Theme.stroke, lineWidth: 1)
                 )
         }
+    }
+}
+
+struct SettingsRow<Accessory: View>: View {
+    let label: String
+    var detail: String? = nil
+    @ViewBuilder var accessory: Accessory
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(loc: label)
+                    .font(.system(size: 12.5))
+                    .foregroundColor(Theme.textPrimary)
+                if let detail {
+                    Text(loc: detail)
+                        .font(.system(size: 11))
+                        .foregroundColor(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Spacer(minLength: 20)
+            accessory
+        }
+        .frame(minHeight: 30)
+        .padding(.vertical, 4)
+    }
+}
+
+struct SettingsDivider: View {
+    var body: some View {
+        Divider()
+            .overlay(Theme.stroke)
+            .padding(.leading, 0)
     }
 }
 
@@ -624,30 +761,46 @@ struct MenuBarPreviewView: View {
 
     var body: some View {
         let image = previewImage
+        let actualWidth = ceil(image.size.width + 4)
+        let isTooWide = actualWidth > AppSettings.menuBarRecommendedMaxWidth
         let previewWidth = min(max(image.size.width + 18, 88), 260)
         let imageScale = min(1, max((previewWidth - 18) / max(image.size.width, 1), 0.1))
-        HStack(spacing: 10) {
-            Text(loc: "Preview")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundColor(Theme.textSecondary)
-            Spacer(minLength: 10)
-            ZStack {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .strokeBorder(Theme.stroke, lineWidth: 1)
-                    )
-                Image(nsImage: image)
-                    .interpolation(.high)
-                    .frame(width: image.size.width, height: image.size.height)
-                    .scaleEffect(imageScale)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                Text(loc: "Preview")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(Theme.textSecondary)
+                Spacer(minLength: 10)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .fill(Color(nsColor: .controlBackgroundColor).opacity(0.8))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .strokeBorder(isTooWide ? Theme.danger.opacity(0.75) : Theme.stroke, lineWidth: 1)
+                        )
+                    Image(nsImage: image)
+                        .interpolation(.high)
+                        .frame(width: image.size.width, height: image.size.height)
+                        .scaleEffect(imageScale)
+                }
+                .frame(width: previewWidth, height: 34)
+                Text("\(Int(actualWidth)) px")
+                    .font(.metric(10))
+                    .foregroundColor(isTooWide ? Theme.danger : Theme.textTertiary)
+                    .frame(width: 48, alignment: .trailing)
             }
-            .frame(width: previewWidth, height: 34)
-            Text("\(Int(ceil(image.size.width + 4))) px")
-                .font(.metric(10))
-                .foregroundColor(Theme.textTertiary)
-                .frame(width: 48, alignment: .trailing)
+            if isTooWide {
+                Label {
+                    Text("Menu bar preview is wider than %@ px. Reduce metrics, font size, or use Stacked/Minimal.".locf("\(Int(AppSettings.menuBarRecommendedMaxWidth))"))
+                        .font(.system(size: 10.5))
+                        .foregroundColor(Theme.danger)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 10))
+                        .foregroundColor(Theme.danger)
+                }
+            }
         }
         .id(previewTick)
         .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
@@ -689,7 +842,9 @@ struct MenuBarPreviewView: View {
             metricOrder: settings.orderedMenuBarMetrics,
             height: 22,
             layout: settings.resolvedMenuBarLayout,
-            compact: settings.menuCompact
+            compact: settings.menuCompact,
+            fontStyle: settings.resolvedMenuBarFontStyle,
+            fontSize: CGFloat(settings.menuBarFontSize)
         )
         return MenuBarImageRenderer.render(input)
     }

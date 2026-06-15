@@ -12,12 +12,9 @@ final class MenuBarStatusController: NSObject {
     private var cancellables = Set<AnyCancellable>()
 
     var onClick: (() -> Void)?
-    var onHoverStart: (() -> Void)?
-    var onHoverEnd: (() -> Void)?
 
     private static let barHeight: CGFloat = 22
     private var lastRenderSignature: String?
-    private var trackingArea: NSTrackingArea?
 
     init(hub: MonitorHub) {
         self.hub = hub
@@ -32,7 +29,6 @@ final class MenuBarStatusController: NSObject {
         button.action = #selector(handleClick(_:))
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         button.toolTip = nil
-        installTrackingArea()
 
         redraw(force: true)
         bindRedraws()
@@ -60,7 +56,9 @@ final class MenuBarStatusController: NSObject {
             s.$menuNetwork.map { _ in () }.eraseToAnyPublisher(),
             s.$menuCompact.map { _ in () }.eraseToAnyPublisher(),
             s.$menuBarLayout.map { _ in () }.eraseToAnyPublisher(),
-            s.$menuBarOrder.map { _ in () }.eraseToAnyPublisher()
+            s.$menuBarOrder.map { _ in () }.eraseToAnyPublisher(),
+            s.$menuBarFontStyle.map { _ in () }.eraseToAnyPublisher(),
+            s.$menuBarFontSize.map { _ in () }.eraseToAnyPublisher()
         ]
         Publishers.MergeMany(settingsPub)
             .receive(on: RunLoop.main)
@@ -72,14 +70,6 @@ final class MenuBarStatusController: NSObject {
         onClick?()
     }
 
-    @objc(mouseEntered:) func mouseEntered(_ event: NSEvent) {
-        onHoverStart?()
-    }
-
-    @objc(mouseExited:) func mouseExited(_ event: NSEvent) {
-        onHoverEnd?()
-    }
-
     private func redraw(force: Bool = false) {
         let signature = renderSignature()
         if !force, signature == lastRenderSignature { return }
@@ -87,7 +77,6 @@ final class MenuBarStatusController: NSObject {
         let image = buildImage()
         statusItem.button?.image = image
         statusItem.length = max(image.size.width + 4, 24)
-        installTrackingArea()
         if let label = image.accessibilityDescription {
             statusItem.button?.setAccessibilityLabel(label)
         }
@@ -96,7 +85,12 @@ final class MenuBarStatusController: NSObject {
     private func renderSignature() -> String {
         let settings = AppSettings.shared
         let memFraction = hub.memory.total > 0 ? hub.memory.used / hub.memory.total : 0
-        var parts: [String] = ["l:\(settings.resolvedMenuBarLayout.rawValue)", "c:\(settings.menuCompact)"]
+        var parts: [String] = [
+            "l:\(settings.resolvedMenuBarLayout.rawValue)",
+            "c:\(settings.menuCompact)",
+            "fs:\(settings.resolvedMenuBarFontStyle.rawValue)",
+            "fz:\(settings.menuBarFontSize)"
+        ]
         parts.append(contentsOf: settings.orderedMenuBarMetrics.map(\.rawValue))
         if settings.menuCPU { parts.append("cpu:\(Int(hub.cpu.totalUsage * 100))") }
         if settings.menuGPU { parts.append("gpu:\(Int(hub.gpu.utilization * 100))") }
@@ -139,32 +133,11 @@ final class MenuBarStatusController: NSObject {
             metricOrder: settings.orderedMenuBarMetrics,
             height: Self.barHeight,
             layout: settings.resolvedMenuBarLayout,
-            compact: settings.menuCompact
+            compact: settings.menuCompact,
+            fontStyle: settings.resolvedMenuBarFontStyle,
+            fontSize: CGFloat(settings.menuBarFontSize)
         )
         return MenuBarImageRenderer.render(input)
-    }
-
-    func isMouseOverStatusItem() -> Bool {
-        guard let button = statusItem.button,
-              let window = button.window else { return false }
-        let windowPoint = window.convertPoint(fromScreen: NSEvent.mouseLocation)
-        let point = button.convert(windowPoint, from: nil)
-        return button.bounds.contains(point)
-    }
-
-    private func installTrackingArea() {
-        guard let button = statusItem.button else { return }
-        if let trackingArea {
-            button.removeTrackingArea(trackingArea)
-        }
-        let area = NSTrackingArea(
-            rect: .zero,
-            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
-            owner: self,
-            userInfo: nil
-        )
-        button.addTrackingArea(area)
-        trackingArea = area
     }
 
 }

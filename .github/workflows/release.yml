@@ -33,7 +33,7 @@ jobs:
             exit 1
           fi
           mkdir -p build/sparkle
-          ditto -c -k --keepParent build/N1KO-STATE.app build/N1KO-STATE-sparkle.zip
+          ditto -c -k --norsrc --noextattr --keepParent build/N1KO-STATE.app build/N1KO-STATE-sparkle.zip
           cp build/N1KO-STATE-sparkle.zip build/sparkle/N1KO-STATE-sparkle.zip
           TAG="${GITHUB_REF_NAME#v}"
           NOTES=".github/release-notes/v${TAG}.md"

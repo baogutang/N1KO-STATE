@@ -50,6 +50,7 @@ final class FanControlService: ObservableObject {
     @Published private(set) var installedHelperVersion: Int?
     @Published private(set) var mode: FanMode = .auto
     @Published private(set) var curveTargets: [Int: Int] = [:]
+    @Published private(set) var usesGlobalFanModeSwitch = false
     /// Fan IDs with a privileged write in flight (engage can take ~6 s on Apple Silicon).
     @Published private(set) var pendingFanIDs: Set<Int> = []
 
@@ -63,8 +64,7 @@ final class FanControlService: ObservableObject {
     private var useFloat = false
     private var probed = false
 
-    private var debounceWork: DispatchWorkItem?
-    private var pendingApply: (id: Int, rpm: Int)?
+    private var debounceWorkByFan: [Int: DispatchWorkItem] = [:]
 
     private var reconcileTimer: Timer?
 
@@ -112,11 +112,13 @@ final class FanControlService: ObservableObject {
             }
 
             let infos = self.readFans()
+            let usesGlobal = self.useFloat && SMCKit.hasFSModeSwitch()
 
             DispatchQueue.main.async {
                 self.fans = infos
                 self.isAvailable = !infos.isEmpty
                 self.supportsControl = self.useFloat && !infos.isEmpty
+                self.usesGlobalFanModeSwitch = usesGlobal
                 self.inFlight = false
                 self.enforceThermalSafety(peakCelsius: nil)
             }
@@ -137,11 +139,13 @@ final class FanControlService: ObservableObject {
             }
             let infos = self.readFans()
             let mode = self.useFloat ? SMCKit.readFanModeSwitch() : nil
+            let usesGlobal = self.useFloat && SMCKit.hasFSModeSwitch()
 
             DispatchQueue.main.async {
                 self.fans = infos
                 self.isAvailable = !infos.isEmpty
                 self.supportsControl = self.useFloat && !infos.isEmpty
+                self.usesGlobalFanModeSwitch = usesGlobal
                 self.reconcile(mode: mode, infos: infos)
             }
         }
@@ -222,8 +226,17 @@ final class FanControlService: ObservableObject {
     func enableManual(fanId: Int, rpm: Int) {
         if mode == .curve { stopCurveMode(disableSetting: true) }
         mode = .manual
+        if usesGlobalFanModeSwitch {
+            for id in Array(debounceWorkByFan.keys) where id != fanId {
+                cancelPendingApply(fanId: id)
+            }
+            manualFanIDs = [fanId]
+            manualTargets = [fanId: rpm]
+            appliedFanIDs = appliedFanIDs.intersection([fanId])
+        }
         manualFanIDs.insert(fanId)
         manualTargets[fanId] = rpm
+        scheduleApply(fanId: fanId, rpm: rpm)
     }
 
     func enableCurveMode() {
@@ -234,6 +247,9 @@ final class FanControlService: ObservableObject {
     }
 
     private func clearAllManualState() {
+        debounceWorkByFan.values.forEach { $0.cancel() }
+        debounceWorkByFan.removeAll()
+        pendingFanIDs.removeAll()
         manualFanIDs.removeAll()
         manualTargets.removeAll()
         appliedFanIDs.removeAll()
@@ -248,11 +264,12 @@ final class FanControlService: ObservableObject {
     private func stopCurveMode(disableSetting: Bool) {
         guard mode == .curve || AppSettings.shared.fanCurveEnabled else { return }
         let hadApplied = !appliedFanIDs.isEmpty
+        let pending = appliedFanIDs
         clearAllManualState()
         if disableSetting, AppSettings.shared.fanCurveEnabled {
             AppSettings.shared.fanCurveEnabled = false
         }
-        if hadApplied { performAutoAll() }
+        if hadApplied { performAutoAll(pendingIDs: pending) }
     }
 
     /// Apply target RPM percent from the temperature curve to every fan.
@@ -272,21 +289,32 @@ final class FanControlService: ObservableObject {
 
     /// Leave manual mode. Returns the fans to automatic if anything was forced.
     func disableManual(fanId: Int) {
+        cancelPendingApply(fanId: fanId)
+        if usesGlobalFanModeSwitch {
+            let pending = appliedFanIDs.union(manualFanIDs).union([fanId])
+            let shouldReset = appliedFanIDs.contains(fanId) || fans.contains(where: { $0.forced })
+            clearAllManualState()
+            if shouldReset { performAutoAll(pendingIDs: pending) }
+            return
+        }
+
         manualFanIDs.remove(fanId)
         manualTargets[fanId] = nil
         let wasApplied = appliedFanIDs.remove(fanId) != nil
         let hwForced = fans.first(where: { $0.id == fanId })?.forced == true
+        if manualFanIDs.isEmpty, mode == .manual { mode = .auto }
         guard wasApplied || hwForced else { return }
-        performAutoAll()
+        performAutoFan(fanId: fanId)
     }
 
-    /// Slider moved — updates target in memory only (no privileged write).
+    /// Slider moved — update target and write after a short debounce.
     func updateManualRPM(fanId: Int, rpm: Int) {
         guard manualFanIDs.contains(fanId) else { return }
         manualTargets[fanId] = rpm
+        scheduleApply(fanId: fanId, rpm: rpm)
     }
 
-    /// User explicitly confirms the manual RPM — triggers the privileged write.
+    /// Compatibility shim for older UI paths; manual sliders now write directly.
     func applyManualRPM(fanId: Int, rpm: Int) {
         guard manualFanIDs.contains(fanId) else { return }
         manualTargets[fanId] = rpm
@@ -366,9 +394,10 @@ final class FanControlService: ObservableObject {
     func resetAllFans() {
         let hadForced = fans.contains { $0.forced }
         let hadApplied = !appliedFanIDs.isEmpty
+        let pending = appliedFanIDs.union(manualFanIDs)
         clearAllManualState()
         guard hadApplied || hadForced else { return }
-        performAutoAll()
+        performAutoAll(pendingIDs: pending)
     }
 
     /// Synchronous reset for app teardown (`applicationWillTerminate`). The
@@ -389,31 +418,41 @@ final class FanControlService: ObservableObject {
     // MARK: - Debounced privileged apply
 
     private func scheduleApply(fanId: Int, rpm: Int) {
-        pendingApply = (fanId, rpm)
-        debounceWork?.cancel()
+        debounceWorkByFan[fanId]?.cancel()
         let work = DispatchWorkItem { [weak self] in
-            guard let self, let p = self.pendingApply else { return }
-            self.pendingApply = nil
-            self.pendingFanIDs.insert(p.id)
+            guard let self else { return }
+            self.debounceWorkByFan[fanId] = nil
+            self.pendingFanIDs.insert(fanId)
             self.controlQueue.async {
-                let code = self.callSetSpeed(id: p.id, rpm: p.rpm)
+                let code = self.callSetSpeed(id: fanId, rpm: rpm)
                 DispatchQueue.main.async {
-                    self.pendingFanIDs.remove(p.id)
+                    self.pendingFanIDs.remove(fanId)
                     if code == 0 {
                         self.isAuthorized = true
                         self.lastError = nil
+                        if self.mode == .manual,
+                           self.manualFanIDs.contains(fanId),
+                           self.manualTargets[fanId] == rpm {
+                            self.appliedFanIDs.insert(fanId)
+                        }
                     } else {
-                        self.lastError = self.fanControlErrorMessage(code: code, fanId: p.id, rpm: p.rpm)
+                        self.lastError = self.fanControlErrorMessage(code: code, fanId: fanId, rpm: rpm)
                     }
                 }
             }
         }
-        debounceWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: work)
+        debounceWorkByFan[fanId] = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.20, execute: work)
     }
 
-    private func performAutoAll() {
-        let pending = appliedFanIDs.union(manualFanIDs)
+    private func cancelPendingApply(fanId: Int) {
+        debounceWorkByFan[fanId]?.cancel()
+        debounceWorkByFan[fanId] = nil
+        pendingFanIDs.remove(fanId)
+    }
+
+    private func performAutoAll(pendingIDs: Set<Int>? = nil) {
+        let pending = pendingIDs ?? appliedFanIDs.union(manualFanIDs)
         if !pending.isEmpty {
             DispatchQueue.main.async { [weak self] in
                 self?.pendingFanIDs.formUnion(pending)
@@ -424,6 +463,18 @@ final class FanControlService: ObservableObject {
             let ok = self.callAuto()
             DispatchQueue.main.async {
                 self.pendingFanIDs.subtract(pending)
+                if ok { self.isAuthorized = true; self.lastError = nil }
+            }
+        }
+    }
+
+    private func performAutoFan(fanId: Int) {
+        pendingFanIDs.insert(fanId)
+        controlQueue.async { [weak self] in
+            guard let self else { return }
+            let ok = self.callAutoFan(id: fanId)
+            DispatchQueue.main.async {
+                self.pendingFanIDs.remove(fanId)
                 if ok { self.isAuthorized = true; self.lastError = nil }
             }
         }
@@ -646,6 +697,13 @@ final class FanControlService: ObservableObject {
         guard ensureHelperInstalled(allowInstall: allowInstall, probeTimeout: probeTimeout) else { return false }
         return xpcCall { proxy, done in
             proxy.resetAllFans { done($0) }
+        }
+    }
+
+    private func callAutoFan(id: Int, allowInstall: Bool = true, probeTimeout: TimeInterval = 2) -> Bool {
+        guard ensureHelperInstalled(allowInstall: allowInstall, probeTimeout: probeTimeout) else { return false }
+        return xpcCall { proxy, done in
+            proxy.resetFan(id) { done($0) }
         }
     }
 

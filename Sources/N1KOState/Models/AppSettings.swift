@@ -97,9 +97,33 @@ final class AppSettings: ObservableObject {
     }
     /// Display order of menu-bar metrics (raw values of `MenuBarMetric`).
     @Published var menuBarOrder: [String] { didSet { d.set(menuBarOrder, forKey: K.mOrder) } }
+    @Published var menuBarFontStyle: String {
+        didSet {
+            let normalized = MenuBarFontStyle.normalized(menuBarFontStyle).rawValue
+            if normalized != menuBarFontStyle {
+                menuBarFontStyle = normalized
+                return
+            }
+            d.set(menuBarFontStyle, forKey: K.mFontStyle)
+        }
+    }
+    @Published var menuBarFontSize: Double {
+        didSet {
+            let clamped = Self.clampMenuBarFontSize(menuBarFontSize)
+            if abs(clamped - menuBarFontSize) > 0.01 {
+                menuBarFontSize = clamped
+                return
+            }
+            d.set(menuBarFontSize, forKey: K.mFontSize)
+        }
+    }
 
     var resolvedMenuBarLayout: MenuBarLayout {
         MenuBarLayout.normalized(menuBarLayout, legacyCompact: menuCompact)
+    }
+
+    var resolvedMenuBarFontStyle: MenuBarFontStyle {
+        MenuBarFontStyle.normalized(menuBarFontStyle)
     }
 
     var orderedMenuBarMetrics: [MenuBarMetric] {
@@ -115,8 +139,6 @@ final class AppSettings: ObservableObject {
     // MARK: Popover style
     /// "cards" (scrollable card list) or "gauges" (iStat-style ring gauge grid).
     @Published var popoverStyle: String { didSet { d.set(popoverStyle, forKey: K.popStyle) } }
-    /// Chart time window for CPU / memory / network cards: "1m" / "10m" / "1h" / "24h".
-    @Published var chartTimeRange: String { didSet { d.set(chartTimeRange, forKey: K.chartRange) } }
 
     // MARK: Fan curve
     @Published var fanCurveEnabled: Bool {
@@ -167,8 +189,14 @@ final class AppSettings: ObservableObject {
         0x5E5CE6, 0x0A84FF, 0x32D74B, 0xFF9F0A,
         0xFF453A, 0xFF6482, 0xBF5AF2, 0x64D2FF
     ]
+    static let menuBarFontSizeRange: ClosedRange<Double> = 8...13
+    static let menuBarRecommendedMaxWidth: CGFloat = 220
 
     var accent: Color { Color(hex: accentHex) }
+
+    static func clampMenuBarFontSize(_ value: Double) -> Double {
+        min(max(value, menuBarFontSizeRange.lowerBound), menuBarFontSizeRange.upperBound)
+    }
 
     private let d = UserDefaults.standard
 
@@ -182,8 +210,9 @@ final class AppSettings: ObservableObject {
             K.cOrder: Module.allCases.map { $0.rawValue },
             K.mCPU: true, K.mGPU: true, K.mMem: false, K.mNet: false,             K.mBat: false,
             K.mOrder: MenuBarMetric.allCases.map(\.rawValue),
+            K.mFontStyle: MenuBarFontStyle.rounded.rawValue,
+            K.mFontSize: 11.0,
             K.popStyle: "cards",
-            K.chartRange: "1m",
             K.fanCurveOn: false,
             K.appTheme: "system",
             K.aOn: false,
@@ -217,8 +246,9 @@ final class AppSettings: ObservableObject {
         menuCompact = storedMenuLayout == .compact
         menuBarLayout = storedMenuLayout.rawValue
         menuBarOrder = (d.array(forKey: K.mOrder) as? [String]) ?? MenuBarMetric.allCases.map(\.rawValue)
+        menuBarFontStyle = MenuBarFontStyle.normalized(d.string(forKey: K.mFontStyle)).rawValue
+        menuBarFontSize = Self.clampMenuBarFontSize(d.object(forKey: K.mFontSize) as? Double ?? 11.0)
         popoverStyle = d.string(forKey: K.popStyle) ?? "cards"
-        chartTimeRange = d.string(forKey: K.chartRange) ?? "1m"
         fanCurveEnabled = d.bool(forKey: K.fanCurveOn)
         if let data = d.data(forKey: K.fanCurve),
            let curve = try? JSONDecoder().decode([FanCurvePoint].self, from: data) {
@@ -257,7 +287,8 @@ final class AppSettings: ObservableObject {
         static let mCPU = "menuCPU", mGPU = "menuGPU", mMem = "menuMemory", mNet = "menuNetwork"
         static let mBat = "menuBattery", mCompact = "menuCompact"
         static let mLayout = "menuBarLayout", mOrder = "menuBarOrder"
-        static let popStyle = "popoverStyle", chartRange = "chartTimeRange"
+        static let mFontStyle = "menuBarFontStyle", mFontSize = "menuBarFontSize"
+        static let popStyle = "popoverStyle"
         static let fanCurveOn = "fanCurveEnabled", fanCurve = "fanCurveJSON"
         static let appTheme = "appTheme"
         static let aOn = "alertsEnabled"

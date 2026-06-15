@@ -92,7 +92,11 @@ final class HelperService: NSObject, FanControlHelperProtocol {
                 markFanDirty()
                 try SMCKit.forceFan(fanIndex, rpm: Double(rpm))
                 self.didForce = true
-                self.forcedTargets[fanIndex] = Double(rpm)
+                if SMCKit.hasFSModeSwitch() {
+                    self.forcedTargets = [fanIndex: Double(rpm)]
+                } else {
+                    self.forcedTargets[fanIndex] = Double(rpm)
+                }
                 self.startReassertLocked()
                 reply(0)
             } catch {
@@ -184,6 +188,31 @@ final class HelperService: NSObject, FanControlHelperProtocol {
                 reply(true)
             } catch {
                 log("resetAllFans failed: \(error)")
+                reply(false)
+            }
+        }
+    }
+
+    func resetFan(_ fanIndex: Int, reply: @escaping (Bool) -> Void) {
+        smcQueue.async {
+            do {
+                if SMCKit.hasFSModeSwitch() {
+                    self.stopForcingLocked()
+                    try SMCKit.autoAllFans()
+                    clearFanDirty()
+                    self.didForce = false
+                } else {
+                    self.forcedTargets[fanIndex] = nil
+                    if self.forcedTargets.isEmpty {
+                        self.stopForcingLocked()
+                        clearFanDirty()
+                        self.didForce = false
+                    }
+                    try SMCKit.autoFan(fanIndex)
+                }
+                reply(true)
+            } catch {
+                log("resetFan(\(fanIndex)) failed: \(error)")
                 reply(false)
             }
         }

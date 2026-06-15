@@ -29,6 +29,18 @@ final class MenuBarImageRendererTests: XCTestCase {
         XCTAssertLessThan(minimal.size.width, standard.size.width)
     }
 
+    func testFontSizeAffectsRenderedWidth() {
+        var small = input(layout: .standard, showNetwork: false)
+        small.fontSize = 9
+        var large = input(layout: .standard, showNetwork: false)
+        large.fontSize = 13
+
+        let smallImage = MenuBarImageRenderer.render(small)
+        let largeImage = MenuBarImageRenderer.render(large)
+
+        XCTAssertGreaterThan(largeImage.size.width, smallImage.size.width)
+    }
+
     private func input(layout: MenuBarLayout, showNetwork: Bool = true) -> MenuBarImageRenderer.Input {
         MenuBarImageRenderer.Input(
             cpu: 0.42,
@@ -46,7 +58,9 @@ final class MenuBarImageRendererTests: XCTestCase {
             metricOrder: MenuBarMetric.allCases,
             height: 22,
             layout: layout,
-            compact: false
+            compact: false,
+            fontStyle: .rounded,
+            fontSize: 11
         )
     }
 }

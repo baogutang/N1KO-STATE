@@ -63,7 +63,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-12%2B-000000?style=flat-square&logo=apple&logoColor=white" alt="macOS 12+" />
   <img src="https://img.shields.io/badge/Swift-5.9-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift 5.9" />
-  <img src="https://img.shields.io/badge/version-1.0.4-blue?style=flat-square" alt="1.0.4" />
+  <img src="https://img.shields.io/badge/version-1.0.5-blue?style=flat-square" alt="1.0.5" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT" />
 </p>
 
@@ -116,7 +116,7 @@ Left-click the menu bar icon for the live dashboard. Right-click for settings, a
 
 1. Download **`N1KO-STATE.dmg`** from [Releases](https://github.com/baogutang/N1KO-STATE/releases).
 2. Open the DMG and drag **N1KO-STATE** to **Applications**.
-3. First launch (ad-hoc build): if macOS blocks it, run `xattr -cr /Applications/N1KO-STATE.app` in Terminal. You can also right-click **修复打不开.app** or **N1KO-STATE.app** → **Open**.
+3. First launch (ad-hoc build): if macOS blocks it, run `xattr -cr /Applications/N1KO-STATE.app` in Terminal. You can also right-click **N1KO-STATE.app** → **Open**.
 
 > Fan control installs a small privileged helper (one administrator password, once). Without it, fan speeds are read-only.
 
@@ -190,7 +190,7 @@ build_app.sh           Build, sign, DMG, smoke test
 
 1. 从 [Releases](https://github.com/baogutang/N1KO-STATE/releases) 下载 **`N1KO-STATE.dmg`**。
 2. 打开 DMG，将 **N1KO-STATE** 拖入「应用程序」。
-3. 首次启动（ad-hoc 签名）若被系统拦截，优先在「终端」执行：`xattr -cr /Applications/N1KO-STATE.app`。也可以右键 **修复打不开.app** 或 **N1KO-STATE.app** → **打开**。
+3. 首次启动（ad-hoc 签名）若被系统拦截，优先在「终端」执行：`xattr -cr /Applications/N1KO-STATE.app`。也可以右键 **N1KO-STATE.app** → **打开**。
 
 > 风扇控制需安装小型特权 Helper（仅需输入一次管理员密码）。未授权时风扇转速为只读。
 
@@ -271,5 +271,5 @@ cd N1KO-STATE
 ---
 
 <p align="center">
-  <sub>N1KO-STATE · v1.0.4 · Made for macOS power users who want clarity without clutter.</sub>
+  <sub>N1KO-STATE · v1.0.5 · Made for macOS power users who want clarity without clutter.</sub>
 </p>

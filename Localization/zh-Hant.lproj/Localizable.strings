@@ -88,6 +88,7 @@
 /* 設定 — 標籤頁 */
 "General" = "一般";
 "Menu Bar" = "選單列";
+"Popover" = "彈窗";
 "Modules" = "模組";
 "Alerts" = "警示";
 "About" = "關於";
@@ -116,8 +117,18 @@
 "Startup" = "啟動";
 "Launch at login" = "登入時啟動";
 "Choose which metrics appear in the menu bar widget." = "選擇選單列中顯示的指標。";
+"Set the app language, appearance, refresh rate, and startup behavior." = "設定語言、外觀、重新整理間隔和登入時啟動。";
+"Basics" = "基礎";
+"Choose what appears in the menu bar and preview its real width." = "選擇選單列顯示內容，並預覽實際佔用寬度。";
 "Metrics" = "指標";
 "Layout" = "版面";
+"Font Style" = "字體樣式";
+"Font Size" = "字體大小";
+"Rounded" = "圓角";
+"System Font" = "系統字體";
+"Monospaced" = "等寬";
+"Keep the preview within the recommended width." = "讓預覽保持在建議寬度內。";
+"Menu bar preview is wider than %@ px. Reduce metrics, font size, or use Stacked/Minimal." = "選單列預覽已超過 %@ px，建議減少指標、調小字體，或使用雙層/極簡版面。";
 "Compact (combine into one readout)" = "緊湊（合併為一個讀數）";
 "Standard" = "標準";
 "Compact" = "緊湊";
@@ -132,12 +143,19 @@
 "Show or hide cards in the dropdown panel." = "顯示或隱藏面板中的卡片。";
 "Drag rows to reorder, and toggle each card on or off." = "拖動列以調整順序，並開關每個卡片。";
 "Drag with the arrows to reorder, and toggle each card on or off." = "拖動列以調整順序，並開關每個卡片。";
+"Search modules" = "搜尋模組";
+"Tune the click-open monitoring panel without changing the menu-bar readout." = "調整點擊開啟的監控面板，不影響選單列讀數。";
+"Chart Range" = "曲線範圍";
+"Behavior" = "行為";
+"The popover opens only when you click the menu-bar item." = "彈窗只會在點擊選單列項目時開啟。";
+"Clicking outside the panel closes it automatically." = "點擊面板外部會自動關閉。";
 "Display" = "顯示";
 "Custom" = "自訂";
 "Show temperatures in Fahrenheit" = "以華氏度顯示溫度";
 "Show individual sensors" = "顯示每個獨立感測器";
 "Fan Control" = "風扇控制";
-"Use Auto/Manual in the Sensors card. Adjust the slider to set a target RPM, then tap Apply to confirm. Quitting the app restores automatic control." = "在感測器卡片中用「自動/手動」切換。拖動滑桿設定目標轉速，然後點擊「套用」確認。退出應用會恢復自動控制。";
+"Use Auto/Manual in the Sensors card. Adjust the slider to set a target RPM; manual changes are applied automatically. Quitting the app restores automatic control." = "在感測器卡片中用「自動/手動」切換。拖動滑桿設定目標轉速，手動改動會自動生效。退出應用會恢復自動控制。";
+"This Mac exposes a shared fan-control switch; only one fan can be forced manually at a time." = "這台 Mac 使用共享風扇控制開關，同一時間只能強制一個風扇進入手動模式。";
 "Manual" = "手動";
 "Auto" = "自動";
 "CPU" = "CPU";

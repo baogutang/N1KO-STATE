@@ -57,7 +57,7 @@ struct PopoverRootView: View {
             .onPreferenceChange(PopoverHeightKey.self) { contentHeight = $0 }
         }
         .frame(width: Theme.popoverWidth)
-        .background(.ultraThinMaterial)
+        .background(Theme.popoverSurface)
         .id(settings.language)
         .id(settings.appTheme)
     }
@@ -104,7 +104,7 @@ struct PopoverRootView: View {
         .padding(.horizontal, Theme.padding)
         .padding(.vertical, 11)
         .background(
-            Rectangle().fill(.thinMaterial).overlay(
+            Rectangle().fill(Theme.popoverHeader).overlay(
                 Rectangle().fill(Theme.stroke).frame(height: 1),
                 alignment: .bottom
             )

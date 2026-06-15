@@ -37,6 +37,15 @@ enum Theme {
     static var track: Color {
         isDark ? Color.white.opacity(0.08) : Color.black.opacity(0.06)
     }
+    static var popoverSurface: Color {
+        isDark ? Color(hex: 0x101218) : Color(nsColor: .windowBackgroundColor)
+    }
+    static var popoverHeader: Color {
+        isDark ? Color(hex: 0x171A22) : Color(nsColor: .controlBackgroundColor)
+    }
+    static var popoverCard: Color {
+        isDark ? Color(hex: 0x1D2029) : Color(nsColor: .controlBackgroundColor)
+    }
 
     // MARK: - Materials (Liquid Glass on Tahoe, fallback on older macOS)
 

@@ -28,6 +28,8 @@ enum MenuBarImageRenderer {
         /// Compact layout: drop chip backgrounds + tighten spacing so the metrics
         /// read as one aggregated readout rather than separate chips.
         var compact: Bool = false
+        var fontStyle: MenuBarFontStyle = .rounded
+        var fontSize: CGFloat = 11
     }
 
     private static let cpuChip = NSColor(srgbRed: 0x0A / 255, green: 0x84 / 255, blue: 1, alpha: 1)
@@ -36,13 +38,6 @@ enum MenuBarImageRenderer {
     private static let downCol = NSColor(srgbRed: 0x0A / 255, green: 0x84 / 255, blue: 1, alpha: 1)
     private static let upCol   = NSColor(srgbRed: 0x32 / 255, green: 0xD7 / 255, blue: 0x4B / 255, alpha: 1)
 
-    private static let tagFont   = NSFont.systemFont(ofSize: 8, weight: .black)
-    private static let valueFont = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold)
-    private static let stackedTagFont = NSFont.systemFont(ofSize: 7, weight: .bold)
-    private static let stackedValueFont = NSFont.monospacedDigitSystemFont(ofSize: 9.5, weight: .semibold)
-    private static let minimalFont = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .semibold)
-    private static let rateFont  = NSFont.monospacedDigitSystemFont(ofSize: 8.5, weight: .medium)
-    private static let arrowFont = NSFont.systemFont(ofSize: 7, weight: .bold)
     private static let downArrow: NSImage? = {
         guard let img = NSImage(systemSymbolName: "arrow.down", accessibilityDescription: nil) else { return nil }
         return img.withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 7, weight: .bold))
@@ -66,19 +61,63 @@ enum MenuBarImageRenderer {
     private static let itemGap: CGFloat = 6
     private static let chipPadX: CGFloat = 3.5
     private static let chipValueGap: CGFloat = 4
-    private static let valueSlot: CGFloat = 30   // fixed slot so width is stable
-    private static let netRateSlot: CGFloat = {
+    private static func valueSlot(_ fonts: FontSet) -> CGFloat {
+        max(30, ceil(("100%" as NSString).size(withAttributes: [.font: fonts.valueFont]).width) + 1)
+    }
+    private static func netRateSlot(_ fonts: FontSet) -> CGFloat {
         let sample = (Formatters.rateCompact(888_800_000) as NSString)
-            .size(withAttributes: [.font: rateFont]).width
+            .size(withAttributes: [.font: fonts.rateFont]).width
         return ceil(sample)
-    }()
-    private static let netSlot: CGFloat = 12 + netRateSlot
+    }
+
+    private struct FontSet {
+        let tagFont: NSFont
+        let valueFont: NSFont
+        let stackedTagFont: NSFont
+        let stackedValueFont: NSFont
+        let minimalFont: NSFont
+        let rateFont: NSFont
+    }
+
+    private static func makeFonts(style: MenuBarFontStyle, size rawSize: CGFloat) -> FontSet {
+        let size = min(max(rawSize, CGFloat(AppSettings.menuBarFontSizeRange.lowerBound)),
+                       CGFloat(AppSettings.menuBarFontSizeRange.upperBound))
+        return FontSet(
+            tagFont: menuFont(style: style, size: max(6.5, size - 3), weight: .black),
+            valueFont: menuFont(style: style, size: size, weight: .semibold),
+            stackedTagFont: menuFont(style: style, size: max(6, size - 4), weight: .bold),
+            stackedValueFont: menuFont(style: style, size: max(7.5, size - 1.5), weight: .semibold),
+            minimalFont: menuFont(style: style, size: max(8, size - 1), weight: .semibold),
+            rateFont: menuFont(style: style, size: max(7, size - 2.5), weight: .medium)
+        )
+    }
+
+    private static func menuFont(style: MenuBarFontStyle,
+                                 size: CGFloat,
+                                 weight: NSFont.Weight) -> NSFont {
+        if style == .monospaced {
+            return NSFont.monospacedDigitSystemFont(ofSize: size, weight: weight)
+        }
+        let base = NSFont.systemFont(ofSize: size, weight: weight)
+        let design: NSFontDescriptor.SystemDesign
+        switch style {
+        case .rounded: design = .rounded
+        case .system: return base
+        case .monospaced: return NSFont.monospacedDigitSystemFont(ofSize: size, weight: weight)
+        }
+        guard let descriptor = base.fontDescriptor.withDesign(design) else { return base }
+        return NSFont(descriptor: descriptor, size: size) ?? base
+    }
 
     static func render(_ input: Input) -> NSImage {
         var segments: [(kind: Segment, width: CGFloat)] = []
 
         let layout = input.layout == .standard && input.compact ? MenuBarLayout.compact : input.layout
         let compact = layout == .compact
+        let fonts = makeFonts(style: input.fontStyle, size: input.fontSize)
+        let valueSlot = valueSlot(fonts)
+        let netRateSlot = netRateSlot(fonts)
+        let netSlot = 12 + netRateSlot
         let gap: CGFloat
         switch layout {
         case .standard: gap = itemGap
@@ -87,21 +126,21 @@ enum MenuBarImageRenderer {
         }
 
         func chipWidth(_ tag: String) -> CGFloat {
-            let tagW = (tag as NSString).size(withAttributes: [.font: tagFont]).width
+            let tagW = (tag as NSString).size(withAttributes: [.font: fonts.tagFont]).width
             let pad = compact ? 0 : chipPadX * 2
             return ceil(tagW) + pad + chipValueGap + valueSlot
         }
 
         func stackedWidth(tag: String, value: Double) -> CGFloat {
-            let tagW = (tag as NSString).size(withAttributes: [.font: stackedTagFont]).width
+            let tagW = (tag as NSString).size(withAttributes: [.font: fonts.stackedTagFont]).width
             let valueW = (Formatters.percent(value) as NSString)
-                .size(withAttributes: [.font: stackedValueFont]).width
+                .size(withAttributes: [.font: fonts.stackedValueFont]).width
             return ceil(max(tagW, valueW)) + 4
         }
 
         func minimalWidth(tag: String, value: Double) -> CGFloat {
             let text = "\(tag)\(Int((value * 100).rounded()))"
-            return ceil((text as NSString).size(withAttributes: [.font: minimalFont]).width) + 2
+            return ceil((text as NSString).size(withAttributes: [.font: fonts.minimalFont]).width) + 2
         }
 
         func widthForMetric(tag: String, value: Double) -> CGFloat {
@@ -144,11 +183,15 @@ enum MenuBarImageRenderer {
             for (i, seg) in segments.enumerated() {
                 switch layout {
                 case .standard, .compact:
-                    drawSegment(seg.kind, x: x, width: seg.width, height: height, compact: compact)
+                    drawSegment(seg.kind, fonts: fonts, x: x, width: seg.width,
+                                height: height, compact: compact,
+                                valueSlot: valueSlot, netRateSlot: netRateSlot)
                 case .stacked:
-                    drawStackedSegment(seg.kind, x: x, width: seg.width, height: height)
+                    drawStackedSegment(seg.kind, fonts: fonts, x: x, width: seg.width,
+                                       height: height, netRateSlot: netRateSlot)
                 case .minimal:
-                    drawMinimalSegment(seg.kind, x: x, width: seg.width, height: height)
+                    drawMinimalSegment(seg.kind, fonts: fonts, x: x, width: seg.width,
+                                       height: height, netRateSlot: netRateSlot)
                 }
                 x += seg.width
                 if i < segments.count - 1 { x += gap }
@@ -193,85 +236,107 @@ enum MenuBarImageRenderer {
         }
     }
 
-    private static func drawSegment(_ seg: Segment, x: CGFloat, width: CGFloat, height: CGFloat, compact: Bool) {
+    private static func drawSegment(_ seg: Segment,
+                                    fonts: FontSet,
+                                    x: CGFloat,
+                                    width: CGFloat,
+                                    height: CGFloat,
+                                    compact: Bool,
+                                    valueSlot: CGFloat,
+                                    netRateSlot: CGFloat) {
         switch seg {
         case let .metric(tag, value, chip):
-            drawMetric(tag: tag, value: value, chip: chip, x: x, height: height, compact: compact)
+            drawMetric(tag: tag, value: value, chip: chip, fonts: fonts,
+                       x: x, height: height, valueSlot: valueSlot, compact: compact)
         case let .battery(level, charging):
             // Reuse the metric chip styling; the chip color encodes charge state
             // and the value uses the same color so a low battery reads at a glance.
             drawMetric(tag: "BAT", value: level, chip: batteryChip(level: level, charging: charging),
-                       x: x, height: height, compact: compact,
-                       valueColor: batteryChip(level: level, charging: charging))
+                       fonts: fonts, x: x, height: height, valueSlot: valueSlot,
+                       compact: compact, valueColor: batteryChip(level: level, charging: charging))
         case let .network(down, up):
-            drawNetwork(down: down, up: up, x: x, width: width, height: height)
+            drawNetwork(down: down, up: up, fonts: fonts, x: x, width: width,
+                        height: height, netRateSlot: netRateSlot)
         case .divider:
             let bar = NSBezierPath(rect: NSRect(x: x, y: height / 2 - 7, width: 1, height: 14))
             NSColor.secondaryLabelColor.withAlphaComponent(0.35).setFill()
             bar.fill()
         case .brand:
             let attrs = legibleAttrs([
-                .font: NSFont.systemFont(ofSize: 11, weight: .heavy),
+                .font: fonts.valueFont,
                 .foregroundColor: NSColor.labelColor
             ])
             draw("N1KO", attrs: attrs, x: x, height: height)
         }
     }
 
-    private static func drawStackedSegment(_ seg: Segment, x: CGFloat, width: CGFloat, height: CGFloat) {
+    private static func drawStackedSegment(_ seg: Segment,
+                                           fonts: FontSet,
+                                           x: CGFloat,
+                                           width: CGFloat,
+                                           height: CGFloat,
+                                           netRateSlot: CGFloat) {
         switch seg {
         case let .metric(tag, value, chip):
-            drawStackedMetric(tag: tag, value: value, chip: chip, x: x, width: width, height: height)
+            drawStackedMetric(tag: tag, value: value, chip: chip, fonts: fonts,
+                              x: x, width: width, height: height)
         case let .battery(level, charging):
             let color = batteryChip(level: level, charging: charging)
-            drawStackedMetric(tag: "BAT", value: level, chip: color, x: x, width: width,
+            drawStackedMetric(tag: "BAT", value: level, chip: color, fonts: fonts, x: x, width: width,
                               height: height, valueColor: color)
         case let .network(down, up):
-            drawNetwork(down: down, up: up, x: x, width: width, height: height)
+            drawNetwork(down: down, up: up, fonts: fonts, x: x, width: width,
+                        height: height, netRateSlot: netRateSlot)
         case .divider:
             let bar = NSBezierPath(rect: NSRect(x: x, y: height / 2 - 7, width: 1, height: 14))
             NSColor.secondaryLabelColor.withAlphaComponent(0.25).setFill()
             bar.fill()
         case .brand:
             let attrs = legibleAttrs([
-                .font: NSFont.systemFont(ofSize: 10, weight: .heavy),
+                .font: fonts.minimalFont,
                 .foregroundColor: NSColor.labelColor
             ])
             draw("N1KO", attrs: attrs, x: x, height: height)
         }
     }
 
-    private static func drawMinimalSegment(_ seg: Segment, x: CGFloat, width: CGFloat, height: CGFloat) {
+    private static func drawMinimalSegment(_ seg: Segment,
+                                           fonts: FontSet,
+                                           x: CGFloat,
+                                           width: CGFloat,
+                                           height: CGFloat,
+                                           netRateSlot: CGFloat) {
         switch seg {
         case let .metric(tag, value, chip):
             drawMinimalMetric(tag: String(tag.prefix(1)), value: value, chip: chip,
-                              x: x, width: width, height: height)
+                              fonts: fonts, x: x, width: width, height: height)
         case let .battery(level, charging):
             let color = batteryChip(level: level, charging: charging)
-            drawMinimalMetric(tag: "B", value: level, chip: color, x: x, width: width, height: height)
+            drawMinimalMetric(tag: "B", value: level, chip: color, fonts: fonts, x: x, width: width, height: height)
         case let .network(down, up):
-            drawNetwork(down: down, up: up, x: x, width: width, height: height)
+            drawNetwork(down: down, up: up, fonts: fonts, x: x, width: width,
+                        height: height, netRateSlot: netRateSlot)
         case .divider:
             let bar = NSBezierPath(rect: NSRect(x: x, y: height / 2 - 6, width: 1, height: 12))
             NSColor.secondaryLabelColor.withAlphaComponent(0.22).setFill()
             bar.fill()
         case .brand:
             let attrs = legibleAttrs([
-                .font: NSFont.systemFont(ofSize: 10, weight: .heavy),
+                .font: fonts.minimalFont,
                 .foregroundColor: NSColor.labelColor
             ])
             draw("N1KO", attrs: attrs, x: x, height: height)
         }
     }
 
-    private static func drawMetric(tag: String, value: Double, chip: NSColor, x: CGFloat, height: CGFloat,
-                                   compact: Bool = false, valueColor: NSColor? = nil) {
-        let tagSize = (tag as NSString).size(withAttributes: [.font: tagFont])
+    private static func drawMetric(tag: String, value: Double, chip: NSColor, fonts: FontSet, x: CGFloat, height: CGFloat,
+                                   valueSlot: CGFloat, compact: Bool = false, valueColor: NSColor? = nil) {
+        let tagSize = (tag as NSString).size(withAttributes: [.font: fonts.tagFont])
         let chipW: CGFloat
         if compact {
             // No background: the tag is drawn as small colored text instead.
             chipW = ceil(tagSize.width)
-            draw(tag, attrs: legibleAttrs([.font: tagFont, .foregroundColor: chip]), x: x, height: height)
+            draw(tag, attrs: legibleAttrs([.font: fonts.tagFont, .foregroundColor: chip]), x: x, height: height)
         } else {
             // Chip background + white tag.
             let chipH = ceil(tagSize.height) + 2
@@ -280,14 +345,14 @@ enum MenuBarImageRenderer {
             let path = NSBezierPath(roundedRect: chipRect, xRadius: 3, yRadius: 3)
             chip.setFill()
             path.fill()
-            draw(tag, attrs: [.font: tagFont, .foregroundColor: NSColor.white], centerIn: chipRect)
+            draw(tag, attrs: [.font: fonts.tagFont, .foregroundColor: NSColor.white], centerIn: chipRect)
             chipW = w
         }
 
         // Value in a fixed-width, right-aligned slot.
         let valueX = x + chipW + chipValueGap
         let str = Formatters.percent(value)
-        let attrs = legibleAttrs([.font: valueFont, .foregroundColor: valueColor ?? tint(value)])
+        let attrs = legibleAttrs([.font: fonts.valueFont, .foregroundColor: valueColor ?? tint(value)])
         let vSize = (str as NSString).size(withAttributes: attrs)
         let vx = valueX + (valueSlot - vSize.width)   // right-align in slot
         draw(str, attrs: attrs, x: vx, height: height)
@@ -295,18 +360,25 @@ enum MenuBarImageRenderer {
 
     private static func drawStackedMetric(tag: String, value: Double, chip: NSColor, x: CGFloat, width: CGFloat,
                                           height: CGFloat, valueColor: NSColor? = nil) {
-        let tagAttrs = legibleAttrs([.font: stackedTagFont, .foregroundColor: chip])
+        let fonts = makeFonts(style: .rounded, size: 11)
+        drawStackedMetric(tag: tag, value: value, chip: chip, fonts: fonts,
+                          x: x, width: width, height: height, valueColor: valueColor)
+    }
+
+    private static func drawStackedMetric(tag: String, value: Double, chip: NSColor, fonts: FontSet,
+                                          x: CGFloat, width: CGFloat, height: CGFloat, valueColor: NSColor? = nil) {
+        let tagAttrs = legibleAttrs([.font: fonts.stackedTagFont, .foregroundColor: chip])
         let valueString = Formatters.percent(value)
-        let valueAttrs = legibleAttrs([.font: stackedValueFont, .foregroundColor: valueColor ?? tint(value)])
+        let valueAttrs = legibleAttrs([.font: fonts.stackedValueFont, .foregroundColor: valueColor ?? tint(value)])
         drawCentered(tag, attrs: tagAttrs, x: x, width: width, yCenter: height * 0.68)
         drawCentered(valueString, attrs: valueAttrs, x: x, width: width, yCenter: height * 0.28)
     }
 
     private static func drawMinimalMetric(tag: String, value: Double, chip: NSColor,
-                                          x: CGFloat, width: CGFloat, height: CGFloat) {
+                                          fonts: FontSet, x: CGFloat, width: CGFloat, height: CGFloat) {
         let str = "\(tag)\(Int((value * 100).rounded()))"
-        let attrs = legibleAttrs([.font: minimalFont, .foregroundColor: tint(value)])
-        let tagAttrs = legibleAttrs([.font: minimalFont, .foregroundColor: chip])
+        let attrs = legibleAttrs([.font: fonts.minimalFont, .foregroundColor: tint(value)])
+        let tagAttrs = legibleAttrs([.font: fonts.minimalFont, .foregroundColor: chip])
         let tagW = (tag as NSString).size(withAttributes: tagAttrs).width
         let totalW = (str as NSString).size(withAttributes: attrs).width
         let start = x + (width - totalW) / 2
@@ -314,16 +386,18 @@ enum MenuBarImageRenderer {
         draw(String(str.dropFirst()), attrs: attrs, x: start + tagW, height: height)
     }
 
-    private static func drawNetwork(down: Double, up: Double, x: CGFloat, width: CGFloat, height: CGFloat) {
+    private static func drawNetwork(down: Double, up: Double, fonts: FontSet,
+                                    x: CGFloat, width: CGFloat, height: CGFloat, netRateSlot: CGFloat) {
         let half = height / 2
-        drawNetLine("arrow.down", rate: down, tint: downCol, x: x, width: width,
-                    yCenter: half + half / 2)
-        drawNetLine("arrow.up", rate: up, tint: upCol, x: x, width: width,
-                    yCenter: half / 2)
+        drawNetLine("arrow.down", rate: down, tint: downCol, fonts: fonts,
+                    x: x, width: width, yCenter: half + half / 2, netRateSlot: netRateSlot)
+        drawNetLine("arrow.up", rate: up, tint: upCol, fonts: fonts,
+                    x: x, width: width, yCenter: half / 2, netRateSlot: netRateSlot)
     }
 
     private static func drawNetLine(_ symbol: String, rate: Double, tint: NSColor,
-                                    x: CGFloat, width: CGFloat, yCenter: CGFloat) {
+                                    fonts: FontSet, x: CGFloat, width: CGFloat,
+                                    yCenter: CGFloat, netRateSlot: CGFloat) {
         var cursor = x
         let glyph = (symbol == "arrow.down" ? downArrow : upArrow)
         if let glyph {
@@ -333,7 +407,7 @@ enum MenuBarImageRenderer {
             cursor += gs.width + 2
         }
         let str = Formatters.rateCompact(rate)
-        let attrs = legibleAttrs([.font: rateFont, .foregroundColor: NSColor.labelColor])
+        let attrs = legibleAttrs([.font: fonts.rateFont, .foregroundColor: NSColor.labelColor])
         let s = (str as NSString).size(withAttributes: attrs)
         let rx = x + width - netRateSlot + (netRateSlot - s.width)
         (str as NSString).draw(at: NSPoint(x: rx, y: yCenter - s.height / 2), withAttributes: attrs)

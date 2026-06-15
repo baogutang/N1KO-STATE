@@ -68,6 +68,12 @@ struct SensorCard: View {
                         if fans.supportsControl && fans.helperState != .ready {
                             FanHelperBanner(controller: fans)
                         }
+                        if fans.usesGlobalFanModeSwitch && fans.fans.count > 1 {
+                            Text(loc: "This Mac exposes a shared fan-control switch; only one fan can be forced manually at a time.")
+                                .font(.system(size: 9.5))
+                                .foregroundColor(Theme.textTertiary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                         VStack(spacing: 11) {
                             ForEach(fans.fans, id: \.id) { fan in
                                 FanRow(fan: fan, controller: fans)
@@ -133,8 +139,7 @@ private enum FanControlMode {
     case auto, manual
 }
 
-/// One fan row: Auto/Manual picker, RPM slider (manual only), explicit Apply button.
-/// No privileged write happens until the user taps Apply.
+/// One fan row: Auto/Manual picker and live RPM slider.
 private struct FanRow: View {
     let fan: FanInfo
     @ObservedObject var controller: FanController
@@ -158,9 +163,6 @@ private struct FanRow: View {
         if let um = userMode { return um }
         if controller.mode == .manual && (controller.isManual(fan.id) || fan.forced) { return .manual }
         return .auto
-    }
-    private var needsApply: Bool {
-        effectiveMode == .manual && (!isApplied || controller.manualTargets[fan.id] != Int(target))
     }
 
     var body: some View {
@@ -272,23 +274,6 @@ private struct FanRow: View {
                         Spacer()
                         Text("\(fan.maxRPM)").font(.system(size: 8.5)).foregroundColor(Theme.textTertiary)
                     }
-                    if !isCurveActive {
-                        Button(action: {
-                            controller.applyManualRPM(fanId: fan.id, rpm: Int(target))
-                        }) {
-                            Text(loc: needsApply ? "Apply" : "Applied")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 5)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                        .fill(needsApply ? Theme.accent : Theme.ok)
-                                )
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(!needsApply || isPending || controller.helperState == .installing)
-                    }
                 } else {
                     Text(loc: "System automatic fan control")
                         .font(.system(size: 9.5))
@@ -303,6 +288,11 @@ private struct FanRow: View {
             // clear any local override so the row follows reality instead of
             // staying stuck on "Manual".
             if !forced { userMode = nil }
+        }
+        .onReceive(controller.$manualFanIDs) { ids in
+            if controller.mode == .auto || (controller.usesGlobalFanModeSwitch && !ids.contains(fan.id)) {
+                userMode = nil
+            }
         }
     }
 

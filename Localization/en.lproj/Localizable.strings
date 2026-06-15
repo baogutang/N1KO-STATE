@@ -88,6 +88,7 @@
 /* Settings — tabs */
 "General" = "General";
 "Menu Bar" = "Menu Bar";
+"Popover" = "Popover";
 "Modules" = "Modules";
 "Alerts" = "Alerts";
 "About" = "About";
@@ -116,8 +117,18 @@
 "Startup" = "Startup";
 "Launch at login" = "Launch at login";
 "Choose which metrics appear in the menu bar widget." = "Choose which metrics appear in the menu bar widget.";
+"Set the app language, appearance, refresh rate, and startup behavior." = "Set the app language, appearance, refresh rate, and startup behavior.";
+"Basics" = "Basics";
+"Choose what appears in the menu bar and preview its real width." = "Choose what appears in the menu bar and preview its real width.";
 "Metrics" = "Metrics";
 "Layout" = "Layout";
+"Font Style" = "Font Style";
+"Font Size" = "Font Size";
+"Rounded" = "Rounded";
+"System Font" = "System Font";
+"Monospaced" = "Monospaced";
+"Keep the preview within the recommended width." = "Keep the preview within the recommended width.";
+"Menu bar preview is wider than %@ px. Reduce metrics, font size, or use Stacked/Minimal." = "Menu bar preview is wider than %@ px. Reduce metrics, font size, or use Stacked/Minimal.";
 "Compact (combine into one readout)" = "Compact (combine into one readout)";
 "Standard" = "Standard";
 "Compact" = "Compact";
@@ -132,6 +143,12 @@
 "Show or hide cards in the dropdown panel." = "Show or hide cards in the dropdown panel.";
 "Drag rows to reorder, and toggle each card on or off." = "Drag rows to reorder, and toggle each card on or off.";
 "Drag with the arrows to reorder, and toggle each card on or off." = "Drag rows to reorder, and toggle each card on or off.";
+"Search modules" = "Search modules";
+"Tune the click-open monitoring panel without changing the menu-bar readout." = "Tune the click-open monitoring panel without changing the menu-bar readout.";
+"Chart Range" = "Chart Range";
+"Behavior" = "Behavior";
+"The popover opens only when you click the menu-bar item." = "The popover opens only when you click the menu-bar item.";
+"Clicking outside the panel closes it automatically." = "Clicking outside the panel closes it automatically.";
 "Display" = "Display";
 "Custom" = "Custom";
 "Show temperatures in Fahrenheit" = "Show temperatures in Fahrenheit";
@@ -212,7 +229,8 @@
 "No fan sensors on this device." = "No fan sensors on this device.";
 "Loading…" = "Loading…";
 "Error" = "Error";
-"Use Auto/Manual in the Sensors card. Adjust the slider to set a target RPM, then tap Apply to confirm. Quitting the app restores automatic control." = "Use Auto/Manual in the Sensors card. Adjust the slider to set a target RPM, then tap Apply to confirm. Quitting the app restores automatic control.";
+"Use Auto/Manual in the Sensors card. Adjust the slider to set a target RPM; manual changes are applied automatically. Quitting the app restores automatic control." = "Use Auto/Manual in the Sensors card. Adjust the slider to set a target RPM; manual changes are applied automatically. Quitting the app restores automatic control.";
+"This Mac exposes a shared fan-control switch; only one fan can be forced manually at a time." = "This Mac exposes a shared fan-control switch; only one fan can be forced manually at a time.";
 "Average runnable threads over the last minute." = "Average runnable threads over the last minute.";
 "Average runnable threads over the last five minutes." = "Average runnable threads over the last five minutes.";
 "CPU usage chart" = "CPU usage chart";

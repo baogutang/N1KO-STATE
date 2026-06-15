@@ -4,11 +4,11 @@ import XCTest
 
 final class MenuBarStatusControllerTests: XCTestCase {
 
-    func testTrackingAreaSelectorsUseAppKitNames() {
+    func testStatusControllerDoesNotInstallHoverPreviewSelectors() {
         let controller = MenuBarStatusController(hub: MonitorHub())
         defer { NSStatusBar.system.removeStatusItem(controller.statusItem) }
 
-        XCTAssertTrue(controller.responds(to: NSSelectorFromString("mouseEntered:")))
-        XCTAssertTrue(controller.responds(to: NSSelectorFromString("mouseExited:")))
+        XCTAssertFalse(controller.responds(to: NSSelectorFromString("mouseEntered:")))
+        XCTAssertFalse(controller.responds(to: NSSelectorFromString("mouseExited:")))
     }
 }

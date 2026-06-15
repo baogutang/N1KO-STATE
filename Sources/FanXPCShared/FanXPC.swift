@@ -37,7 +37,8 @@ public enum FanXPC {
     /// v2: Apple Silicon manual mode rework — Ftst unlock, verified mode engage,
     /// periodic re-assert against thermalmonitord reclaim.
     /// v3: `setFanSpeedV2` error codes + LaunchDaemon stderr logging.
-    public static let version = 3
+    /// v4: per-fan automatic reset endpoint where firmware supports it.
+    public static let version = 4
 }
 
 /// The privileged operations the daemon exposes over XPC. Every signature is
@@ -58,6 +59,10 @@ public enum FanXPC {
 
     /// Return every fan to automatic control (`FS! = 0`).
     func resetAllFans(reply: @escaping (Bool) -> Void)
+
+    /// Return one fan to automatic control. On firmware with a global `FS!`
+    /// switch, this necessarily returns every fan to automatic.
+    func resetFan(_ fanIndex: Int, reply: @escaping (Bool) -> Void)
 
     /// Current SMC fan state as a JSON-encoded `FanStatePayload` (nil on read
     /// failure). Sent as `Data` rather than `[String: Any]` to keep the NSXPC
