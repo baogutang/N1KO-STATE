@@ -379,12 +379,12 @@ struct SettingsView: View {
                     PerformanceCostRow(name: "CPU / Memory",
                                        detail: "Sampled for visible menu-bar metrics, alerts, and 30s history.",
                                        background: cpuMemoryBackgroundCost,
-                                       visible: "Every tick")
+                                       visible: foregroundSamplingCadence)
                     SettingsDivider()
                     PerformanceCostRow(name: "Network",
                                        detail: "Rates update live only when the menu bar or popover needs them.",
                                        background: networkBackgroundCost,
-                                       visible: "Every tick")
+                                       visible: foregroundSamplingCadence)
                     SettingsDivider()
                     PerformanceCostRow(name: "Processes",
                                        detail: "Top processes are only sampled while the popover needs CPU or memory detail.",
@@ -682,6 +682,10 @@ struct SettingsView: View {
 
     private var networkBackgroundCost: String {
         settings.menuNetwork ? "Visible" : "30s"
+    }
+
+    private var foregroundSamplingCadence: String {
+        settings.refreshInterval < 0.75 ? "Every tick" : "Live popover / 2s menu"
     }
 
     private var sensorsBackgroundCost: String {

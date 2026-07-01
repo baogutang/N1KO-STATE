@@ -313,6 +313,7 @@
 "CPU / Memory" = "CPU / 内存";
 "Sampled for visible menu-bar metrics, alerts, and 30s history." = "用于菜单栏可见指标、告警和 30 秒历史记录。";
 "Every tick" = "每次 tick";
+"Live popover / 2s menu" = "弹窗实时 / 菜单栏 2 秒";
 "Rates update live only when the menu bar or popover needs them." = "仅在菜单栏或面板需要时实时更新速率。";
 "Processes" = "进程";
 "Top processes are only sampled while the popover needs CPU or memory detail." = "只有面板需要 CPU 或内存详情时才采样高占用进程。";

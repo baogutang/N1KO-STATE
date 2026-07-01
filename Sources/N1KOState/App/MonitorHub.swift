@@ -24,6 +24,49 @@ struct MonitorVisibility {
 
 }
 
+struct MonitorDisplaySnapshot {
+    var cpuUsage: Double = 0
+    var cpuLoadAverageOne: Double = 0
+    var cpuCoreCount: Int = 0
+    var cpuUptime: TimeInterval = 0
+
+    var gpuUtilization: Double = 0
+    var gpuVRAMUsed: Double = 0
+    var gpuVRAMTotal: Double = 0
+    var gpuName: String = "GPU"
+    var gpuIsAvailable = false
+
+    var memoryUsed: Double = 0
+    var memoryFree: Double = 0
+    var memoryTotal: Double = 0
+    var memoryPressureLevel: MemoryPressureLevel = .low
+    var memoryFraction: Double { memoryTotal > 0 ? memoryUsed / memoryTotal : 0 }
+
+    var diskPrimaryFree: Double?
+    var diskPrimaryFraction: Double?
+    var diskReadRate: Double = 0
+    var diskWriteRate: Double = 0
+
+    var networkDownloadRate: Double = 0
+    var networkUploadRate: Double = 0
+    var networkLocalIP: String?
+    var networkIsConnected = false
+
+    var batteryIsPresent = false
+    var batteryPercentage: Double = 0
+    var batteryIsCharging = false
+    var batteryIsCharged = false
+    var batteryOnACPower = false
+    var batteryHealthFraction: Double?
+    var batteryCycleCount: Int?
+
+    var sensorPeakCelsius: Double?
+    var sensorsIsAvailable = false
+    var fansIsAvailable = false
+    var fanCount = 0
+    var firstFanRPM: Int?
+}
+
 /// Owns every monitor and drives them from a single timer so sampling stays
 /// coordinated and the app's own overhead is minimal.
 final class MonitorHub: ObservableObject {
@@ -38,6 +81,8 @@ final class MonitorHub: ObservableObject {
     let processes = ProcessMonitor()
     let battery = BatteryMonitor()
     let alerts = AlertManager()
+
+    @Published private(set) var snapshot = MonitorDisplaySnapshot()
 
     @Published var interval: TimeInterval = 1.0 {
         didSet { if timer != nil { restart() } }
@@ -122,19 +167,30 @@ final class MonitorHub: ObservableObject {
         timer = t
     }
 
+    private var menuBarSampleStride: Int {
+        if interval < 0.75 { return 1 }
+        return max(1, Int(ceil(2.0 / max(interval, 0.1))))
+    }
+
     private func tick(full: Bool) {
         tickCount += 1
         let s = AppSettings.shared
         let vis = visibility
         let alertMetrics = alerts.requiredMetrics
+        let menuBarTick = full || vis.popoverOpen || tickCount % menuBarSampleStride == 0
         let menuHasCPU = vis.menuBarMetrics.contains(.cpu)
         let menuHasMemory = vis.menuBarMetrics.contains(.memory)
         let menuHasNet = vis.menuBarMetrics.contains(.network)
         let menuHasGPU = vis.menuBarMetrics.contains(.gpu)
         let menuHasBattery = vis.menuBarMetrics.contains(.battery)
-        let needsCPU = full || vis.popoverOpen || menuHasCPU || alertMetrics.contains(.cpu)
-        let needsMemory = full || vis.popoverOpen || menuHasMemory || alertMetrics.contains(.memory)
+        let menuNeedsCPU = menuHasCPU && menuBarTick
+        let menuNeedsMemory = menuHasMemory && menuBarTick
+        let menuNeedsNet = menuHasNet && menuBarTick
+        let menuNeedsGPU = menuHasGPU && menuBarTick
+        let needsCPU = full || vis.popoverOpen || menuNeedsCPU || alertMetrics.contains(.cpu)
+        let needsMemory = full || vis.popoverOpen || menuNeedsMemory || alertMetrics.contains(.memory)
         let historyTick = tickCount % 30 == 0
+        var displayChanged = full || vis.popoverOpen || menuNeedsCPU || menuNeedsMemory || menuNeedsNet || menuNeedsGPU
         // SAFETY: thermal protection + fan curve depend on continuous sensor sampling.
         let needsSensors = full || vis.popoverOpen
             || fans.mode == .curve || fans.mode == .manual
@@ -149,8 +205,8 @@ final class MonitorHub: ObservableObject {
             memory.refresh(publish: needsMemory)
         }
 
-        if full || vis.popoverOpen || menuHasNet || historyTick {
-            if full || vis.popoverOpen || menuHasNet {
+        if full || vis.popoverOpen || menuNeedsNet || historyTick {
+            if full || vis.popoverOpen || menuNeedsNet {
                 // Interface name/IP strings change rarely — rebuild them at most
                 // every 10 ticks; rates stay per-tick fresh.
                 network.refresh(includeInterfaceInfo: full || tickCount % 10 == 0)
@@ -163,10 +219,8 @@ final class MonitorHub: ObservableObject {
             disk.refreshVolumesNow()
         }
 
-        if full || vis.popoverOpen || menuHasGPU {
-            if full || vis.popoverOpen || (tickCount % 2 == 0) {
-                gpu.refresh()
-            }
+        if full || vis.popoverOpen || menuNeedsGPU {
+            gpu.refresh()
         }
 
         if battery.shouldPollFromTick(popoverOpen: vis.popoverOpen,
@@ -175,6 +229,7 @@ final class MonitorHub: ObservableObject {
             let intervalTicks = vis.popoverOpen ? 2 : 30
             if full || vis.popoverOpen || tickCount % intervalTicks == 0 {
                 battery.refreshFromTick(popoverOpen: vis.popoverOpen)
+                displayChanged = true
             }
         }
 
@@ -194,6 +249,7 @@ final class MonitorHub: ObservableObject {
         if full || vis.popoverOpen {
             if full || tickCount % 3 == 0 {
                 disk.refreshIO()
+                displayChanged = true
             }
         }
 
@@ -217,6 +273,48 @@ final class MonitorHub: ObservableObject {
         if s.alertsEnabled {
             evaluateAlerts()
         }
+        if displayChanged {
+            publishSnapshot()
+        }
+    }
+
+    private func publishSnapshot() {
+        let primaryVolume = disk.volumes.first { $0.id == "/" } ?? disk.volumes.first
+        snapshot = MonitorDisplaySnapshot(
+            cpuUsage: cpu.totalUsage,
+            cpuLoadAverageOne: cpu.loadAverage.one,
+            cpuCoreCount: cpu.cores.count,
+            cpuUptime: cpu.uptime,
+            gpuUtilization: gpu.utilization,
+            gpuVRAMUsed: gpu.vramUsed,
+            gpuVRAMTotal: gpu.vramTotal,
+            gpuName: gpu.name,
+            gpuIsAvailable: gpu.isAvailable,
+            memoryUsed: memory.used,
+            memoryFree: memory.free,
+            memoryTotal: memory.total,
+            memoryPressureLevel: memory.pressureLevel,
+            diskPrimaryFree: primaryVolume?.free,
+            diskPrimaryFraction: primaryVolume?.fraction,
+            diskReadRate: disk.readRate,
+            diskWriteRate: disk.writeRate,
+            networkDownloadRate: network.downloadRate,
+            networkUploadRate: network.uploadRate,
+            networkLocalIP: network.localIP,
+            networkIsConnected: network.isConnected,
+            batteryIsPresent: battery.isPresent,
+            batteryPercentage: battery.percentage,
+            batteryIsCharging: battery.isCharging,
+            batteryIsCharged: battery.isCharged,
+            batteryOnACPower: battery.onACPower,
+            batteryHealthFraction: battery.healthFraction,
+            batteryCycleCount: battery.cycleCount,
+            sensorPeakCelsius: sensors.peakCelsius,
+            sensorsIsAvailable: sensors.isAvailable,
+            fansIsAvailable: fans.isAvailable,
+            fanCount: fans.fans.count,
+            firstFanRPM: fans.fans.first?.rpm
+        )
     }
 
     private func evaluateAlerts() {

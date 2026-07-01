@@ -27,7 +27,7 @@ struct GaugeGridView: View {
 
     private var visibleModules: [Module] {
         settings.orderedModules.filter { module in
-            settings.isVisible(module) && (module != .battery || hub.battery.isPresent)
+            settings.isVisible(module) && (module != .battery || hub.snapshot.batteryIsPresent)
         }
     }
 
@@ -48,25 +48,27 @@ struct GaugeGridView: View {
     }
 
     private var cpuTile: some View {
-        DashboardGaugeTile(
+        let snapshot = hub.snapshot
+        return DashboardGaugeTile(
             height: Self.tileHeight,
             icon: "cpu",
             title: "CPU",
-            fraction: hub.cpu.totalUsage,
-            value: Formatters.percent(hub.cpu.totalUsage),
-            color: Theme.semantic(for: hub.cpu.totalUsage),
+            fraction: snapshot.cpuUsage,
+            value: Formatters.percent(snapshot.cpuUsage),
+            color: Theme.semantic(for: snapshot.cpuUsage),
             details: [
-                .init(label: "Load", value: String(format: "%.2f", hub.cpu.loadAverage.one)),
-                .init(label: "Cores", value: hub.cpu.cores.isEmpty ? "—" : "\(hub.cpu.cores.count)"),
-                .init(label: "Uptime", value: Formatters.uptime(hub.cpu.uptime))
+                .init(label: "Load", value: String(format: "%.2f", snapshot.cpuLoadAverageOne)),
+                .init(label: "Cores", value: snapshot.cpuCoreCount == 0 ? "—" : "\(snapshot.cpuCoreCount)"),
+                .init(label: "Uptime", value: Formatters.uptime(snapshot.cpuUptime))
             ]
         )
     }
 
     private var gpuTile: some View {
+        let snapshot = hub.snapshot
         let vramText: String
-        if hub.gpu.vramTotal > 0 {
-            vramText = "\(Formatters.bytes(hub.gpu.vramUsed)) / \(Formatters.bytes(hub.gpu.vramTotal))"
+        if snapshot.gpuVRAMTotal > 0 {
+            vramText = "\(Formatters.bytes(snapshot.gpuVRAMUsed)) / \(Formatters.bytes(snapshot.gpuVRAMTotal))"
         } else {
             vramText = "—"
         }
@@ -74,18 +76,19 @@ struct GaugeGridView: View {
             height: Self.tileHeight,
             icon: "sparkles",
             title: "GPU",
-            fraction: hub.gpu.utilization,
-            value: Formatters.percent(hub.gpu.utilization),
+            fraction: snapshot.gpuUtilization,
+            value: Formatters.percent(snapshot.gpuUtilization),
             color: Theme.gpu,
             details: [
                 .init(label: "VRAM", value: vramText),
-                .init(label: "Chip", value: hub.gpu.isAvailable ? hub.gpu.name : "—")
+                .init(label: "Chip", value: snapshot.gpuIsAvailable ? snapshot.gpuName : "—")
             ]
         )
     }
 
     private var memoryTile: some View {
-        let usedFraction = hub.memory.total > 0 ? hub.memory.used / hub.memory.total : 0
+        let snapshot = hub.snapshot
+        let usedFraction = snapshot.memoryFraction
         return DashboardGaugeTile(
             height: Self.tileHeight,
             icon: "memorychip",
@@ -94,16 +97,16 @@ struct GaugeGridView: View {
             value: Formatters.percent(usedFraction),
             color: memoryColor,
             details: [
-                .init(label: "Used", value: Formatters.bytes(hub.memory.used)),
-                .init(label: "Free", value: Formatters.bytes(hub.memory.free)),
-                .init(label: "Pressure", value: hub.memory.pressureLevel.rawValue.loc)
+                .init(label: "Used", value: Formatters.bytes(snapshot.memoryUsed)),
+                .init(label: "Free", value: Formatters.bytes(snapshot.memoryFree)),
+                .init(label: "Pressure", value: snapshot.memoryPressureLevel.rawValue.loc)
             ]
         )
     }
 
     private var diskTile: some View {
-        let volume = primaryVolume
-        let used = volume?.fraction ?? 0
+        let snapshot = hub.snapshot
+        let used = snapshot.diskPrimaryFraction ?? 0
         return DashboardGaugeTile(
             height: Self.tileHeight,
             icon: "internaldrive",
@@ -112,39 +115,41 @@ struct GaugeGridView: View {
             value: Formatters.percent(used),
             color: Theme.semantic(for: used),
             details: [
-                .init(label: "Free", value: volume.map { Formatters.bytes($0.free) } ?? "—"),
-                .init(label: "Read", value: Formatters.rateCompact(hub.disk.readRate)),
-                .init(label: "Write", value: Formatters.rateCompact(hub.disk.writeRate))
+                .init(label: "Free", value: snapshot.diskPrimaryFree.map { Formatters.bytes($0) } ?? "—"),
+                .init(label: "Read", value: Formatters.rateCompact(snapshot.diskReadRate)),
+                .init(label: "Write", value: Formatters.rateCompact(snapshot.diskWriteRate))
             ]
         )
     }
 
     private var batteryTile: some View {
-        DashboardGaugeTile(
+        let snapshot = hub.snapshot
+        return DashboardGaugeTile(
             height: Self.tileHeight,
-            icon: hub.battery.isCharging ? "battery.100.bolt" : "battery.75",
+            icon: snapshot.batteryIsCharging ? "battery.100.bolt" : "battery.75",
             title: "Battery",
-            fraction: hub.battery.percentage,
-            value: Formatters.percent(hub.battery.percentage),
+            fraction: snapshot.batteryPercentage,
+            value: Formatters.percent(snapshot.batteryPercentage),
             color: batteryColor,
             details: [
                 .init(label: "State", value: batteryState.loc),
-                .init(label: "Health", value: hub.battery.healthFraction.map { Formatters.percent($0) } ?? "—"),
-                .init(label: "Cycles", value: hub.battery.cycleCount.map { "\($0)" } ?? "—")
+                .init(label: "Health", value: snapshot.batteryHealthFraction.map { Formatters.percent($0) } ?? "—"),
+                .init(label: "Cycles", value: snapshot.batteryCycleCount.map { "\($0)" } ?? "—")
             ]
         )
     }
 
     private var networkTile: some View {
-        NetworkDashboardTile(network: hub.network, height: Self.tileHeight)
+        NetworkDashboardTile(snapshot: hub.snapshot, height: Self.tileHeight)
     }
 
     private var sensorTile: some View {
-        let peak = hub.sensors.peakCelsius
-        let fanValue = hub.fans.fans.isEmpty
+        let snapshot = hub.snapshot
+        let peak = snapshot.sensorPeakCelsius
+        let fanValue = snapshot.fanCount == 0
             ? "—"
-            : "\(hub.fans.fans.count)"
-        let rpmValue = hub.fans.fans.first.map { "\($0.rpm) RPM" } ?? "—"
+            : "\(snapshot.fanCount)"
+        let rpmValue = snapshot.firstFanRPM.map { "\($0) RPM" } ?? "—"
         return DashboardGaugeTile(
             height: Self.tileHeight,
             icon: "thermometer",
@@ -158,15 +163,11 @@ struct GaugeGridView: View {
                 .init(label: "RPM", value: rpmValue)
             ]
         )
-        .opacity(hub.sensors.isAvailable || hub.fans.isAvailable ? 1 : 0.58)
-    }
-
-    private var primaryVolume: VolumeInfo? {
-        hub.disk.volumes.first { $0.id == "/" } ?? hub.disk.volumes.first
+        .opacity(snapshot.sensorsIsAvailable || snapshot.fansIsAvailable ? 1 : 0.58)
     }
 
     private var memoryColor: Color {
-        switch hub.memory.pressureLevel {
+        switch hub.snapshot.memoryPressureLevel {
         case .low: return Theme.ok
         case .medium: return Theme.warn
         case .high: return Theme.danger
@@ -174,8 +175,9 @@ struct GaugeGridView: View {
     }
 
     private var batteryColor: Color {
-        if hub.battery.isCharging { return Theme.ok }
-        switch hub.battery.percentage {
+        let snapshot = hub.snapshot
+        if snapshot.batteryIsCharging { return Theme.ok }
+        switch snapshot.batteryPercentage {
         case ..<0.20: return Theme.danger
         case ..<0.40: return Theme.warn
         default: return Theme.ok
@@ -183,9 +185,10 @@ struct GaugeGridView: View {
     }
 
     private var batteryState: String {
-        if hub.battery.isCharged && hub.battery.onACPower { return "Fully charged" }
-        if hub.battery.isCharging { return "Charging" }
-        if hub.battery.onACPower { return "On AC power" }
+        let snapshot = hub.snapshot
+        if snapshot.batteryIsCharged && snapshot.batteryOnACPower { return "Fully charged" }
+        if snapshot.batteryIsCharging { return "Charging" }
+        if snapshot.batteryOnACPower { return "On AC power" }
         return "On battery"
     }
 }
@@ -194,18 +197,19 @@ private struct DashboardSummary: View {
     @ObservedObject var hub: MonitorHub
 
     var body: some View {
+        let snapshot = hub.snapshot
         HStack(spacing: 8) {
             SummaryBadge(icon: "cpu",
                          title: "CPU",
-                         value: Formatters.percent(hub.cpu.totalUsage),
-                         color: Theme.semantic(for: hub.cpu.totalUsage))
+                         value: Formatters.percent(snapshot.cpuUsage),
+                         color: Theme.semantic(for: snapshot.cpuUsage))
             SummaryBadge(icon: "memorychip",
                          title: "Memory",
-                         value: Formatters.percent(memoryFraction),
+                         value: Formatters.percent(snapshot.memoryFraction),
                          color: memoryColor)
             SummaryBadge(icon: "arrow.down",
                          title: "Download",
-                         value: Formatters.rateCompact(hub.network.downloadRate),
+                         value: Formatters.rateCompact(snapshot.networkDownloadRate),
                          color: Theme.info)
         }
         .padding(10)
@@ -219,12 +223,8 @@ private struct DashboardSummary: View {
         )
     }
 
-    private var memoryFraction: Double {
-        hub.memory.total > 0 ? hub.memory.used / hub.memory.total : 0
-    }
-
     private var memoryColor: Color {
-        switch hub.memory.pressureLevel {
+        switch hub.snapshot.memoryPressureLevel {
         case .low: return Theme.ok
         case .medium: return Theme.warn
         case .high: return Theme.danger
@@ -357,7 +357,7 @@ private struct DashboardGaugeTile: View {
 }
 
 private struct NetworkDashboardTile: View {
-    @ObservedObject var network: NetworkMonitor
+    let snapshot: MonitorDisplaySnapshot
     let height: CGFloat
 
     var body: some View {
@@ -371,7 +371,7 @@ private struct NetworkDashboardTile: View {
                     .foregroundColor(Theme.textPrimary)
                 Spacer(minLength: 0)
                 Circle()
-                    .fill(network.isConnected ? Theme.ok : Theme.danger)
+                    .fill(snapshot.networkIsConnected ? Theme.ok : Theme.danger)
                     .frame(width: 7, height: 7)
             }
             .frame(height: 16)
@@ -379,8 +379,8 @@ private struct NetworkDashboardTile: View {
             Spacer(minLength: 7)
 
             VStack(spacing: 5) {
-                rateRow(icon: "arrow.down", label: "Download", value: Formatters.rate(network.downloadRate), color: Theme.info)
-                rateRow(icon: "arrow.up", label: "Upload", value: Formatters.rate(network.uploadRate), color: Theme.ok)
+                rateRow(icon: "arrow.down", label: "Download", value: Formatters.rate(snapshot.networkDownloadRate), color: Theme.info)
+                rateRow(icon: "arrow.up", label: "Upload", value: Formatters.rate(snapshot.networkUploadRate), color: Theme.ok)
             }
             .frame(height: 39)
 
@@ -395,7 +395,7 @@ private struct NetworkDashboardTile: View {
                     .font(.system(size: 8.5, weight: .semibold))
                     .foregroundColor(Theme.textTertiary)
                 Spacer(minLength: 3)
-                Text(network.localIP ?? "—")
+                Text(snapshot.networkLocalIP ?? "—")
                     .font(.metric(9.5, weight: .semibold))
                     .foregroundColor(Theme.textSecondary)
                     .lineLimit(1)

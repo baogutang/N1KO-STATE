@@ -146,37 +146,37 @@ enum MenuBarImageRenderer {
             return ceil(tagW) + pad + chipValueGap + valueSlot
         }
 
-        func stackedWidth(tag: String, value: Double) -> CGFloat {
+        func stackedWidth(tag: String) -> CGFloat {
             let tagW = (tag as NSString).size(withAttributes: [.font: fonts.stackedTagFont]).width
-            let valueW = (Formatters.percent(value) as NSString)
+            let valueW = ("100%" as NSString)
                 .size(withAttributes: [.font: fonts.stackedValueFont]).width
             return ceil(max(tagW, valueW)) + 4
         }
 
-        func minimalWidth(tag: String, value: Double) -> CGFloat {
-            let text = "\(tag)\(Int((value * 100).rounded()))"
+        func minimalWidth(tag: String) -> CGFloat {
+            let text = "\(tag)100"
             return ceil((text as NSString).size(withAttributes: [.font: fonts.minimalFont]).width) + 2
         }
 
-        func widthForMetric(tag: String, value: Double) -> CGFloat {
+        func widthForMetric(tag: String) -> CGFloat {
             switch layout {
             case .standard, .compact: return chipWidth(tag)
-            case .stacked: return stackedWidth(tag: tag, value: value)
-            case .minimal: return minimalWidth(tag: String(tag.prefix(1)), value: value)
+            case .stacked: return stackedWidth(tag: tag)
+            case .minimal: return minimalWidth(tag: String(tag.prefix(1)))
             }
         }
 
         for metric in input.metricOrder {
             switch metric {
             case .cpu where input.showCPU:
-                segments.append((.metric("CPU", input.cpu, cpuChip), widthForMetric(tag: "CPU", value: input.cpu)))
+                segments.append((.metric("CPU", input.cpu, cpuChip), widthForMetric(tag: "CPU")))
             case .gpu where input.showGPU:
-                segments.append((.metric("GPU", input.gpu, gpuChip), widthForMetric(tag: "GPU", value: input.gpu)))
+                segments.append((.metric("GPU", input.gpu, gpuChip), widthForMetric(tag: "GPU")))
             case .memory where input.showMem:
-                segments.append((.metric("MEM", input.mem, memChip), widthForMetric(tag: "MEM", value: input.mem)))
+                segments.append((.metric("MEM", input.mem, memChip), widthForMetric(tag: "MEM")))
             case .battery where input.showBattery:
                 if let bat = input.battery {
-                    segments.append((.battery(bat, input.batteryCharging), widthForMetric(tag: "BAT", value: bat)))
+                    segments.append((.battery(bat, input.batteryCharging), widthForMetric(tag: "BAT")))
                 }
             case .network where input.showNet:
                 if !segments.isEmpty { segments.append((.divider, 1)) }

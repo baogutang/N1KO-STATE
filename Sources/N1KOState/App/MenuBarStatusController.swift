@@ -36,14 +36,7 @@ final class MenuBarStatusController: NSObject {
     }
 
     private func bindRedraws() {
-        let monitorPub = [
-            hub.cpu.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-            hub.gpu.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-            hub.memory.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-            hub.network.objectWillChange.map { _ in () }.eraseToAnyPublisher(),
-            hub.battery.objectWillChange.map { _ in () }.eraseToAnyPublisher()
-        ]
-        Publishers.MergeMany(monitorPub)
+        hub.$snapshot
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.scheduleRedraw() }
             .store(in: &cancellables)
@@ -102,7 +95,7 @@ final class MenuBarStatusController: NSObject {
 
     private func renderSignature() -> String {
         let settings = AppSettings.shared
-        let memFraction = hub.memory.total > 0 ? hub.memory.used / hub.memory.total : 0
+        let snapshot = hub.snapshot
         var parts: [String] = [
             "l:\(settings.resolvedMenuBarLayout.rawValue)",
             "c:\(settings.menuCompact)",
@@ -111,22 +104,22 @@ final class MenuBarStatusController: NSObject {
             "fz:\(settings.menuBarFontSize)"
         ]
         parts.append(contentsOf: settings.orderedMenuBarMetrics.map(\.rawValue))
-        if settings.menuCPU { parts.append("cpu:\(Int(hub.cpu.totalUsage * 100))") }
-        if settings.menuGPU { parts.append("gpu:\(Int(hub.gpu.utilization * 100))") }
-        if settings.menuMemory { parts.append("mem:\(Int(memFraction * 100))") }
-        if settings.menuBattery, hub.battery.isPresent {
-            parts.append("bat:\(Int(hub.battery.percentage * 100)):\(hub.battery.isCharging)")
+        if settings.menuCPU { parts.append("cpu:\(Int(snapshot.cpuUsage * 100))") }
+        if settings.menuGPU { parts.append("gpu:\(Int(snapshot.gpuUtilization * 100))") }
+        if settings.menuMemory { parts.append("mem:\(Int(snapshot.memoryFraction * 100))") }
+        if settings.menuBattery, snapshot.batteryIsPresent {
+            parts.append("bat:\(Int(snapshot.batteryPercentage * 100)):\(snapshot.batteryIsCharging)")
         }
         if settings.menuNetwork {
-            parts.append("dn:\(Formatters.rateCompact(hub.network.downloadRate))")
-            parts.append("up:\(Formatters.rateCompact(hub.network.uploadRate))")
+            parts.append("dn:\(Formatters.rateCompact(snapshot.networkDownloadRate))")
+            parts.append("up:\(Formatters.rateCompact(snapshot.networkUploadRate))")
         }
         return parts.joined(separator: "|")
     }
 
     private func buildImage() -> NSImage {
         let settings = AppSettings.shared
-        let memFraction = hub.memory.total > 0 ? hub.memory.used / hub.memory.total : 0
+        let snapshot = hub.snapshot
         var showCPU = settings.menuCPU
         var showGPU = settings.menuGPU
         let showMem = settings.menuMemory
@@ -137,13 +130,13 @@ final class MenuBarStatusController: NSObject {
             showGPU = true
         }
         let input = MenuBarImageRenderer.Input(
-            cpu: hub.cpu.totalUsage,
-            gpu: hub.gpu.utilization,
-            mem: memFraction,
-            battery: hub.battery.isPresent ? hub.battery.percentage : nil,
-            batteryCharging: hub.battery.isCharging,
-            down: hub.network.downloadRate,
-            up: hub.network.uploadRate,
+            cpu: snapshot.cpuUsage,
+            gpu: snapshot.gpuUtilization,
+            mem: snapshot.memoryFraction,
+            battery: snapshot.batteryIsPresent ? snapshot.batteryPercentage : nil,
+            batteryCharging: snapshot.batteryIsCharging,
+            down: snapshot.networkDownloadRate,
+            up: snapshot.networkUploadRate,
             showCPU: showCPU,
             showGPU: showGPU,
             showMem: showMem,

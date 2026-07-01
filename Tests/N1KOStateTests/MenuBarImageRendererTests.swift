@@ -51,6 +51,42 @@ final class MenuBarImageRendererTests: XCTestCase {
         XCTAssertTrue(MenuBarImageRenderer.render(adaptive).isTemplate)
     }
 
+    func testMetricValueChangesDoNotChangeRenderedWidth() {
+        for layout in MenuBarLayout.allCases {
+            var low = input(layout: layout, showNetwork: false)
+            low.cpu = 0.07
+            low.gpu = 0.13
+            low.mem = 0.85
+            low.battery = 0.09
+
+            var high = input(layout: layout, showNetwork: false)
+            high.cpu = 1.0
+            high.gpu = 1.0
+            high.mem = 1.0
+            high.battery = 1.0
+
+            XCTAssertEqual(MenuBarImageRenderer.render(low).size.width,
+                           MenuBarImageRenderer.render(high).size.width,
+                           "Expected \(layout.rawValue) width to be stable across digit changes")
+        }
+    }
+
+    func testNetworkRateChangesDoNotChangeRenderedWidth() {
+        for layout in MenuBarLayout.allCases {
+            var low = input(layout: layout, showNetwork: true)
+            low.down = 0
+            low.up = 0
+
+            var high = input(layout: layout, showNetwork: true)
+            high.down = 988_800_000
+            high.up = 888_800_000
+
+            XCTAssertEqual(MenuBarImageRenderer.render(low).size.width,
+                           MenuBarImageRenderer.render(high).size.width,
+                           "Expected \(layout.rawValue) network width to be stable across rate changes")
+        }
+    }
+
     private func input(layout: MenuBarLayout, showNetwork: Bool = true) -> MenuBarImageRenderer.Input {
         MenuBarImageRenderer.Input(
             cpu: 0.42,

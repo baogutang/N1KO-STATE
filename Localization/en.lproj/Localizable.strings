@@ -311,6 +311,7 @@
 "CPU / Memory" = "CPU / Memory";
 "Sampled for visible menu-bar metrics, alerts, and 30s history." = "Sampled for visible menu-bar metrics, alerts, and 30s history.";
 "Every tick" = "Every tick";
+"Live popover / 2s menu" = "Live popover / 2s menu";
 "Rates update live only when the menu bar or popover needs them." = "Rates update live only when the menu bar or popover needs them.";
 "Processes" = "Processes";
 "Top processes are only sampled while the popover needs CPU or memory detail." = "Top processes are only sampled while the popover needs CPU or memory detail.";
