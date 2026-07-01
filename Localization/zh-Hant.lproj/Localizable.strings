@@ -359,3 +359,5 @@
 "Compact dashboard with ring gauges." = "緊湊儀表板，環形圖展示關鍵指標。";
 "Detailed cards with charts and process lists." = "詳細卡片，含圖表和程序列表。";
 "Open settings from the menu bar to see a live popover preview." = "從選單列開啟設定以查看彈窗即時預覽。";
+"No battery detected on this Mac." = "此 Mac 未偵測到電池。";
+"No battery detected on this Mac. Battery will not appear in the menu bar." = "此 Mac 未偵測到電池，選單列不會顯示電量。";

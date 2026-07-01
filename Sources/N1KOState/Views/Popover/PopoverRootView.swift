@@ -77,36 +77,39 @@ struct PopoverRootView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 8) {
-            Text("N1KO")
-                .font(.system(size: 14, weight: .heavy, design: .rounded))
-                .foregroundColor(Theme.textPrimary)
-            Text("STATE")
-                .font(.system(size: 14, weight: .heavy, design: .rounded))
-                .foregroundColor(settings.accent)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                Text("N1KO")
+                    .font(.system(size: 14, weight: .heavy, design: .rounded))
+                    .foregroundColor(Theme.textPrimary)
+                Text("STATE")
+                    .font(.system(size: 14, weight: .heavy, design: .rounded))
+                    .foregroundColor(settings.accent)
+                Spacer(minLength: 4)
+                Button(action: { SettingsWindowController.shared.show(fans: hub.fans, hub: hub) }) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Theme.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .help("Settings".loc)
+
+                Button(action: { NSApp.terminate(nil) }) {
+                    Image(systemName: "power")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Theme.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .help("Quit N1KO-STATE".loc)
+            }
+
             if settings.popoverStyle == "gauges" {
                 DashboardHeaderSummary(hub: hub)
-                    .layoutPriority(-1)
+                    .padding(.top, 8)
             }
-            Spacer(minLength: 4)
-            Button(action: { SettingsWindowController.shared.show(fans: hub.fans, hub: hub) }) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Theme.textSecondary)
-            }
-            .buttonStyle(.plain)
-            .help("Settings".loc)
-
-            Button(action: { NSApp.terminate(nil) }) {
-                Image(systemName: "power")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Theme.textSecondary)
-            }
-            .buttonStyle(.plain)
-            .help("Quit N1KO-STATE".loc)
         }
         .padding(.horizontal, Theme.padding)
-        .padding(.vertical, 11)
+        .padding(.vertical, settings.popoverStyle == "gauges" ? 10 : 11)
         .background(
             Rectangle().fill(Theme.popoverHeader).overlay(
                 Rectangle().fill(Theme.stroke).frame(height: 1),

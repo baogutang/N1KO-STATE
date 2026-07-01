@@ -127,6 +127,7 @@ final class MonitorHub: ObservableObject {
         FanCurveController.shared = fans
         disk.startVolumeWatching()
         battery.start()
+        reconcileBatterySettings()
         tick(full: true)
         restart()
     }
@@ -152,9 +153,16 @@ final class MonitorHub: ObservableObject {
         if s.menuCPU { metrics.insert(.cpu) }
         if s.menuGPU { metrics.insert(.gpu) }
         if s.menuMemory { metrics.insert(.memory) }
-        if s.menuBattery { metrics.insert(.battery) }
+        if s.menuBattery, battery.isPresent { metrics.insert(.battery) }
         if s.menuNetwork { metrics.insert(.network) }
         visibility.menuBarMetrics = metrics
+    }
+
+    private func reconcileBatterySettings() {
+        guard !battery.isPresent else { return }
+        let s = AppSettings.shared
+        if s.menuBattery { s.menuBattery = false }
+        if s.showBattery { s.showBattery = false }
     }
 
     private func restart() {

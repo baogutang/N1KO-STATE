@@ -357,3 +357,5 @@
 "Compact dashboard with ring gauges." = "Compact dashboard with ring gauges.";
 "Detailed cards with charts and process lists." = "Detailed cards with charts and process lists.";
 "Open settings from the menu bar to see a live popover preview." = "Open settings from the menu bar to see a live popover preview.";
+"No battery detected on this Mac." = "No battery detected on this Mac.";
+"No battery detected on this Mac. Battery will not appear in the menu bar." = "No battery detected on this Mac. Battery will not appear in the menu bar.";

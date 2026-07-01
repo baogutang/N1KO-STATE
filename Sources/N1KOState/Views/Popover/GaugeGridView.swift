@@ -6,18 +6,19 @@ struct GaugeGridView: View {
     @ObservedObject var settings = AppSettings.shared
 
     private let columns = [
-        GridItem(.flexible(), spacing: Theme.gaugeGridSpacing),
-        GridItem(.flexible(), spacing: Theme.gaugeGridSpacing)
+        GridItem(.flexible(), spacing: Theme.gaugeGridSpacing, alignment: .top),
+        GridItem(.flexible(), spacing: Theme.gaugeGridSpacing, alignment: .top)
     ]
 
     var body: some View {
-        LazyVGrid(columns: columns, spacing: Theme.gaugeGridSpacing) {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: Theme.gaugeGridSpacing) {
             ForEach(visibleModules) { module in
                 tile(for: module)
             }
         }
         .padding(.horizontal, Theme.padding)
-        .padding(.vertical, Theme.padding)
+        .padding(.top, 12)
+        .padding(.bottom, Theme.padding)
     }
 
     private var visibleModules: [Module] {
@@ -209,7 +210,9 @@ struct DashboardHeaderSummary: View {
             HeaderSummaryPill(icon: "arrow.down",
                               value: Formatters.rateCompact(snapshot.networkDownloadRate),
                               color: Theme.info)
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var memoryColor: Color {
@@ -300,41 +303,45 @@ private struct DashboardGaugeTile: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
             }
+            .frame(height: 22)
 
-            Spacer(minLength: 10)
+            Spacer(minLength: 0)
 
-            HStack {
-                Spacer(minLength: 0)
+            HStack(spacing: 0) {
                 RingGauge(fraction: fraction,
                           color: color,
-                          lineWidth: 5.5,
-                          value: value)
-                    .frame(width: 56, height: 56)
+                          lineWidth: 6,
+                          value: nil)
+                    .frame(width: 60, height: 60)
                 Spacer(minLength: 0)
             }
 
-            Spacer(minLength: 10)
+            Spacer(minLength: 0)
 
-            VStack(spacing: 5) {
+            VStack(spacing: 4) {
                 ForEach(displayDetails) { detail in
                     HStack(spacing: 6) {
                         Text(detail.label.loc.uppercased())
                             .font(.system(size: 9, weight: .semibold))
                             .foregroundColor(Theme.textTertiary)
                             .lineLimit(1)
-                        Spacer(minLength: 4)
+                            .frame(width: 52, alignment: .leading)
+                        Spacer(minLength: 0)
                         Text(detail.value)
                             .font(.metric(10, weight: .semibold))
                             .foregroundColor(Theme.textSecondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
+                            .multilineTextAlignment(.trailing)
                     }
+                    .frame(height: 14)
                     .opacity(detail.placeholder ? 0 : 1)
                 }
             }
         }
         .padding(12)
-        .frame(maxWidth: .infinity, minHeight: Theme.gaugeTileMinHeight, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(height: Theme.gaugeTileHeight)
         .background(
             RoundedRectangle(cornerRadius: Theme.gaugeTileRadius, style: .continuous)
                 .fill(Theme.card)
