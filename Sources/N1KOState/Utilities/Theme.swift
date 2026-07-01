@@ -112,7 +112,8 @@ enum Theme {
     static let popoverWidth: CGFloat = 360
     static let gaugeGridSpacing: CGFloat = 12
     static let gaugeTileRadius: CGFloat = 12
-    static let gaugeTileHeight: CGFloat = 160
+    static let gaugeRingSize: CGFloat = 92
+    static let gaugeTileHeight: CGFloat = 148
 }
 
 extension Color {

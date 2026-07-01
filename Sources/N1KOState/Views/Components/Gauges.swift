@@ -43,6 +43,113 @@ struct RingGauge: View {
     }
 }
 
+/// Premium dashboard ring with spring-animated arc, soft glow, and custom center content.
+struct DashboardRingGauge<Center: View>: View {
+    var fraction: Double
+    var color: Color
+    var lineWidth: CGFloat = 7
+    var size: CGFloat = Theme.gaugeRingSize
+    @ViewBuilder var center: () -> Center
+
+    @State private var animatedFraction: Double = 0
+    @State private var glowPulse = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(color.opacity(glowPulse ? 0.22 : 0.12), lineWidth: lineWidth + 10)
+                .blur(radius: 6)
+                .animation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true), value: glowPulse)
+
+            Circle()
+                .stroke(Theme.track.opacity(0.9), style: StrokeStyle(lineWidth: lineWidth))
+
+            Circle()
+                .trim(from: 0, to: CGFloat(min(max(animatedFraction, 0), 1)))
+                .stroke(
+                    AngularGradient(
+                        gradient: Gradient(colors: [
+                            color.opacity(0.55),
+                            color,
+                            color.opacity(0.85)
+                        ]),
+                        center: .center,
+                        startAngle: .degrees(-90),
+                        endAngle: .degrees(270)
+                    ),
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .shadow(color: color.opacity(0.28), radius: 4, x: 0, y: 0)
+
+            center()
+                .frame(width: innerDiameter)
+        }
+        .frame(width: size, height: size)
+        .onAppear {
+            glowPulse = true
+            withAnimation(.spring(response: 0.72, dampingFraction: 0.78)) {
+                animatedFraction = fraction
+            }
+        }
+        .onChange(of: fraction) { newValue in
+            withAnimation(.spring(response: 0.52, dampingFraction: 0.84)) {
+                animatedFraction = newValue
+            }
+        }
+    }
+
+    private var innerDiameter: CGFloat {
+        max(size - lineWidth * 2 - 14, 44)
+    }
+}
+
+/// Animated center stack for dashboard rings: primary value + compact detail rows.
+struct DashboardRingCenter: View, Equatable {
+    let primaryValue: String
+    let primaryColor: Color
+    let details: [DashboardRingDetail]
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(primaryValue)
+                .font(.metric(15, weight: .heavy))
+                .foregroundColor(primaryColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.62)
+                .animation(.spring(response: 0.42, dampingFraction: 0.86), value: primaryValue)
+
+            VStack(spacing: 2) {
+                ForEach(details) { detail in
+                    Text(detailText(detail))
+                        .font(.metric(7.5, weight: .semibold))
+                        .foregroundColor(detail.placeholder ? .clear : Theme.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.55)
+                        .frame(maxWidth: .infinity)
+                        .animation(.easeOut(duration: 0.28), value: detail.value)
+                }
+            }
+        }
+        .multilineTextAlignment(.center)
+    }
+
+    private func detailText(_ detail: DashboardRingDetail) -> String {
+        guard !detail.placeholder else { return " " }
+        return "\(detail.label.loc) \(detail.value)"
+    }
+}
+
+struct DashboardRingDetail: Identifiable, Equatable {
+    let label: String
+    let value: String
+    var placeholder = false
+
+    var id: String { "\(label)|\(value)|\(placeholder)" }
+
+    static let empty = DashboardRingDetail(label: "", value: "", placeholder: true)
+}
+
 /// Per-core "equalizer" bars. Each bar is labeled with its core (E1/E2,
 /// P1…P8 on Apple Silicon) and tinted by type, with a legend when both
 /// efficiency and performance clusters exist.

@@ -683,7 +683,7 @@ struct SettingsView: View {
 
             SettingGroup(title: "Maintenance") {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(verbatim: "N1KO-STATE \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.14")")
+                    Text(verbatim: "N1KO-STATE \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.15")")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(Theme.textPrimary)
                     Text(loc: "A modern macOS system monitor.")

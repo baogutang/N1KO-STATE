@@ -23,9 +23,9 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.14</string>
+    <string>1.0.15</string>
     <key>CFBundleVersion</key>
-    <string>114</string>
+    <string>115</string>
     <key>SUFeedURL</key>
     <string>https://raw.githubusercontent.com/baogutang/N1KO-STATE/main/appcast.xml</string>
     <key>SUPublicEDKey</key>
