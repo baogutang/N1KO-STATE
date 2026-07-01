@@ -3,16 +3,16 @@
     <channel>
         <title>N1KO-STATE</title>
         <item>
-            <title>1.0.13</title>
-            <pubDate>Wed, 01 Jul 2026 10:11:13 +0000</pubDate>
-            <sparkle:version>113</sparkle:version>
-            <sparkle:shortVersionString>1.0.13</sparkle:shortVersionString>
+            <title>1.0.14</title>
+            <pubDate>Wed, 01 Jul 2026 10:26:33 +0000</pubDate>
+            <sparkle:version>114</sparkle:version>
+            <sparkle:shortVersionString>1.0.14</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# N1KO-STATE v1.0.13
+            <description sparkle:format="markdown"><![CDATA[# N1KO-STATE v1.0.14
 
-**Sparkle update feed fix** — uses a stable appcast URL and bypasses cached GitHub release redirects so in-app update checks reliably detect new versions.
+**Settings polish & dashboard fixes** — unified pill-style controls, desktop battery handling, gauge alignment, and a scrollable settings layout that no longer clips content.
 
-**Sparkle 更新源修复** — 使用稳定的 appcast 地址，并避免 GitHub 重定向缓存导致应用内检查不到新版本。
+**设置页打磨与仪表盘修复** — 统一药丸式选项、桌面机电池逻辑、仪表盘对齐，以及可滚动、不再裁切内容的设置布局。
 
 ---
 
@@ -32,37 +32,47 @@
 
 ## What's New / 本版本内容
 
-### Reliable In-App Updates / 可靠的应用内更新
+### Settings UI / 设置界面
 
-- Switched Sparkle feed to a stable URL on `main`: `appcast.xml` via `raw.githubusercontent.com`.
-- Manual **Check for Updates** now clears the URL cache before fetching the feed.
-- Release CI publishes an updated cumulative `appcast.xml` back to `main` after each tag build.
+- Replaced segmented controls with in-card pill selectors on Menu Bar, Popover, Sampling, and Advanced pages.
+- Menu Bar page layout: Metrics + Live Preview side by side, Appearance full width below.
+- Settings window is resizable (default 980×720), with a properly constrained scroll area so bottom controls are never clipped.
 
-- Sparkle 更新源改为 `main` 分支上的稳定 `appcast.xml` 地址。
-- 手动点击「检查更新」时会先清理 URL 缓存，再拉取 feed。
-- 每次发版后 CI 会把新的 appcast 回写到 `main`。
+- 菜单栏、弹窗、采样、高级等页的分段控件改为卡片内药丸式选项。
+- 菜单栏页改为「指标 | 预览」并排，「外观」整行置于下方。
+- 设置窗口支持调整大小（默认 980×720），内容区可滚动，底部不再被裁切。
 
-### If you are on v1.0.11 or v1.0.12 / 如果你还在旧版本
+### Battery on Desktops / 桌面机电池
 
-- Quit N1KO-STATE, run `rm -rf ~/Library/Caches/com.n1ko.state.monitor`, reopen the app, then check for updates again.
-- Or download the DMG from this release page and reinstall.
+- Macs without a battery now disable the battery toggle with an explanation instead of showing a misleading ON state.
+- App startup reconciles saved battery preferences when no power source is present.
 
-- 退出应用，执行 `rm -rf ~/Library/Caches/com.n1ko.state.monitor`，重新打开后再检查更新。
-- 或直接从本页下载 DMG 覆盖安装。
+- 无电池的 Mac 会禁用电池开关并显示说明，避免开关打开却不显示。
+- 启动时自动校正已保存的电池相关设置。
+
+### Gauges Popover / 仪表盘弹窗
+
+- Equal-width two-column grid with leading alignment.
+- Header summary pills and ring gauges align with card content.
+- Fixed popover header layout regression.
+
+- 等宽双列网格、左对齐布局。
+- 表头摘要与环形图与卡片内容对齐。
+- 修复弹窗表头布局问题。
 
 ### Versioning / 版本同步
 
-- Updated app version metadata to `1.0.13` / build `113`.
+- Updated app version metadata to `1.0.14` / build `114`.
 
-- 应用版本元数据更新为 `1.0.13` / build `113`。
+- 应用版本元数据更新为 `1.0.14` / build `114`。
 
 ---
 
 ## Full changelog / 完整变更
 
-**Full changelog:** [v1.0.13 tag](https://github.com/baogutang/N1KO-STATE/releases/tag/v1.0.13)
+**Full changelog:** [v1.0.14 tag](https://github.com/baogutang/N1KO-STATE/releases/tag/v1.0.14)
 ]]></description>
-            <enclosure url="https://github.com/baogutang/N1KO-STATE/releases/download/v1.0.13/N1KO-STATE-sparkle.zip" length="3538123" type="application/octet-stream" sparkle:edSignature="vYPbMOSxQYG32yn/sFS3wMdUeBxKcsIDBQzLbi0kL6zRmp+lxFvJa9UUztkiHlp/L0PBcBsDuRZ6JRvixXlnBg=="/>
+            <enclosure url="https://github.com/baogutang/N1KO-STATE/releases/download/v1.0.14/N1KO-STATE-sparkle.zip" length="3551400" type="application/octet-stream" sparkle:edSignature="NZTcfqPBu5ZqhgQLKla8Pj2fOTOA2aopRoVl5wo3SfbwhwrylTojcqMV5+RbwMx2qPsEd9mcHFhWpT3UIv4VBw=="/>
         </item>
     </channel>
 </rss>
