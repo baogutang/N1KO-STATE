@@ -139,6 +139,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             popover.contentViewController = NSHostingController(rootView: PopoverRootView(hub: hub))
         }
         hub.setPopoverVisible(true)
+        menuBar.redrawNow()
         if !popover.isShown {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }

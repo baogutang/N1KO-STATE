@@ -5,7 +5,7 @@ struct GaugeGridView: View {
     @ObservedObject var hub: MonitorHub
     @ObservedObject var settings = AppSettings.shared
 
-    private static let tileHeight: CGFloat = 118
+    private static let tileHeight: CGFloat = 124
     private let columns = [
         GridItem(.flexible(minimum: 138), spacing: 10),
         GridItem(.flexible(minimum: 138), spacing: 10)
@@ -266,9 +266,13 @@ private struct SummaryBadge: View {
 }
 
 private struct DashboardDetail: Identifiable {
-    let id = UUID()
     let label: String
     let value: String
+    var placeholder = false
+
+    var id: String { "\(label)|\(value)|\(placeholder)" }
+
+    static let empty = DashboardDetail(label: "", value: "", placeholder: true)
 }
 
 private struct DashboardGaugeTile: View {
@@ -281,7 +285,7 @@ private struct DashboardGaugeTile: View {
     let details: [DashboardDetail]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
                     .font(.system(size: 10, weight: .semibold))
@@ -297,16 +301,19 @@ private struct DashboardGaugeTile: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
             }
+            .frame(height: 16)
+
+            Spacer(minLength: 8)
 
             HStack(alignment: .center, spacing: 9) {
                 RingGauge(fraction: fraction,
                           color: color,
                           lineWidth: 6,
                           value: value)
-                    .frame(width: 54, height: 54)
+                    .frame(width: 58, height: 58)
 
                 VStack(spacing: 4) {
-                    ForEach(details.prefix(3)) { detail in
+                    ForEach(Array(displayDetails.enumerated()), id: \.offset) { _, detail in
                         HStack(spacing: 5) {
                             Text(detail.label.loc.uppercased())
                                 .font(.system(size: 8.5, weight: .semibold))
@@ -319,9 +326,16 @@ private struct DashboardGaugeTile: View {
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
                         }
+                        .frame(height: 13)
+                        .opacity(detail.placeholder ? 0 : 1)
                     }
                 }
+                .frame(height: 58, alignment: .center)
+                .frame(maxWidth: .infinity, alignment: .center)
             }
+            .frame(height: 58)
+
+            Spacer(minLength: 0)
         }
         .padding(10)
         .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .topLeading)
@@ -334,6 +348,12 @@ private struct DashboardGaugeTile: View {
                 .strokeBorder(Theme.stroke, lineWidth: 1)
         )
     }
+
+    private var displayDetails: [DashboardDetail] {
+        var rows = Array(details.prefix(3))
+        while rows.count < 3 { rows.append(.empty) }
+        return rows
+    }
 }
 
 private struct NetworkDashboardTile: View {
@@ -341,7 +361,7 @@ private struct NetworkDashboardTile: View {
     let height: CGFloat
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
                 Image(systemName: "network")
                     .font(.system(size: 10, weight: .semibold))
@@ -354,13 +374,21 @@ private struct NetworkDashboardTile: View {
                     .fill(network.isConnected ? Theme.ok : Theme.danger)
                     .frame(width: 7, height: 7)
             }
+            .frame(height: 16)
+
+            Spacer(minLength: 7)
 
             VStack(spacing: 5) {
                 rateRow(icon: "arrow.down", label: "Download", value: Formatters.rate(network.downloadRate), color: Theme.info)
                 rateRow(icon: "arrow.up", label: "Upload", value: Formatters.rate(network.uploadRate), color: Theme.ok)
             }
+            .frame(height: 39)
+
+            Spacer(minLength: 7)
 
             Divider().overlay(Theme.stroke)
+
+            Spacer(minLength: 5)
 
             HStack(spacing: 5) {
                 Text("IP")
@@ -373,6 +401,7 @@ private struct NetworkDashboardTile: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
+            .frame(height: 12)
         }
         .padding(10)
         .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .topLeading)

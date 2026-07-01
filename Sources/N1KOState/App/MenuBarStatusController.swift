@@ -15,6 +15,7 @@ final class MenuBarStatusController: NSObject {
 
     private static let barHeight: CGFloat = 22
     private var lastRenderSignature: String?
+    private var redrawScheduled = false
 
     init(hub: MonitorHub) {
         self.hub = hub
@@ -43,8 +44,8 @@ final class MenuBarStatusController: NSObject {
             hub.battery.objectWillChange.map { _ in () }.eraseToAnyPublisher()
         ]
         Publishers.MergeMany(monitorPub)
-            .throttle(for: .seconds(2), scheduler: RunLoop.main, latest: true)
-            .sink { [weak self] _ in self?.redraw() }
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.scheduleRedraw() }
             .store(in: &cancellables)
 
         let s = AppSettings.shared
@@ -63,8 +64,23 @@ final class MenuBarStatusController: NSObject {
         ]
         Publishers.MergeMany(settingsPub)
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.redraw(force: true) }
+            .sink { [weak self] _ in self?.redrawNow() }
             .store(in: &cancellables)
+    }
+
+    func redrawNow() {
+        redrawScheduled = false
+        redraw(force: true)
+    }
+
+    private func scheduleRedraw() {
+        guard !redrawScheduled else { return }
+        redrawScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.redrawScheduled = false
+            self.redraw()
+        }
     }
 
     @objc private func handleClick(_ sender: NSStatusBarButton) {
@@ -72,6 +88,7 @@ final class MenuBarStatusController: NSObject {
     }
 
     private func redraw(force: Bool = false) {
+        redrawScheduled = false
         let signature = renderSignature()
         if !force, signature == lastRenderSignature { return }
         lastRenderSignature = signature
