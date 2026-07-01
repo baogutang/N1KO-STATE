@@ -346,3 +346,14 @@
 "Choose the always-visible readout and keep it legible in every menu-bar state." = "Choose the always-visible readout and keep it legible in every menu-bar state.";
 "Tune how much work the app performs while it is hidden or visible." = "Tune how much work the app performs while it is hidden or visible.";
 "Keep temperature display and fan control together because they share the same safety boundary." = "Keep temperature display and fan control together because they share the same safety boundary.";
+
+/* Settings UI refresh */
+"Search settings" = "Search settings";
+"Display & Popover" = "Display & Popover";
+"Performance" = "Performance";
+"Hardware" = "Hardware";
+"System & Advanced" = "System & Advanced";
+"Width" = "Width";
+"Compact dashboard with ring gauges." = "Compact dashboard with ring gauges.";
+"Detailed cards with charts and process lists." = "Detailed cards with charts and process lists.";
+"Open settings from the menu bar to see a live popover preview." = "Open settings from the menu bar to see a live popover preview.";

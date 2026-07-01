@@ -24,6 +24,41 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .advanced: return "slider.horizontal.3"
         }
     }
+
+    var group: SettingsGroup {
+        switch self {
+        case .overview: return .general
+        case .menuBar, .popover: return .display
+        case .sampling: return .performance
+        case .sensors, .alerts: return .hardware
+        case .advanced: return .system
+        }
+    }
+
+    static var grouped: [(group: SettingsGroup, tabs: [SettingsTab])] {
+        SettingsGroup.allCases.compactMap { group in
+            let tabs = allCases.filter { $0.group == group }
+            return tabs.isEmpty ? nil : (group, tabs)
+        }
+    }
+}
+
+enum SettingsGroup: String, CaseIterable {
+    case general
+    case display
+    case performance
+    case hardware
+    case system
+
+    var title: String {
+        switch self {
+        case .general: return "General".loc
+        case .display: return "Display & Popover".loc
+        case .performance: return "Performance".loc
+        case .hardware: return "Hardware".loc
+        case .system: return "System & Advanced".loc
+        }
+    }
 }
 
 struct SettingsView: View {
@@ -35,6 +70,7 @@ struct SettingsView: View {
     @State private var exportMessage: String?
     @State private var launchAtLogin = LoginItem.isEnabled
     @State private var moduleFilter = ""
+    @State private var settingsSearch = ""
 
     init(fans: FanControlService, hub: MonitorHub? = nil, initialTab: SettingsTab? = nil) {
         self.fans = fans
@@ -61,7 +97,7 @@ struct SettingsView: View {
             }
             .background(Theme.surface)
         }
-        .frame(width: 920, height: 620)
+        .frame(width: 980, height: 660)
         .controlSize(.small)
         .background(Theme.surfaceMaterial)
         .id(settings.language)
@@ -71,50 +107,48 @@ struct SettingsView: View {
     // MARK: Sidebar
 
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("N1KO-STATE")
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("N1KO STATE")
                     .font(.system(size: 15, weight: .heavy, design: .rounded))
                     .foregroundColor(Theme.textPrimary)
-                Text(loc: "Settings Center")
+                Text(loc: "Settings")
                     .font(.system(size: 11.5))
                     .foregroundColor(Theme.textSecondary)
             }
-            .padding(.horizontal, 12)
-            .padding(.top, 22)
+            .padding(.horizontal, 10)
+            .padding(.top, 20)
 
-            VStack(spacing: 4) {
-                ForEach(SettingsTab.allCases) { t in
-                    Button(action: { tab = t }) {
-                        HStack(spacing: 10) {
-                            Image(systemName: t.icon)
-                                .font(.system(size: 12, weight: .semibold))
-                                .frame(width: 20)
-                            Text(loc: t.rawValue)
-                                .font(.system(size: 12.5, weight: .medium))
-                            Spacer()
+            TextField("Search settings".loc, text: $settingsSearch)
+                .textFieldStyle(.roundedBorder)
+                .controlSize(.small)
+                .padding(.horizontal, 8)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(filteredSidebarGroups, id: \.group) { section in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(section.group.title)
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(Theme.textTertiary)
+                                .padding(.horizontal, 10)
+
+                            ForEach(section.tabs) { t in
+                                SettingsSidebarItem(tab: t, isSelected: tab == t, accent: settings.accent) {
+                                    tab = t
+                                }
+                            }
                         }
-                        .foregroundColor(tab == t ? Theme.textPrimary : Theme.textSecondary)
-                        .padding(.horizontal, 10)
-                        .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(tab == t ? settings.accent.opacity(0.16) : Color.clear)
-                        )
-                        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
-                    .buttonStyle(.plain)
                 }
+                .padding(.bottom, 8)
             }
-            .padding(.horizontal, 8)
-
-            Spacer()
 
             SettingGroup(title: "Current Cost", compact: true) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .firstTextBaseline) {
                         Text(loc: resourceModeTitle)
-                            .font(.system(size: 18, weight: .bold))
+                            .font(.system(size: 17, weight: .bold))
                             .foregroundColor(Theme.textPrimary)
                         Spacer()
                         CostBadge(text: resourceModeBadge, color: resourceModeColor)
@@ -126,10 +160,21 @@ struct SettingsView: View {
                 }
             }
             .padding(.horizontal, 8)
-            .padding(.bottom, 14)
+            .padding(.bottom, 12)
         }
-        .frame(width: 216)
+        .frame(width: 220)
         .background(.thinMaterial)
+    }
+
+    private var filteredSidebarGroups: [(group: SettingsGroup, tabs: [SettingsTab])] {
+        let query = settingsSearch.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !query.isEmpty else { return SettingsTab.grouped }
+        return SettingsTab.grouped.compactMap { section in
+            let tabs = section.tabs.filter {
+                $0.rawValue.loc.lowercased().contains(query) || section.group.title.lowercased().contains(query)
+            }
+            return tabs.isEmpty ? nil : (section.group, tabs)
+        }
     }
 
     // MARK: Pages
@@ -207,94 +252,109 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 18) {
             SettingsHeader(title: "Menu Bar",
                            subtitle: "Choose the always-visible readout and keep it legible in every menu-bar state.")
-            SettingGroup(title: "Preview") {
-                MenuBarPreviewView(hub: hub)
-            }
-            SettingGroup(title: "Metrics") {
-                List {
-                    ForEach(settings.orderedMenuBarMetrics) { m in
-                        HStack(spacing: 10) {
-                            Image(systemName: metricIcon(m))
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundColor(metricColor(m))
-                                .frame(width: 18)
-                            Text(loc: m.title)
-                                .font(.system(size: 12.5))
-                            Spacer()
-                            Toggle("", isOn: menuBarBinding(m))
-                                .labelsHidden()
-                                .toggleStyle(.switch)
-                                .tint(settings.accent)
+
+            HStack(alignment: .top, spacing: 20) {
+                VStack(alignment: .leading, spacing: 14) {
+                    SettingGroup(title: "Metrics") {
+                        List {
+                            ForEach(settings.orderedMenuBarMetrics) { m in
+                                HStack(spacing: 10) {
+                                    Image(systemName: metricIcon(m))
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundColor(metricColor(m))
+                                        .frame(width: 18)
+                                    Text(loc: m.title)
+                                        .font(.system(size: 12.5))
+                                    Spacer()
+                                    Toggle("", isOn: menuBarBinding(m))
+                                        .labelsHidden()
+                                        .toggleStyle(.switch)
+                                        .tint(settings.accent)
+                                }
+                                .listRowBackground(Color.clear)
+                            }
+                            .onMove { source, dest in
+                                var order = settings.orderedMenuBarMetrics.map(\.rawValue)
+                                order.move(fromOffsets: source, toOffset: dest)
+                                settings.menuBarOrder = order
+                            }
                         }
-                        .listRowBackground(Color.clear)
+                        .listStyle(.plain)
+                        .hiddenScrollContentBackground()
+                        .frame(minHeight: 150)
                     }
-                    .onMove { source, dest in
-                        var order = settings.orderedMenuBarMetrics.map(\.rawValue)
-                        order.move(fromOffsets: source, toOffset: dest)
-                        settings.menuBarOrder = order
+
+                    SettingGroup(title: "Appearance") {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SettingsRow(label: "Color Mode",
+                                        detail: MenuBarColorMode.normalized(settings.menuBarColorMode).detail) {
+                                Picker("", selection: $settings.menuBarColorMode) {
+                                    ForEach(MenuBarColorMode.allCases) { mode in
+                                        Text(loc: mode.title).tag(mode.rawValue)
+                                    }
+                                }
+                                .labelsHidden()
+                                .pickerStyle(.segmented)
+                                .frame(width: 260)
+                            }
+                            SettingsDivider()
+                            SettingsRow(label: "Layout",
+                                        detail: MenuBarLayout.normalized(settings.menuBarLayout, legacyCompact: settings.menuCompact).title) {
+                                Picker("", selection: $settings.menuBarLayout) {
+                                    ForEach(MenuBarLayout.allCases) { layout in
+                                        Text(loc: layout.title).tag(layout.rawValue)
+                                    }
+                                }
+                                .labelsHidden()
+                                .pickerStyle(.segmented)
+                                .frame(width: 300)
+                            }
+                            SettingsDivider()
+                            SettingsRow(label: "Font Style") {
+                                Picker("", selection: $settings.menuBarFontStyle) {
+                                    ForEach(MenuBarFontStyle.allCases) { style in
+                                        Text(loc: style.title).tag(style.rawValue)
+                                    }
+                                }
+                                .labelsHidden()
+                                .pickerStyle(.segmented)
+                                .frame(width: 260)
+                            }
+                            SettingsDivider()
+                            SettingsRow(label: "Font Size",
+                                        detail: "Keep the preview within the recommended width.") {
+                                HStack(spacing: 10) {
+                                    Slider(value: $settings.menuBarFontSize,
+                                           in: AppSettings.menuBarFontSizeRange,
+                                           step: 0.5)
+                                        .frame(width: 150)
+                                        .tint(settings.accent)
+                                    Text(String(format: "%.1f", settings.menuBarFontSize))
+                                        .font(.metric(11))
+                                        .foregroundColor(Theme.textSecondary)
+                                        .frame(width: 34, alignment: .trailing)
+                                }
+                            }
+                            HStack {
+                                Spacer()
+                                Button(action: resetMenuBarDefaults) {
+                                    Text(loc: "Reset Menu Bar")
+                                }
+                                .buttonStyle(.bordered)
+                            }
+                        }
                     }
                 }
-                .listStyle(.plain)
-                .hiddenScrollContentBackground()
-                .frame(minHeight: 150)
-            }
-            SettingGroup(title: "Appearance") {
-                VStack(alignment: .leading, spacing: 12) {
-                    SettingsRow(label: "Color Mode",
-                                detail: MenuBarColorMode.normalized(settings.menuBarColorMode).detail) {
-                        Picker("", selection: $settings.menuBarColorMode) {
-                            ForEach(MenuBarColorMode.allCases) { mode in
-                                Text(loc: mode.title).tag(mode.rawValue)
-                            }
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.segmented)
-                        .frame(width: 260)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(loc: "Live Preview")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(Theme.textTertiary)
+                    SettingGroup(title: nil) {
+                        MenuBarPreviewView(hub: hub, expanded: true)
                     }
-                    SettingsDivider()
-                    SettingsRow(label: "Layout") {
-                        Picker("", selection: $settings.menuBarLayout) {
-                            ForEach(MenuBarLayout.allCases) { layout in
-                                Text(loc: layout.title).tag(layout.rawValue)
-                            }
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.segmented)
-                        .frame(width: 300)
-                    }
-                    SettingsDivider()
-                    SettingsRow(label: "Font Style") {
-                        Picker("", selection: $settings.menuBarFontStyle) {
-                            ForEach(MenuBarFontStyle.allCases) { style in
-                                Text(loc: style.title).tag(style.rawValue)
-                            }
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.segmented)
-                        .frame(width: 260)
-                    }
-                    SettingsDivider()
-                    SettingsRow(label: "Font Size",
-                                detail: "Keep the preview within the recommended width.") {
-                        HStack(spacing: 10) {
-                            Slider(value: $settings.menuBarFontSize,
-                                   in: AppSettings.menuBarFontSizeRange,
-                                   step: 0.5)
-                                .frame(width: 150)
-                                .tint(settings.accent)
-                            Text(String(format: "%.1f", settings.menuBarFontSize))
-                                .font(.metric(11))
-                                .foregroundColor(Theme.textSecondary)
-                                .frame(width: 34, alignment: .trailing)
-                        }
-                    }
-                    HStack {
-                        Spacer()
-                        Button(action: resetMenuBarDefaults) {
-                            Text(loc: "Reset Menu Bar")
-                        }
-                        .buttonStyle(.bordered)
-                    }
+                    .frame(width: Theme.popoverWidth)
                 }
             }
         }
@@ -304,50 +364,76 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 18) {
             SettingsHeader(title: "Popover",
                            subtitle: "Control the click-open panel separately from the always-on menu bar.")
-            SettingGroup(title: "Display Options") {
-                VStack(spacing: 0) {
-                    SettingsRow(label: "Popover Style") {
-                        Picker("", selection: $settings.popoverStyle) {
-                            Text(loc: "Cards").tag("cards")
-                            Text(loc: "Gauges").tag("gauges")
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.segmented)
-                        .frame(width: 180)
-                    }
-                    SettingsDivider()
-                    SettingsRow(label: "Chart Range") {
-                        Picker("", selection: $chartRange.range) {
-                            ForEach(HistoryStore.Range.allCases) { range in
-                                Text(range.rawValue.uppercased()).tag(range.rawValue)
+
+            HStack(alignment: .top, spacing: 20) {
+                VStack(alignment: .leading, spacing: 14) {
+                    SettingGroup(title: "Display Options") {
+                        VStack(spacing: 0) {
+                            SettingsRow(label: "Popover Style",
+                                        detail: settings.popoverStyle == "gauges"
+                                            ? "Compact dashboard with ring gauges."
+                                            : "Detailed cards with charts and process lists.") {
+                                Picker("", selection: $settings.popoverStyle) {
+                                    Text(loc: "Cards").tag("cards")
+                                    Text(loc: "Gauges").tag("gauges")
+                                }
+                                .labelsHidden()
+                                .pickerStyle(.segmented)
+                                .frame(width: 180)
+                            }
+                            SettingsDivider()
+                            SettingsRow(label: "Chart Range") {
+                                Picker("", selection: $chartRange.range) {
+                                    ForEach(HistoryStore.Range.allCases) { range in
+                                        Text(range.rawValue.uppercased()).tag(range.rawValue)
+                                    }
+                                }
+                                .labelsHidden()
+                                .pickerStyle(.segmented)
+                                .frame(width: 240)
                             }
                         }
-                        .labelsHidden()
-                        .pickerStyle(.segmented)
-                        .frame(width: 240)
+                    }
+
+                    SettingGroup(title: "Modules") {
+                        VStack(alignment: .leading, spacing: 10) {
+                            TextField("Search modules".loc, text: $moduleFilter)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(maxWidth: 260)
+                            List {
+                                ForEach(filteredModules) { m in
+                                    ModuleListRow(module: m, isOn: visibilityBinding(m), accent: settings.accent)
+                                }
+                                .onMove { source, destination in
+                                    guard moduleFilter.isEmpty else { return }
+                                    var order = settings.orderedModules.map(\.rawValue)
+                                    order.move(fromOffsets: source, toOffset: destination)
+                                    settings.moduleOrder = order
+                                }
+                            }
+                            .listStyle(.plain)
+                            .hiddenScrollContentBackground()
+                            .frame(minHeight: 220)
+                        }
                     }
                 }
-            }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            SettingGroup(title: "Modules") {
-                VStack(alignment: .leading, spacing: 10) {
-                    TextField("Search modules".loc, text: $moduleFilter)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(maxWidth: 260)
-                    List {
-                        ForEach(filteredModules) { m in
-                            ModuleListRow(module: m, isOn: visibilityBinding(m), accent: settings.accent)
-                        }
-                        .onMove { source, destination in
-                            guard moduleFilter.isEmpty else { return }
-                            var order = settings.orderedModules.map(\.rawValue)
-                            order.move(fromOffsets: source, toOffset: destination)
-                            settings.moduleOrder = order
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(loc: "Live Preview")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(Theme.textTertiary)
+                    if let hub {
+                        PopoverPreviewView(hub: hub)
+                    } else {
+                        SettingGroup(title: nil) {
+                            Text(loc: "Open settings from the menu bar to see a live popover preview.")
+                                .font(.system(size: 11.5))
+                                .foregroundColor(Theme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(width: Theme.popoverWidth, alignment: .leading)
                         }
                     }
-                    .listStyle(.plain)
-                    .hiddenScrollContentBackground()
-                    .frame(minHeight: 220)
                 }
             }
         }
@@ -601,7 +687,7 @@ struct SettingsView: View {
 
             SettingGroup(title: "Maintenance") {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(verbatim: "N1KO-STATE \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.8")")
+                    Text(verbatim: "N1KO-STATE \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.12")")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(Theme.textPrimary)
                     Text(loc: "A modern macOS system monitor.")
@@ -881,6 +967,45 @@ struct SettingsView: View {
 
 // MARK: - Reusable settings controls
 
+struct SettingsSidebarItem: View {
+    let tab: SettingsTab
+    let isSelected: Bool
+    let accent: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: tab.icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 20)
+                Text(loc: tab.rawValue)
+                    .font(.system(size: 12.5, weight: isSelected ? .semibold : .medium))
+                Spacer(minLength: 0)
+            }
+            .foregroundColor(isSelected ? Theme.textPrimary : Theme.textSecondary)
+            .padding(.leading, 12)
+            .padding(.trailing, 10)
+            .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
+            .background(
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(isSelected ? accent.opacity(0.14) : Color.clear)
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 2, style: .continuous)
+                            .fill(accent)
+                            .frame(width: 3)
+                            .padding(.vertical, 7)
+                    }
+                }
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 8)
+    }
+}
+
 struct SettingsHeader: View {
     let title: String
     var subtitle: String? = nil
@@ -916,10 +1041,10 @@ struct SettingGroup<Content: View>: View {
                 .padding(compact ? 10 : 12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.card)
+                    RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.card)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Theme.stroke, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.stroke, lineWidth: 1)
                 )
         }
     }
@@ -1115,37 +1240,43 @@ struct PerformanceCostRow: View {
 struct MenuBarPreviewView: View {
     @ObservedObject var settings = AppSettings.shared
     var hub: MonitorHub?
+    var expanded = false
     @State private var previewTick = 0
 
     var body: some View {
         let image = previewImage
         let actualWidth = ceil(image.size.width + 4)
         let isTooWide = actualWidth > AppSettings.menuBarRecommendedMaxWidth
-        let previewWidth = min(max(image.size.width + 18, 88), 280)
+        let previewWidth = expanded
+            ? min(max(image.size.width + 24, 120), Theme.popoverWidth - 28)
+            : min(max(image.size.width + 18, 88), 280)
         let imageScale = min(1, max((previewWidth - 18) / max(image.size.width, 1), 0.1))
         VStack(alignment: .leading, spacing: 7) {
-            HStack(spacing: 12) {
-                Text(loc: "Preview")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(Theme.textSecondary)
-                Spacer(minLength: 10)
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color(nsColor: .controlBackgroundColor).opacity(0.8))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .strokeBorder(isTooWide ? Theme.danger.opacity(0.75) : Theme.stroke, lineWidth: 1)
-                        )
-                    Image(nsImage: image)
-                        .interpolation(.high)
-                        .frame(width: image.size.width, height: image.size.height)
-                        .scaleEffect(imageScale)
+            if !expanded {
+                HStack(spacing: 12) {
+                    Text(loc: "Preview")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(Theme.textSecondary)
+                    Spacer(minLength: 10)
+                    previewChrome(image: image, previewWidth: previewWidth, imageScale: imageScale, isTooWide: isTooWide)
+                    Text("\(Int(actualWidth)) px")
+                        .font(.metric(10))
+                        .foregroundColor(isTooWide ? Theme.danger : Theme.textTertiary)
+                        .frame(width: 48, alignment: .trailing)
                 }
-                .frame(width: previewWidth, height: 36)
-                Text("\(Int(actualWidth)) px")
-                    .font(.metric(10))
-                    .foregroundColor(isTooWide ? Theme.danger : Theme.textTertiary)
-                    .frame(width: 48, alignment: .trailing)
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    previewChrome(image: image, previewWidth: previewWidth, imageScale: imageScale, isTooWide: isTooWide)
+                    HStack {
+                        Text(loc: "Width")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(Theme.textTertiary)
+                        Spacer()
+                        Text("\(Int(actualWidth)) px")
+                            .font(.metric(10))
+                            .foregroundColor(isTooWide ? Theme.danger : Theme.textSecondary)
+                    }
+                }
             }
             if settings.resolvedMenuBarColorMode == .adaptive {
                 Label {
@@ -1218,6 +1349,38 @@ struct MenuBarPreviewView: View {
             fontSize: CGFloat(settings.menuBarFontSize)
         )
         return MenuBarImageRenderer.render(input)
+    }
+
+    private func previewChrome(image: NSImage, previewWidth: CGFloat, imageScale: CGFloat, isTooWide: Bool) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(isTooWide ? Theme.danger.opacity(0.75) : Theme.stroke, lineWidth: 1)
+                )
+            Image(nsImage: image)
+                .interpolation(.high)
+                .frame(width: image.size.width, height: image.size.height)
+                .scaleEffect(imageScale)
+        }
+        .frame(width: previewWidth, height: expanded ? 42 : 36)
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct PopoverPreviewView: View {
+    @ObservedObject var hub: MonitorHub
+    @ObservedObject var settings = AppSettings.shared
+
+    var body: some View {
+        PopoverRootView(hub: hub)
+            .frame(width: Theme.popoverWidth)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Theme.stroke, lineWidth: 1)
+            )
     }
 }
 

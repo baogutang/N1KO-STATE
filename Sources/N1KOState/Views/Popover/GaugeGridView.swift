@@ -5,24 +5,19 @@ struct GaugeGridView: View {
     @ObservedObject var hub: MonitorHub
     @ObservedObject var settings = AppSettings.shared
 
-    private static let tileHeight: CGFloat = 124
     private let columns = [
-        GridItem(.flexible(minimum: 138), spacing: 10),
-        GridItem(.flexible(minimum: 138), spacing: 10)
+        GridItem(.flexible(), spacing: Theme.gaugeGridSpacing),
+        GridItem(.flexible(), spacing: Theme.gaugeGridSpacing)
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            DashboardSummary(hub: hub)
-
-            LazyVGrid(columns: columns, spacing: 10) {
-                ForEach(visibleModules) { module in
-                    tile(for: module)
-                }
+        LazyVGrid(columns: columns, spacing: Theme.gaugeGridSpacing) {
+            ForEach(visibleModules) { module in
+                tile(for: module)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 14)
+        .padding(.horizontal, Theme.padding)
+        .padding(.vertical, Theme.padding)
     }
 
     private var visibleModules: [Module] {
@@ -50,7 +45,6 @@ struct GaugeGridView: View {
     private var cpuTile: some View {
         let snapshot = hub.snapshot
         return DashboardGaugeTile(
-            height: Self.tileHeight,
             icon: "cpu",
             title: "CPU",
             fraction: snapshot.cpuUsage,
@@ -68,12 +62,11 @@ struct GaugeGridView: View {
         let snapshot = hub.snapshot
         let vramText: String
         if snapshot.gpuVRAMTotal > 0 {
-            vramText = "\(Formatters.bytes(snapshot.gpuVRAMUsed)) / \(Formatters.bytes(snapshot.gpuVRAMTotal))"
+            vramText = Formatters.bytes(snapshot.gpuVRAMUsed)
         } else {
             vramText = "—"
         }
         return DashboardGaugeTile(
-            height: Self.tileHeight,
             icon: "sparkles",
             title: "GPU",
             fraction: snapshot.gpuUtilization,
@@ -90,7 +83,6 @@ struct GaugeGridView: View {
         let snapshot = hub.snapshot
         let usedFraction = snapshot.memoryFraction
         return DashboardGaugeTile(
-            height: Self.tileHeight,
             icon: "memorychip",
             title: "Memory",
             fraction: usedFraction,
@@ -108,7 +100,6 @@ struct GaugeGridView: View {
         let snapshot = hub.snapshot
         let used = snapshot.diskPrimaryFraction ?? 0
         return DashboardGaugeTile(
-            height: Self.tileHeight,
             icon: "internaldrive",
             title: "Disk",
             fraction: used,
@@ -125,7 +116,6 @@ struct GaugeGridView: View {
     private var batteryTile: some View {
         let snapshot = hub.snapshot
         return DashboardGaugeTile(
-            height: Self.tileHeight,
             icon: snapshot.batteryIsCharging ? "battery.100.bolt" : "battery.75",
             title: "Battery",
             fraction: snapshot.batteryPercentage,
@@ -140,18 +130,29 @@ struct GaugeGridView: View {
     }
 
     private var networkTile: some View {
-        NetworkDashboardTile(snapshot: hub.snapshot, height: Self.tileHeight)
+        let snapshot = hub.snapshot
+        let activity = min(snapshot.networkDownloadRate / 5_000_000, 1)
+        return DashboardGaugeTile(
+            icon: "network",
+            title: "Network",
+            fraction: snapshot.networkIsConnected ? max(activity, 0.08) : 0,
+            value: snapshot.networkIsConnected ? Formatters.rateCompact(snapshot.networkDownloadRate) : "—",
+            color: snapshot.networkIsConnected ? Theme.info : Theme.danger,
+            details: [
+                .init(label: "Download", value: Formatters.rate(snapshot.networkDownloadRate)),
+                .init(label: "Upload", value: Formatters.rate(snapshot.networkUploadRate)),
+                .init(label: "IP", value: snapshot.networkLocalIP ?? "—")
+            ],
+            statusColor: snapshot.networkIsConnected ? Theme.ok : Theme.danger
+        )
     }
 
     private var sensorTile: some View {
         let snapshot = hub.snapshot
         let peak = snapshot.sensorPeakCelsius
-        let fanValue = snapshot.fanCount == 0
-            ? "—"
-            : "\(snapshot.fanCount)"
+        let fanValue = snapshot.fanCount == 0 ? "—" : "\(snapshot.fanCount)"
         let rpmValue = snapshot.firstFanRPM.map { "\($0) RPM" } ?? "—"
         return DashboardGaugeTile(
-            height: Self.tileHeight,
             icon: "thermometer",
             title: "Sensors",
             fraction: peak.map { min($0 / 110, 1) } ?? 0,
@@ -193,34 +194,22 @@ struct GaugeGridView: View {
     }
 }
 
-private struct DashboardSummary: View {
+struct DashboardHeaderSummary: View {
     @ObservedObject var hub: MonitorHub
 
     var body: some View {
         let snapshot = hub.snapshot
-        HStack(spacing: 8) {
-            SummaryBadge(icon: "cpu",
-                         title: "CPU",
-                         value: Formatters.percent(snapshot.cpuUsage),
-                         color: Theme.semantic(for: snapshot.cpuUsage))
-            SummaryBadge(icon: "memorychip",
-                         title: "Memory",
-                         value: Formatters.percent(snapshot.memoryFraction),
-                         color: memoryColor)
-            SummaryBadge(icon: "arrow.down",
-                         title: "Download",
-                         value: Formatters.rateCompact(snapshot.networkDownloadRate),
-                         color: Theme.info)
+        HStack(spacing: 6) {
+            HeaderSummaryPill(icon: "cpu",
+                              value: Formatters.percent(snapshot.cpuUsage),
+                              color: Theme.semantic(for: snapshot.cpuUsage))
+            HeaderSummaryPill(icon: "memorychip",
+                              value: Formatters.percent(snapshot.memoryFraction),
+                              color: memoryColor)
+            HeaderSummaryPill(icon: "arrow.down",
+                              value: Formatters.rateCompact(snapshot.networkDownloadRate),
+                              color: Theme.info)
         }
-        .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Theme.card)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(Theme.stroke, lineWidth: 1)
-        )
     }
 
     private var memoryColor: Color {
@@ -232,36 +221,32 @@ private struct DashboardSummary: View {
     }
 }
 
-private struct SummaryBadge: View {
+private struct HeaderSummaryPill: View {
     let icon: String
-    let title: String
     let value: String
     let color: Color
 
     var body: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 8, weight: .bold))
                 .foregroundColor(color)
-                .frame(width: 20, height: 20)
-                .background(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(color.opacity(0.16))
-                )
-            VStack(alignment: .leading, spacing: 1) {
-                Text(loc: title)
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundColor(Theme.textTertiary)
-                    .lineLimit(1)
-                Text(value)
-                    .font(.metric(11, weight: .bold))
-                    .foregroundColor(Theme.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-            }
-            Spacer(minLength: 0)
+            Text(value)
+                .font(.metric(9.5, weight: .bold))
+                .foregroundColor(Theme.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
-        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 4)
+        .background(
+            Capsule(style: .continuous)
+                .fill(color.opacity(0.12))
+        )
+        .overlay(
+            Capsule(style: .continuous)
+                .strokeBorder(color.opacity(0.2), lineWidth: 1)
+        )
     }
 }
 
@@ -276,75 +261,86 @@ private struct DashboardDetail: Identifiable {
 }
 
 private struct DashboardGaugeTile: View {
-    let height: CGFloat
     let icon: String
     let title: String
     let fraction: Double
     let value: String
     let color: Color
     let details: [DashboardDetail]
+    var statusColor: Color?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(color)
+                    .frame(width: 22, height: 22)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(color.opacity(0.14))
+                    )
+
                 Text(loc: title)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(Theme.textPrimary)
                     .lineLimit(1)
+
                 Spacer(minLength: 0)
+
+                if let statusColor {
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 7, height: 7)
+                }
+
                 Text(value)
-                    .font(.metric(11, weight: .bold))
+                    .font(.metric(12, weight: .bold))
                     .foregroundColor(color)
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
             }
-            .frame(height: 16)
 
-            Spacer(minLength: 8)
+            Spacer(minLength: 10)
 
-            HStack(alignment: .center, spacing: 9) {
+            HStack {
+                Spacer(minLength: 0)
                 RingGauge(fraction: fraction,
                           color: color,
-                          lineWidth: 6,
+                          lineWidth: 5.5,
                           value: value)
-                    .frame(width: 58, height: 58)
-
-                VStack(spacing: 4) {
-                    ForEach(Array(displayDetails.enumerated()), id: \.offset) { _, detail in
-                        HStack(spacing: 5) {
-                            Text(detail.label.loc.uppercased())
-                                .font(.system(size: 8.5, weight: .semibold))
-                                .foregroundColor(Theme.textTertiary)
-                                .lineLimit(1)
-                            Spacer(minLength: 3)
-                            Text(detail.value)
-                                .font(.metric(9.5, weight: .semibold))
-                                .foregroundColor(Theme.textSecondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-                        }
-                        .frame(height: 13)
-                        .opacity(detail.placeholder ? 0 : 1)
-                    }
-                }
-                .frame(height: 58, alignment: .center)
-                .frame(maxWidth: .infinity, alignment: .center)
+                    .frame(width: 56, height: 56)
+                Spacer(minLength: 0)
             }
-            .frame(height: 58)
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 10)
+
+            VStack(spacing: 5) {
+                ForEach(displayDetails) { detail in
+                    HStack(spacing: 6) {
+                        Text(detail.label.loc.uppercased())
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(Theme.textTertiary)
+                            .lineLimit(1)
+                        Spacer(minLength: 4)
+                        Text(detail.value)
+                            .font(.metric(10, weight: .semibold))
+                            .foregroundColor(Theme.textSecondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
+                    .opacity(detail.placeholder ? 0 : 1)
+                }
+            }
         }
-        .padding(10)
-        .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .topLeading)
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: Theme.gaugeTileMinHeight, alignment: .topLeading)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: Theme.gaugeTileRadius, style: .continuous)
                 .fill(Theme.card)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: Theme.gaugeTileRadius, style: .continuous)
                 .strokeBorder(Theme.stroke, lineWidth: 1)
         )
     }
@@ -353,89 +349,5 @@ private struct DashboardGaugeTile: View {
         var rows = Array(details.prefix(3))
         while rows.count < 3 { rows.append(.empty) }
         return rows
-    }
-}
-
-private struct NetworkDashboardTile: View {
-    let snapshot: MonitorDisplaySnapshot
-    let height: CGFloat
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 6) {
-                Image(systemName: "network")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(Theme.info)
-                Text(loc: "Network")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(Theme.textPrimary)
-                Spacer(minLength: 0)
-                Circle()
-                    .fill(snapshot.networkIsConnected ? Theme.ok : Theme.danger)
-                    .frame(width: 7, height: 7)
-            }
-            .frame(height: 16)
-
-            Spacer(minLength: 7)
-
-            VStack(spacing: 5) {
-                rateRow(icon: "arrow.down", label: "Download", value: Formatters.rate(snapshot.networkDownloadRate), color: Theme.info)
-                rateRow(icon: "arrow.up", label: "Upload", value: Formatters.rate(snapshot.networkUploadRate), color: Theme.ok)
-            }
-            .frame(height: 39)
-
-            Spacer(minLength: 7)
-
-            Divider().overlay(Theme.stroke)
-
-            Spacer(minLength: 5)
-
-            HStack(spacing: 5) {
-                Text("IP")
-                    .font(.system(size: 8.5, weight: .semibold))
-                    .foregroundColor(Theme.textTertiary)
-                Spacer(minLength: 3)
-                Text(snapshot.networkLocalIP ?? "—")
-                    .font(.metric(9.5, weight: .semibold))
-                    .foregroundColor(Theme.textSecondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-            .frame(height: 12)
-        }
-        .padding(10)
-        .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .topLeading)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Theme.card)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(Theme.stroke, lineWidth: 1)
-        )
-    }
-
-    private func rateRow(icon: String, label: String, value: String, color: Color) -> some View {
-        HStack(spacing: 7) {
-            Image(systemName: icon)
-                .font(.system(size: 9, weight: .bold))
-                .foregroundColor(color)
-                .frame(width: 17, height: 17)
-                .background(
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(color.opacity(0.15))
-                )
-            VStack(alignment: .leading, spacing: 1) {
-                Text(label.loc.uppercased())
-                    .font(.system(size: 8.5, weight: .semibold))
-                    .foregroundColor(Theme.textTertiary)
-                Text(value)
-                    .font(.metric(10.5, weight: .bold))
-                    .foregroundColor(Theme.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-            }
-            Spacer(minLength: 0)
-        }
     }
 }

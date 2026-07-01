@@ -348,3 +348,14 @@
 "Choose the always-visible readout and keep it legible in every menu-bar state." = "选择常驻菜单栏的读数，并确保各种菜单栏状态下都清晰可读。";
 "Tune how much work the app performs while it is hidden or visible." = "调整应用在隐藏和可见时分别执行多少后台工作。";
 "Keep temperature display and fan control together because they share the same safety boundary." = "温度显示和风扇控制共享安全边界，因此放在一起设置。";
+
+/* Settings UI refresh */
+"Search settings" = "搜索设置";
+"Display & Popover" = "显示与弹窗";
+"Performance" = "性能";
+"Hardware" = "硬件";
+"System & Advanced" = "系统与高级";
+"Width" = "宽度";
+"Compact dashboard with ring gauges." = "紧凑仪表盘，环形图展示关键指标。";
+"Detailed cards with charts and process lists." = "详细卡片，含图表和进程列表。";
+"Open settings from the menu bar to see a live popover preview." = "从菜单栏打开设置以查看弹窗实时预览。";

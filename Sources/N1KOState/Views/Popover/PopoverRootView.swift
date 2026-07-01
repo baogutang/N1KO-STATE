@@ -84,7 +84,11 @@ struct PopoverRootView: View {
             Text("STATE")
                 .font(.system(size: 14, weight: .heavy, design: .rounded))
                 .foregroundColor(settings.accent)
-            Spacer()
+            if settings.popoverStyle == "gauges" {
+                DashboardHeaderSummary(hub: hub)
+                    .layoutPriority(-1)
+            }
+            Spacer(minLength: 4)
             Button(action: { SettingsWindowController.shared.show(fans: hub.fans, hub: hub) }) {
                 Image(systemName: "gearshape")
                     .font(.system(size: 12, weight: .semibold))

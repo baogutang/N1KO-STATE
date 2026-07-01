@@ -109,7 +109,10 @@ enum Theme {
     static let cardRadius: CGFloat = 14
     static let padding: CGFloat = 14
     static let cardPadding: CGFloat = 14
-    static let popoverWidth: CGFloat = 340
+    static let popoverWidth: CGFloat = 360
+    static let gaugeGridSpacing: CGFloat = 12
+    static let gaugeTileRadius: CGFloat = 12
+    static let gaugeTileMinHeight: CGFloat = 148
 }
 
 extension Color {

@@ -27,7 +27,7 @@ final class SettingsWindowController {
         let w = NSWindow(contentViewController: hosting)
         w.title = "N1KO-STATE Settings"
         w.styleMask = [.titled, .closable, .fullSizeContentView]
-        w.minSize = NSSize(width: 860, height: 560)
+        w.minSize = NSSize(width: 900, height: 600)
         w.titlebarAppearsTransparent = true
         w.titleVisibility = .hidden
         w.isMovableByWindowBackground = true

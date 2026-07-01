@@ -348,3 +348,14 @@
 "Choose the always-visible readout and keep it legible in every menu-bar state." = "選擇常駐選單列的讀數，並確保各種選單列狀態下都清晰可讀。";
 "Tune how much work the app performs while it is hidden or visible." = "調整應用程式在隱藏和可見時分別執行多少背景工作。";
 "Keep temperature display and fan control together because they share the same safety boundary." = "溫度顯示和風扇控制共享安全邊界，因此放在一起設定。";
+
+/* Settings UI refresh */
+"Search settings" = "搜尋設定";
+"Display & Popover" = "顯示與彈窗";
+"Performance" = "效能";
+"Hardware" = "硬體";
+"System & Advanced" = "系統與進階";
+"Width" = "寬度";
+"Compact dashboard with ring gauges." = "緊湊儀表板，環形圖展示關鍵指標。";
+"Detailed cards with charts and process lists." = "詳細卡片，含圖表和程序列表。";
+"Open settings from the menu bar to see a live popover preview." = "從選單列開啟設定以查看彈窗即時預覽。";
