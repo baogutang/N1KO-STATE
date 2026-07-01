@@ -8,7 +8,7 @@ final class SettingsWindowController {
     private weak var hub: MonitorHub?
 
     func showAbout(fans: FanControlService, hub: MonitorHub) {
-        show(fans: fans, hub: hub, tab: .about)
+        show(fans: fans, hub: hub, tab: .advanced)
     }
 
     func show(fans: FanControlService? = nil, hub: MonitorHub? = nil, tab: SettingsTab? = nil) {
@@ -27,7 +27,7 @@ final class SettingsWindowController {
         let w = NSWindow(contentViewController: hosting)
         w.title = "N1KO-STATE Settings"
         w.styleMask = [.titled, .closable, .fullSizeContentView]
-        w.minSize = NSSize(width: 720, height: 500)
+        w.minSize = NSSize(width: 860, height: 560)
         w.titlebarAppearsTransparent = true
         w.titleVisibility = .hidden
         w.isMovableByWindowBackground = true

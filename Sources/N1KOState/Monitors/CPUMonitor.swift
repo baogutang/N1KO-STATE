@@ -39,13 +39,13 @@ final class CPUMonitor: ObservableObject {
         }
     }
 
-    func refresh() {
+    func refresh(publish: Bool = true) {
         sampleCores()
         var loads = [Double](repeating: 0, count: 3)
         getloadavg(&loads, 3)
         loadAverage = LoadAverage(one: loads[0], five: loads[1], fifteen: loads[2])
         uptime = Date().timeIntervalSince(bootDate)
-        objectWillChange.send()
+        if publish { objectWillChange.send() }
     }
 
     private func sampleCores() {

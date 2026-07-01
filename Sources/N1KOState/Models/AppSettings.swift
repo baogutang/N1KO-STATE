@@ -107,6 +107,16 @@ final class AppSettings: ObservableObject {
             d.set(menuBarFontStyle, forKey: K.mFontStyle)
         }
     }
+    @Published var menuBarColorMode: String {
+        didSet {
+            let normalized = MenuBarColorMode.normalized(menuBarColorMode).rawValue
+            if normalized != menuBarColorMode {
+                menuBarColorMode = normalized
+                return
+            }
+            d.set(menuBarColorMode, forKey: K.mColorMode)
+        }
+    }
     @Published var menuBarFontSize: Double {
         didSet {
             let clamped = Self.clampMenuBarFontSize(menuBarFontSize)
@@ -124,6 +134,10 @@ final class AppSettings: ObservableObject {
 
     var resolvedMenuBarFontStyle: MenuBarFontStyle {
         MenuBarFontStyle.normalized(menuBarFontStyle)
+    }
+
+    var resolvedMenuBarColorMode: MenuBarColorMode {
+        MenuBarColorMode.normalized(menuBarColorMode)
     }
 
     var orderedMenuBarMetrics: [MenuBarMetric] {
@@ -211,6 +225,7 @@ final class AppSettings: ObservableObject {
             K.mCPU: true, K.mGPU: true, K.mMem: false, K.mNet: false,             K.mBat: false,
             K.mOrder: MenuBarMetric.allCases.map(\.rawValue),
             K.mFontStyle: MenuBarFontStyle.rounded.rawValue,
+            K.mColorMode: MenuBarColorMode.colorful.rawValue,
             K.mFontSize: 11.0,
             K.popStyle: "cards",
             K.fanCurveOn: false,
@@ -247,6 +262,7 @@ final class AppSettings: ObservableObject {
         menuBarLayout = storedMenuLayout.rawValue
         menuBarOrder = (d.array(forKey: K.mOrder) as? [String]) ?? MenuBarMetric.allCases.map(\.rawValue)
         menuBarFontStyle = MenuBarFontStyle.normalized(d.string(forKey: K.mFontStyle)).rawValue
+        menuBarColorMode = MenuBarColorMode.normalized(d.string(forKey: K.mColorMode)).rawValue
         menuBarFontSize = Self.clampMenuBarFontSize(d.object(forKey: K.mFontSize) as? Double ?? 11.0)
         popoverStyle = d.string(forKey: K.popStyle) ?? "cards"
         fanCurveEnabled = d.bool(forKey: K.fanCurveOn)
@@ -287,7 +303,8 @@ final class AppSettings: ObservableObject {
         static let mCPU = "menuCPU", mGPU = "menuGPU", mMem = "menuMemory", mNet = "menuNetwork"
         static let mBat = "menuBattery", mCompact = "menuCompact"
         static let mLayout = "menuBarLayout", mOrder = "menuBarOrder"
-        static let mFontStyle = "menuBarFontStyle", mFontSize = "menuBarFontSize"
+        static let mFontStyle = "menuBarFontStyle", mColorMode = "menuBarColorMode"
+        static let mFontSize = "menuBarFontSize"
         static let popStyle = "popoverStyle"
         static let fanCurveOn = "fanCurveEnabled", fanCurve = "fanCurveJSON"
         static let appTheme = "appTheme"

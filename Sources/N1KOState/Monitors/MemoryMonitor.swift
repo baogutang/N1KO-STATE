@@ -33,7 +33,7 @@ final class MemoryMonitor: ObservableObject {
         total = Double(ProcessInfo.processInfo.physicalMemory)
     }
 
-    func refresh() {
+    func refresh(publish: Bool = true) {
         var stats = vm_statistics64_data_t()
         var count = mach_msg_type_number_t(MemoryLayout<vm_statistics64_data_t>.stride / MemoryLayout<integer_t>.stride)
 
@@ -72,7 +72,7 @@ final class MemoryMonitor: ObservableObject {
         history.append(pressure)
         if history.count > historyCapacity { history.removeFirst(history.count - historyCapacity) }
 
-        objectWillChange.send()
+        if publish { objectWillChange.send() }
     }
 
     private func readSwap() {

@@ -63,7 +63,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-12%2B-000000?style=flat-square&logo=apple&logoColor=white" alt="macOS 12+" />
   <img src="https://img.shields.io/badge/Swift-5.9-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift 5.9" />
-  <img src="https://img.shields.io/badge/version-1.0.7-blue?style=flat-square" alt="1.0.7" />
+  <img src="https://img.shields.io/badge/version-1.0.8-blue?style=flat-square" alt="1.0.8" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT" />
 </p>
 
@@ -271,5 +271,5 @@ cd N1KO-STATE
 ---
 
 <p align="center">
-  <sub>N1KO-STATE · v1.0.7 · Made for macOS power users who want clarity without clutter.</sub>
+  <sub>N1KO-STATE · v1.0.8 · Made for macOS power users who want clarity without clutter.</sub>
 </p>

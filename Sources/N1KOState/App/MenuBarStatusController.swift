@@ -58,6 +58,7 @@ final class MenuBarStatusController: NSObject {
             s.$menuBarLayout.map { _ in () }.eraseToAnyPublisher(),
             s.$menuBarOrder.map { _ in () }.eraseToAnyPublisher(),
             s.$menuBarFontStyle.map { _ in () }.eraseToAnyPublisher(),
+            s.$menuBarColorMode.map { _ in () }.eraseToAnyPublisher(),
             s.$menuBarFontSize.map { _ in () }.eraseToAnyPublisher()
         ]
         Publishers.MergeMany(settingsPub)
@@ -89,6 +90,7 @@ final class MenuBarStatusController: NSObject {
             "l:\(settings.resolvedMenuBarLayout.rawValue)",
             "c:\(settings.menuCompact)",
             "fs:\(settings.resolvedMenuBarFontStyle.rawValue)",
+            "cm:\(settings.resolvedMenuBarColorMode.rawValue)",
             "fz:\(settings.menuBarFontSize)"
         ]
         parts.append(contentsOf: settings.orderedMenuBarMetrics.map(\.rawValue))
@@ -135,6 +137,7 @@ final class MenuBarStatusController: NSObject {
             layout: settings.resolvedMenuBarLayout,
             compact: settings.menuCompact,
             fontStyle: settings.resolvedMenuBarFontStyle,
+            colorMode: settings.resolvedMenuBarColorMode,
             fontSize: CGFloat(settings.menuBarFontSize)
         )
         return MenuBarImageRenderer.render(input)

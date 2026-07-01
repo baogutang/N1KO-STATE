@@ -3,24 +3,25 @@ import Combine
 import SwiftUI
 
 enum SettingsTab: String, CaseIterable, Identifiable {
-    case general = "General"
+    case overview = "Overview"
     case menuBar = "Menu Bar"
     case popover = "Popover"
-    case modules = "Modules"
-    case sensors = "Sensors"
+    case sampling = "Sampling & Performance"
+    case sensors = "Sensors & Fans"
     case alerts = "Alerts"
-    case about = "About"
+    case advanced = "Advanced"
+
     var id: String { rawValue }
 
     var icon: String {
         switch self {
-        case .general: return "gearshape"
-        case .menuBar: return "macwindow"
+        case .overview: return "gauge.with.dots.needle.67percent"
+        case .menuBar: return "menubar.rectangle"
         case .popover: return "rectangle.on.rectangle"
-        case .modules: return "square.grid.2x2"
-        case .sensors: return "thermometer"
+        case .sampling: return "speedometer"
+        case .sensors: return "thermometer.medium"
         case .alerts: return "bell.badge"
-        case .about: return "info.circle"
+        case .advanced: return "slider.horizontal.3"
         }
     }
 }
@@ -38,11 +39,9 @@ struct SettingsView: View {
     init(fans: FanControlService, hub: MonitorHub? = nil, initialTab: SettingsTab? = nil) {
         self.fans = fans
         self.hub = hub
-        _tab = State(initialValue: initialTab ?? .general)
+        _tab = State(initialValue: initialTab ?? .overview)
     }
 
-    /// Selectable UI languages. "System" follows the OS; the rest are shown in
-    /// their own script so they're recognizable regardless of current language.
     private let languages: [(code: String, label: String)] = [
         (LocalizationManager.system, "System"),
         ("en", "English"),
@@ -55,16 +54,14 @@ struct SettingsView: View {
             sidebar
             Divider().overlay(Theme.stroke)
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    page
-                }
-                .padding(.horizontal, 28)
-                .padding(.vertical, 24)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                page
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 24)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .background(Theme.surface)
         }
-        .frame(width: 760, height: 540)
+        .frame(width: 920, height: 620)
         .controlSize(.small)
         .background(Theme.surfaceMaterial)
         .id(settings.language)
@@ -74,43 +71,63 @@ struct SettingsView: View {
     // MARK: Sidebar
 
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text("N1KO-STATE")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 15, weight: .heavy, design: .rounded))
                     .foregroundColor(Theme.textPrimary)
-                Text(loc: "Settings")
-                    .font(.system(size: 11))
+                Text(loc: "Settings Center")
+                    .font(.system(size: 11.5))
                     .foregroundColor(Theme.textSecondary)
             }
             .padding(.horizontal, 12)
             .padding(.top, 22)
-            .padding(.bottom, 14)
 
-            ForEach(SettingsTab.allCases) { t in
-                Button(action: { tab = t }) {
-                    HStack(spacing: 9) {
-                        Image(systemName: t.icon)
-                            .font(.system(size: 12, weight: .semibold))
-                            .frame(width: 18)
-                        Text(loc: t.rawValue)
-                            .font(.system(size: 12.5, weight: .medium))
-                        Spacer()
+            VStack(spacing: 4) {
+                ForEach(SettingsTab.allCases) { t in
+                    Button(action: { tab = t }) {
+                        HStack(spacing: 10) {
+                            Image(systemName: t.icon)
+                                .font(.system(size: 12, weight: .semibold))
+                                .frame(width: 20)
+                            Text(loc: t.rawValue)
+                                .font(.system(size: 12.5, weight: .medium))
+                            Spacer()
+                        }
+                        .foregroundColor(tab == t ? Theme.textPrimary : Theme.textSecondary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(tab == t ? settings.accent.opacity(0.16) : Color.clear)
+                        )
                     }
-                    .foregroundColor(tab == t ? Theme.textPrimary : Theme.textSecondary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(tab == t ? settings.accent.opacity(0.16) : Color.clear)
-                    )
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 8)
             }
+            .padding(.horizontal, 8)
+
             Spacer()
+
+            SettingGroup(title: "Current Cost", compact: true) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(loc: resourceModeTitle)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(Theme.textPrimary)
+                        Spacer()
+                        CostBadge(text: resourceModeBadge, color: resourceModeColor)
+                    }
+                    Text(loc: "Idle work is reduced when the popover is closed.")
+                        .font(.system(size: 10.5))
+                        .foregroundColor(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.bottom, 14)
         }
-        .frame(width: 188)
+        .frame(width: 224)
         .background(.thinMaterial)
     }
 
@@ -118,93 +135,67 @@ struct SettingsView: View {
 
     @ViewBuilder private var page: some View {
         switch tab {
-        case .general: generalPage
+        case .overview: overviewPage
         case .menuBar: menuBarPage
         case .popover: popoverPage
-        case .modules: modulesPage
+        case .sampling: samplingPage
         case .sensors: sensorsPage
         case .alerts: alertsPage
-        case .about: aboutPage
+        case .advanced: advancedPage
         }
     }
 
-    private var generalPage: some View {
+    private var overviewPage: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SettingsHeader(title: "General",
-                           subtitle: "Set the app language, appearance, refresh rate, and startup behavior.")
+            SettingsHeader(title: "Keep the menu bar promise",
+                           subtitle: "Quiet in the background, accurate when visible, and conservative around thermal safety.")
 
-            SettingGroup(title: "Basics") {
+            SettingGroup(title: "Live Preview") {
+                MenuBarPreviewView(hub: hub)
+            }
+
+            HStack(alignment: .top, spacing: 12) {
+                OverviewCard(title: "Sampling",
+                             value: resourceModeTitle,
+                             detail: resourceModeDetail,
+                             badge: resourceModeBadge,
+                             color: resourceModeColor,
+                             icon: "speedometer")
+                OverviewCard(title: "Safety",
+                             value: safetyStatusLabel,
+                             detail: safetyStatusDetail,
+                             badge: safetyStatusBadge,
+                             color: safetyStatusColor,
+                             icon: "shield.checkered")
+                OverviewCard(title: "Attention",
+                             value: "\(attentionItems.count)",
+                             detail: attentionSummary,
+                             badge: attentionItems.isEmpty ? "Clean" : "Review",
+                             color: attentionItems.isEmpty ? Theme.ok : Theme.warn,
+                             icon: "exclamationmark.triangle")
+            }
+
+            SettingGroup(title: "Recommended Actions") {
                 VStack(spacing: 0) {
-                    SettingsRow(label: "Language") {
-                        Picker("", selection: $settings.language) {
-                            ForEach(languages, id: \.code) { lang in
-                                Text(lang.code == LocalizationManager.system ? "System".loc : lang.label)
-                                    .tag(lang.code)
-                            }
-                        }
-                        .labelsHidden()
-                        .frame(width: 170)
+                    OverviewActionRow(icon: "menubar.rectangle",
+                                      title: "Menu bar display",
+                                      detail: "Preview width, color mode, and visible metrics.",
+                                      status: "Active metrics: %d".locf(activeMenuMetricCount)) {
+                        tab = .menuBar
                     }
                     SettingsDivider()
-                    SettingsRow(label: "Appearance") {
-                        Picker("", selection: $settings.appTheme) {
-                            Text(loc: "System").tag("system")
-                            Text(loc: "Light").tag("light")
-                            Text(loc: "Dark").tag("dark")
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.segmented)
-                        .frame(width: 210)
+                    OverviewActionRow(icon: "speedometer",
+                                      title: "Sampling cost",
+                                      detail: "Choose the background refresh profile.",
+                                      status: resourceModeTitle) {
+                        tab = .sampling
                     }
                     SettingsDivider()
-                    SettingsRow(label: "Refresh Interval") {
-                        Picker("", selection: $settings.refreshInterval) {
-                            Text("0.5s").tag(0.5)
-                            Text("1s").tag(1.0)
-                            Text("2s").tag(2.0)
-                            Text("3s").tag(3.0)
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.segmented)
-                        .frame(width: 220)
-                    }
-                }
-            }
-
-            SettingGroup(title: "Accent Color") {
-                SettingsRow(label: "Accent Color") {
-                    HStack(spacing: 10) {
-                        ForEach(AppSettings.accentPalette, id: \.self) { hex in
-                            Circle()
-                                .fill(Color(hex: hex))
-                                .frame(width: 22, height: 22)
-                                .overlay(
-                                    Circle().strokeBorder(Theme.textPrimary.opacity(0.85),
-                                                          lineWidth: settings.accentHex == hex ? 2 : 0)
-                                )
-                                .onTapGesture { settings.accentHex = hex }
-                                .help("#\(String(format: "%06X", hex))")
-                        }
-                        Divider().frame(height: 20).overlay(Theme.stroke)
-                        ColorPicker("", selection: Binding(
-                            get: { Color(hex: settings.accentHex) },
-                            set: { if let hex = $0.toHexInt() { settings.accentHex = hex } }
-                        ), supportsOpacity: false)
-                        .labelsHidden()
-                        Text(loc: "Custom")
-                            .font(.system(size: 11)).foregroundColor(Theme.textSecondary)
-                    }
-                }
-            }
-
-            if LoginItem.isAvailable {
-                SettingGroup(title: "Startup") {
-                    SettingsRow(label: "Launch at login") {
-                        Toggle("", isOn: Binding(get: { launchAtLogin },
-                                                 set: { launchAtLogin = $0; LoginItem.set($0) }))
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                            .tint(settings.accent)
+                    OverviewActionRow(icon: "thermometer.medium",
+                                      title: "Sensors and fans",
+                                      detail: "Check helper status and thermal controls.",
+                                      status: safetyStatusBadge) {
+                        tab = .sensors
                     }
                 }
             }
@@ -213,14 +204,19 @@ struct SettingsView: View {
 
     private var menuBarPage: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SettingsHeader(title: "Menu Bar", subtitle: "Choose what appears in the menu bar and preview its real width.")
-            SettingGroup(title: nil) {
+            SettingsHeader(title: "Menu Bar",
+                           subtitle: "Choose the always-visible readout and keep it legible in every menu-bar state.")
+            SettingGroup(title: "Preview") {
                 MenuBarPreviewView(hub: hub)
             }
             SettingGroup(title: "Metrics") {
                 List {
                     ForEach(settings.orderedMenuBarMetrics) { m in
                         HStack(spacing: 10) {
+                            Image(systemName: metricIcon(m))
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(metricColor(m))
+                                .frame(width: 18)
                             Text(loc: m.title)
                                 .font(.system(size: 12.5))
                             Spacer()
@@ -239,10 +235,22 @@ struct SettingsView: View {
                 }
                 .listStyle(.plain)
                 .hiddenScrollContentBackground()
-                .frame(minHeight: 180)
+                .frame(minHeight: 150)
             }
-            SettingGroup(title: "Layout") {
+            SettingGroup(title: "Appearance") {
                 VStack(alignment: .leading, spacing: 12) {
+                    SettingsRow(label: "Color Mode",
+                                detail: MenuBarColorMode.normalized(settings.menuBarColorMode).detail) {
+                        Picker("", selection: $settings.menuBarColorMode) {
+                            ForEach(MenuBarColorMode.allCases) { mode in
+                                Text(loc: mode.title).tag(mode.rawValue)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                        .frame(width: 260)
+                    }
+                    SettingsDivider()
                     SettingsRow(label: "Layout") {
                         Picker("", selection: $settings.menuBarLayout) {
                             ForEach(MenuBarLayout.allCases) { layout in
@@ -291,33 +299,11 @@ struct SettingsView: View {
         }
     }
 
-    private func resetMenuBarDefaults() {
-        settings.menuCPU = true
-        settings.menuGPU = true
-        settings.menuMemory = false
-        settings.menuNetwork = false
-        settings.menuBattery = false
-        settings.menuBarLayout = MenuBarLayout.standard.rawValue
-        settings.menuBarOrder = MenuBarMetric.allCases.map(\.rawValue)
-        settings.menuBarFontStyle = MenuBarFontStyle.rounded.rawValue
-        settings.menuBarFontSize = 11.0
-    }
-
-    private func menuBarBinding(_ m: MenuBarMetric) -> Binding<Bool> {
-        switch m {
-        case .cpu: return $settings.menuCPU
-        case .gpu: return $settings.menuGPU
-        case .memory: return $settings.menuMemory
-        case .battery: return $settings.menuBattery
-        case .network: return $settings.menuNetwork
-        }
-    }
-
     private var popoverPage: some View {
         VStack(alignment: .leading, spacing: 18) {
             SettingsHeader(title: "Popover",
-                           subtitle: "Tune the click-open monitoring panel without changing the menu-bar readout.")
-            SettingGroup(title: "Display") {
+                           subtitle: "Control the click-open panel separately from the always-on menu bar.")
+            SettingGroup(title: "Display Options") {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Popover Style") {
                         Picker("", selection: $settings.popoverStyle) {
@@ -341,82 +327,88 @@ struct SettingsView: View {
                     }
                 }
             }
-            SettingGroup(title: "Behavior") {
-                VStack(alignment: .leading, spacing: 6) {
-                    Label {
-                        Text(loc: "The popover opens only when you click the menu-bar item.")
-                            .font(.system(size: 12))
-                            .foregroundColor(Theme.textSecondary)
-                    } icon: {
-                        Image(systemName: "cursorarrow.click")
-                            .foregroundColor(settings.accent)
+
+            SettingGroup(title: "Modules") {
+                VStack(alignment: .leading, spacing: 10) {
+                    TextField("Search modules".loc, text: $moduleFilter)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 260)
+                    List {
+                        ForEach(filteredModules) { m in
+                            ModuleListRow(module: m, isOn: visibilityBinding(m), accent: settings.accent)
+                        }
+                        .onMove { source, destination in
+                            guard moduleFilter.isEmpty else { return }
+                            var order = settings.orderedModules.map(\.rawValue)
+                            order.move(fromOffsets: source, toOffset: destination)
+                            settings.moduleOrder = order
+                        }
                     }
-                    Label {
-                        Text(loc: "Clicking outside the panel closes it automatically.")
-                            .font(.system(size: 12))
-                            .foregroundColor(Theme.textSecondary)
-                    } icon: {
-                        Image(systemName: "rectangle.and.hand.point.up.left")
-                            .foregroundColor(settings.accent)
-                    }
+                    .listStyle(.plain)
+                    .hiddenScrollContentBackground()
+                    .frame(minHeight: 220)
                 }
             }
         }
     }
 
-    private var modulesPage: some View {
+    private var samplingPage: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SettingsHeader(title: "Modules",
-                           subtitle: "Drag rows to reorder, and toggle each card on or off.")
-            TextField("Search modules".loc, text: $moduleFilter)
-                .textFieldStyle(.roundedBorder)
-                .frame(maxWidth: 260)
-            List {
-                ForEach(filteredModules) { m in
-                    ModuleListRow(module: m, isOn: visibilityBinding(m), accent: settings.accent)
-                }
-                .onMove { source, destination in
-                    guard moduleFilter.isEmpty else { return }
-                    var order = settings.orderedModules.map(\.rawValue)
-                    order.move(fromOffsets: source, toOffset: destination)
-                    settings.moduleOrder = order
+            SettingsHeader(title: "Sampling & Performance",
+                           subtitle: "Tune how much work the app performs while it is hidden or visible.")
+            SettingGroup(title: "Refresh Profile") {
+                VStack(spacing: 0) {
+                    SettingsRow(label: "Refresh Interval",
+                                detail: "Lower intervals feel more live but wake the app more often.") {
+                        Picker("", selection: $settings.refreshInterval) {
+                            Text(loc: "Quiet").tag(3.0)
+                            Text(loc: "Low Impact").tag(2.0)
+                            Text(loc: "Balanced").tag(1.0)
+                            Text(loc: "Real Time").tag(0.5)
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                        .frame(width: 330)
+                    }
                 }
             }
-            .listStyle(.plain)
-            .hiddenScrollContentBackground()
-            .frame(minHeight: 260)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.card)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.stroke, lineWidth: 1)
-            )
-        }
-    }
 
-    private var filteredModules: [Module] {
-        let modules = settings.orderedModules
-        let query = moduleFilter.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !query.isEmpty else { return modules }
-        return modules.filter { $0.localizedTitle.lowercased().contains(query) || $0.rawValue.contains(query) }
-    }
-
-    private func visibilityBinding(_ m: Module) -> Binding<Bool> {
-        switch m {
-        case .cpu:     return $settings.showCPU
-        case .gpu:     return $settings.showGPU
-        case .memory:  return $settings.showMemory
-        case .battery: return $settings.showBattery
-        case .disk:    return $settings.showDisk
-        case .network: return $settings.showNetwork
-        case .sensors: return $settings.showSensors
+            SettingGroup(title: "Cost Map") {
+                VStack(spacing: 0) {
+                    PerformanceCostRow(name: "CPU / Memory",
+                                       detail: "Sampled for visible menu-bar metrics, alerts, and 30s history.",
+                                       background: cpuMemoryBackgroundCost,
+                                       visible: "Every tick")
+                    SettingsDivider()
+                    PerformanceCostRow(name: "Network",
+                                       detail: "Rates update live only when the menu bar or popover needs them.",
+                                       background: networkBackgroundCost,
+                                       visible: "Every tick")
+                    SettingsDivider()
+                    PerformanceCostRow(name: "Processes",
+                                       detail: "Top processes are only sampled while the popover needs CPU or memory detail.",
+                                       background: "Stopped",
+                                       visible: "5s")
+                    SettingsDivider()
+                    PerformanceCostRow(name: "Sensors / Fans",
+                                       detail: "Thermal safety, manual fan mode, and fan curves keep this path active.",
+                                       background: sensorsBackgroundCost,
+                                       visible: "2s")
+                    SettingsDivider()
+                    PerformanceCostRow(name: "Disk Volumes",
+                                       detail: "Mount changes are event-driven; free-space checks stay slow.",
+                                       background: "Event driven",
+                                       visible: "On open")
+                }
+            }
         }
     }
 
     private var sensorsPage: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SettingsHeader(title: "Sensors")
-            SettingGroup(title: "Display") {
+            SettingsHeader(title: "Sensors & Fans",
+                           subtitle: "Keep temperature display and fan control together because they share the same safety boundary.")
+            SettingGroup(title: "Display Options") {
                 VStack(spacing: 2) {
                     ToggleRow(label: "Show temperatures in Fahrenheit",
                               isOn: $settings.useFahrenheit, accent: settings.accent)
@@ -486,53 +478,6 @@ struct SettingsView: View {
         .onAppear { fans.refreshHelperStatus() }
     }
 
-    private func fanCurveRow(index: Int, label: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(loc: label)
-                    .font(.system(size: 11, weight: .medium))
-                Spacer()
-                Text("\(Int(settings.fanCurve[index].tempC))° → \(Int(settings.fanCurve[index].rpmPercent))%")
-                    .font(.metric(10))
-                    .foregroundColor(Theme.textSecondary)
-            }
-            HStack {
-                Text("°C").font(.system(size: 9)).foregroundColor(Theme.textTertiary)
-                Slider(value: curveTempBinding(index), in: 40...95, step: 1)
-                    .tint(settings.accent)
-            }
-            HStack {
-                Text("%").font(.system(size: 9)).foregroundColor(Theme.textTertiary)
-                Slider(value: curveRPMBinding(index), in: 0...100, step: 5)
-                    .tint(settings.accent)
-            }
-        }
-    }
-
-    private func curveTempBinding(_ i: Int) -> Binding<Double> {
-        Binding(
-            get: { settings.fanCurve[i].tempC },
-            set: { v in
-                var c = settings.fanCurve
-                guard c.indices.contains(i) else { return }
-                c[i].tempC = v
-                settings.fanCurve = c
-            }
-        )
-    }
-
-    private func curveRPMBinding(_ i: Int) -> Binding<Double> {
-        Binding(
-            get: { settings.fanCurve[i].rpmPercent },
-            set: { v in
-                var c = settings.fanCurve
-                guard c.indices.contains(i) else { return }
-                c[i].rpmPercent = v
-                settings.fanCurve = c
-            }
-        )
-    }
-
     private var alertsPage: some View {
         VStack(alignment: .leading, spacing: 18) {
             SettingsHeader(title: "Alerts",
@@ -589,6 +534,306 @@ struct SettingsView: View {
         }
     }
 
+    private var advancedPage: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            SettingsHeader(title: "Advanced",
+                           subtitle: "Language, appearance, startup, diagnostics, and maintenance.")
+            SettingGroup(title: "Basics") {
+                VStack(spacing: 0) {
+                    SettingsRow(label: "Language") {
+                        Picker("", selection: $settings.language) {
+                            ForEach(languages, id: \.code) { lang in
+                                Text(lang.code == LocalizationManager.system ? "System".loc : lang.label)
+                                    .tag(lang.code)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 170)
+                    }
+                    SettingsDivider()
+                    SettingsRow(label: "Appearance") {
+                        Picker("", selection: $settings.appTheme) {
+                            Text(loc: "System").tag("system")
+                            Text(loc: "Light").tag("light")
+                            Text(loc: "Dark").tag("dark")
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.segmented)
+                        .frame(width: 210)
+                    }
+                    SettingsDivider()
+                    SettingsRow(label: "Accent Color") {
+                        HStack(spacing: 10) {
+                            ForEach(AppSettings.accentPalette, id: \.self) { hex in
+                                Circle()
+                                    .fill(Color(hex: hex))
+                                    .frame(width: 22, height: 22)
+                                    .overlay(
+                                        Circle().strokeBorder(Theme.textPrimary.opacity(0.85),
+                                                              lineWidth: settings.accentHex == hex ? 2 : 0)
+                                    )
+                                    .onTapGesture { settings.accentHex = hex }
+                                    .help("#\(String(format: "%06X", hex))")
+                            }
+                            Divider().frame(height: 20).overlay(Theme.stroke)
+                            ColorPicker("", selection: Binding(
+                                get: { Color(hex: settings.accentHex) },
+                                set: { if let hex = $0.toHexInt() { settings.accentHex = hex } }
+                            ), supportsOpacity: false)
+                            .labelsHidden()
+                            Text(loc: "Custom")
+                                .font(.system(size: 11)).foregroundColor(Theme.textSecondary)
+                        }
+                    }
+                    if LoginItem.isAvailable {
+                        SettingsDivider()
+                        SettingsRow(label: "Launch at login") {
+                            Toggle("", isOn: Binding(get: { launchAtLogin },
+                                                     set: { launchAtLogin = $0; LoginItem.set($0) }))
+                                .labelsHidden()
+                                .toggleStyle(.switch)
+                                .tint(settings.accent)
+                        }
+                    }
+                }
+            }
+
+            SettingGroup(title: "Maintenance") {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(verbatim: "N1KO-STATE \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.8")")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Theme.textPrimary)
+                    Text(loc: "A modern macOS system monitor.")
+                        .font(.system(size: 11.5))
+                        .foregroundColor(Theme.textSecondary)
+                    Text(loc: "Includes SMCKit (MIT, © 2014–2017 beltex).")
+                        .font(.system(size: 11))
+                        .foregroundColor(Theme.textTertiary)
+                    HStack(spacing: 8) {
+                        Button(action: { UpdateController.shared.checkForUpdates(nil) }) {
+                            Text(loc: "Check for Updates…")
+                        }
+                        .buttonStyle(.bordered)
+                        Button(action: openLogFolder) {
+                            Text(loc: "Open Log Folder")
+                        }
+                        .buttonStyle(.bordered)
+                        Button(action: exportDiagnostic) {
+                            Text(loc: "Export Diagnostic Report")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(settings.accent)
+                        .disabled(hub == nil)
+                    }
+                    if let exportMessage {
+                        Text(exportMessage)
+                            .font(.system(size: 10.5))
+                            .foregroundColor(Theme.textSecondary)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Bindings / derived state
+
+    private var activeMenuMetricCount: Int {
+        [settings.menuCPU, settings.menuGPU, settings.menuMemory, settings.menuNetwork, settings.menuBattery]
+            .filter { $0 }.count
+    }
+
+    private var resourceModeTitle: String {
+        switch settings.refreshInterval {
+        case ..<0.75: return "Real Time"
+        case ..<1.5: return "Balanced"
+        case ..<2.5: return "Low Impact"
+        default: return "Quiet"
+        }
+    }
+
+    private var resourceModeBadge: String {
+        switch settings.refreshInterval {
+        case ..<0.75: return "Highest"
+        case ..<1.5: return "Normal"
+        default: return "Low"
+        }
+    }
+
+    private var resourceModeDetail: String {
+        switch settings.refreshInterval {
+        case ..<0.75: return "Best for short diagnostic sessions."
+        case ..<1.5: return "Good live feel with modest background work."
+        default: return "Best for leaving the app running all day."
+        }
+    }
+
+    private var resourceModeColor: Color {
+        switch settings.refreshInterval {
+        case ..<0.75: return Theme.warn
+        case ..<1.5: return Theme.info
+        default: return Theme.ok
+        }
+    }
+
+    private var cpuMemoryBackgroundCost: String {
+        settings.menuCPU || settings.menuMemory || settings.alertsEnabled ? "Visible" : "30s"
+    }
+
+    private var networkBackgroundCost: String {
+        settings.menuNetwork ? "Visible" : "30s"
+    }
+
+    private var sensorsBackgroundCost: String {
+        settings.fanCurveEnabled || fans.mode == .manual || settings.tempAlert && settings.alertsEnabled ? "Safety" : "On demand"
+    }
+
+    private var attentionItems: [String] {
+        var items: [String] = []
+        if !settings.alertsEnabled { items.append("Alerts are off") }
+        if settings.menuNetwork { items.append("Network is live in the menu bar") }
+        if settings.refreshInterval < 0.75 { items.append("Real-time sampling is active") }
+        if settings.resolvedMenuBarColorMode == .colorful { items.append("Colorful menu-bar mode is active") }
+        return items
+    }
+
+    private var attentionSummary: String {
+        guard !attentionItems.isEmpty else { return "Nothing needs attention." }
+        return attentionItems.prefix(2).map { $0.loc }.joined(separator: " · ")
+    }
+
+    private var safetyStatusLabel: String {
+        if fans.supportsControl { return "Protected" }
+        if fans.isAvailable { return "Read-only" }
+        return "Unavailable"
+    }
+
+    private var safetyStatusDetail: String {
+        if fans.supportsControl { return "Thermal safety stays active during fan control." }
+        if fans.isAvailable { return "Fan speed can be read, but this device does not expose control." }
+        return "No fan sensors are exposed on this device."
+    }
+
+    private var safetyStatusBadge: String {
+        if fans.supportsControl { return "Ready" }
+        if fans.isAvailable { return "Read-only" }
+        return "Limited"
+    }
+
+    private var safetyStatusColor: Color {
+        if fans.supportsControl { return Theme.ok }
+        if fans.isAvailable { return Theme.warn }
+        return Theme.textTertiary
+    }
+
+    private var filteredModules: [Module] {
+        let modules = settings.orderedModules
+        let query = moduleFilter.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !query.isEmpty else { return modules }
+        return modules.filter { $0.localizedTitle.lowercased().contains(query) || $0.rawValue.contains(query) }
+    }
+
+    private func resetMenuBarDefaults() {
+        settings.menuCPU = true
+        settings.menuGPU = true
+        settings.menuMemory = false
+        settings.menuNetwork = false
+        settings.menuBattery = false
+        settings.menuBarLayout = MenuBarLayout.standard.rawValue
+        settings.menuBarColorMode = MenuBarColorMode.colorful.rawValue
+        settings.menuBarOrder = MenuBarMetric.allCases.map(\.rawValue)
+        settings.menuBarFontStyle = MenuBarFontStyle.rounded.rawValue
+        settings.menuBarFontSize = 11.0
+    }
+
+    private func menuBarBinding(_ m: MenuBarMetric) -> Binding<Bool> {
+        switch m {
+        case .cpu: return $settings.menuCPU
+        case .gpu: return $settings.menuGPU
+        case .memory: return $settings.menuMemory
+        case .battery: return $settings.menuBattery
+        case .network: return $settings.menuNetwork
+        }
+    }
+
+    private func visibilityBinding(_ m: Module) -> Binding<Bool> {
+        switch m {
+        case .cpu:     return $settings.showCPU
+        case .gpu:     return $settings.showGPU
+        case .memory:  return $settings.showMemory
+        case .battery: return $settings.showBattery
+        case .disk:    return $settings.showDisk
+        case .network: return $settings.showNetwork
+        case .sensors: return $settings.showSensors
+        }
+    }
+
+    private func metricIcon(_ metric: MenuBarMetric) -> String {
+        switch metric {
+        case .cpu: return "cpu"
+        case .gpu: return "cpu.fill"
+        case .memory: return "memorychip"
+        case .battery: return "battery.100"
+        case .network: return "network"
+        }
+    }
+
+    private func metricColor(_ metric: MenuBarMetric) -> Color {
+        switch metric {
+        case .cpu: return Theme.cpu
+        case .gpu: return Theme.gpu
+        case .memory: return Theme.memory
+        case .battery: return Theme.ok
+        case .network: return Theme.network
+        }
+    }
+
+    private func fanCurveRow(index: Int, label: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(loc: label)
+                    .font(.system(size: 11, weight: .medium))
+                Spacer()
+                Text("\(Int(settings.fanCurve[index].tempC))° → \(Int(settings.fanCurve[index].rpmPercent))%")
+                    .font(.metric(10))
+                    .foregroundColor(Theme.textSecondary)
+            }
+            HStack {
+                Text("°C").font(.system(size: 9)).foregroundColor(Theme.textTertiary)
+                Slider(value: curveTempBinding(index), in: 40...95, step: 1)
+                    .tint(settings.accent)
+            }
+            HStack {
+                Text("%").font(.system(size: 9)).foregroundColor(Theme.textTertiary)
+                Slider(value: curveRPMBinding(index), in: 0...100, step: 5)
+                    .tint(settings.accent)
+            }
+        }
+    }
+
+    private func curveTempBinding(_ i: Int) -> Binding<Double> {
+        Binding(
+            get: { settings.fanCurve[i].tempC },
+            set: { v in
+                var c = settings.fanCurve
+                guard c.indices.contains(i) else { return }
+                c[i].tempC = v
+                settings.fanCurve = c
+            }
+        )
+    }
+
+    private func curveRPMBinding(_ i: Int) -> Binding<Double> {
+        Binding(
+            get: { settings.fanCurve[i].rpmPercent },
+            set: { v in
+                var c = settings.fanCurve
+                guard c.indices.contains(i) else { return }
+                c[i].rpmPercent = v
+                settings.fanCurve = c
+            }
+        )
+    }
+
     private var helperStatusLabel: String {
         switch fans.helperState {
         case .ready:
@@ -627,43 +872,6 @@ struct SettingsView: View {
             exportMessage = err
         }
     }
-
-    private var aboutPage: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SettingsHeader(title: "About")
-            Text(verbatim: "N1KO-STATE \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.7")")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(Theme.textPrimary)
-            Text(loc: "A modern macOS system monitor.")
-                .font(.system(size: 11.5))
-                .foregroundColor(Theme.textSecondary)
-            Text(loc: "Includes SMCKit (MIT, © 2014–2017 beltex).")
-                .font(.system(size: 11))
-                .foregroundColor(Theme.textTertiary)
-            HStack(spacing: 8) {
-                Button(action: { UpdateController.shared.checkForUpdates(nil) }) {
-                    Text(loc: "Check for Updates…")
-                }
-                .buttonStyle(.bordered)
-                Button(action: openLogFolder) {
-                    Text(loc: "Open Log Folder")
-                }
-                .buttonStyle(.bordered)
-                Button(action: exportDiagnostic) {
-                    Text(loc: "Export Diagnostic Report")
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(settings.accent)
-                .disabled(hub == nil)
-            }
-            if let exportMessage {
-                Text(exportMessage)
-                    .font(.system(size: 10.5))
-                    .foregroundColor(Theme.textSecondary)
-            }
-            Spacer()
-        }
-    }
 }
 
 // MARK: - Reusable settings controls
@@ -671,13 +879,17 @@ struct SettingsView: View {
 struct SettingsHeader: View {
     let title: String
     var subtitle: String? = nil
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(loc: title).font(.system(size: 18, weight: .bold))
+        VStack(alignment: .leading, spacing: 5) {
+            Text(loc: title)
+                .font(.system(size: 21, weight: .bold))
                 .foregroundColor(Theme.textPrimary)
             if let subtitle {
-                Text(loc: subtitle).font(.system(size: 11.5))
+                Text(loc: subtitle)
+                    .font(.system(size: 12))
                     .foregroundColor(Theme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -685,16 +897,18 @@ struct SettingsHeader: View {
 
 struct SettingGroup<Content: View>: View {
     let title: String?
+    var compact = false
     @ViewBuilder var content: Content
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: compact ? 7 : 8) {
             if let title {
                 Text(title.loc.uppercased())
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(Theme.textTertiary)
             }
             content
-                .padding(12)
+                .padding(compact ? 10 : 12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.card)
@@ -715,7 +929,7 @@ struct SettingsRow<Accessory: View>: View {
         HStack(alignment: .center, spacing: 16) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(loc: label)
-                    .font(.system(size: 12.5))
+                    .font(.system(size: 12.5, weight: .medium))
                     .foregroundColor(Theme.textPrimary)
                 if let detail {
                     Text(loc: detail)
@@ -734,9 +948,7 @@ struct SettingsRow<Accessory: View>: View {
 
 struct SettingsDivider: View {
     var body: some View {
-        Divider()
-            .overlay(Theme.stroke)
-            .padding(.leading, 0)
+        Divider().overlay(Theme.stroke)
     }
 }
 
@@ -744,13 +956,151 @@ struct ToggleRow: View {
     let label: String
     @Binding var isOn: Bool
     var accent: Color
+
     var body: some View {
         Toggle(isOn: $isOn) {
-            Text(loc: label).font(.system(size: 12.5)).foregroundColor(Theme.textPrimary)
+            Text(loc: label)
+                .font(.system(size: 12.5))
+                .foregroundColor(Theme.textPrimary)
         }
         .toggleStyle(.switch)
         .tint(accent)
         .padding(.vertical, 4)
+    }
+}
+
+struct CostBadge: View {
+    let text: String
+    let color: Color
+
+    var body: some View {
+        Text(loc: text)
+            .font(.system(size: 10.5, weight: .bold))
+            .foregroundColor(color)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule().fill(color.opacity(0.13))
+            )
+            .overlay(
+                Capsule().strokeBorder(color.opacity(0.22), lineWidth: 1)
+            )
+    }
+}
+
+struct OverviewCard: View {
+    let title: String
+    let value: String
+    let detail: String
+    let badge: String
+    let color: Color
+    let icon: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(color)
+                Spacer()
+                CostBadge(text: badge, color: color)
+            }
+            Text(loc: title)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(Theme.textTertiary)
+            Text(loc: value)
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(Theme.textPrimary)
+            Text(loc: detail)
+                .font(.system(size: 11))
+                .foregroundColor(Theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.card)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Theme.stroke, lineWidth: 1)
+        )
+    }
+}
+
+struct OverviewActionRow: View {
+    let icon: String
+    let title: String
+    let detail: String
+    let status: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(AppSettings.shared.accent)
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(loc: title)
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundColor(Theme.textPrimary)
+                    Text(loc: detail)
+                        .font(.system(size: 11))
+                        .foregroundColor(Theme.textSecondary)
+                }
+                Spacer()
+                Text(loc: status)
+                    .font(.metric(11))
+                    .foregroundColor(Theme.textTertiary)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(Theme.textTertiary)
+            }
+            .padding(.vertical, 6)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct PerformanceCostRow: View {
+    let name: String
+    let detail: String
+    let background: String
+    let visible: String
+
+    var body: some View {
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(loc: name)
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundColor(Theme.textPrimary)
+                Text(loc: detail)
+                    .font(.system(size: 11))
+                    .foregroundColor(Theme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 12)
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(loc: "Background")
+                    .font(.system(size: 9.5, weight: .semibold))
+                    .foregroundColor(Theme.textTertiary)
+                Text(loc: background)
+                    .font(.metric(11))
+                    .foregroundColor(Theme.textPrimary)
+            }
+            .frame(width: 82, alignment: .trailing)
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(loc: "Visible")
+                    .font(.system(size: 9.5, weight: .semibold))
+                    .foregroundColor(Theme.textTertiary)
+                Text(loc: visible)
+                    .font(.metric(11))
+                    .foregroundColor(Theme.textPrimary)
+            }
+            .frame(width: 70, alignment: .trailing)
+        }
+        .padding(.vertical, 8)
     }
 }
 
@@ -763,19 +1113,19 @@ struct MenuBarPreviewView: View {
         let image = previewImage
         let actualWidth = ceil(image.size.width + 4)
         let isTooWide = actualWidth > AppSettings.menuBarRecommendedMaxWidth
-        let previewWidth = min(max(image.size.width + 18, 88), 260)
+        let previewWidth = min(max(image.size.width + 18, 88), 280)
         let imageScale = min(1, max((previewWidth - 18) / max(image.size.width, 1), 0.1))
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 12) {
                 Text(loc: "Preview")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(Theme.textSecondary)
                 Spacer(minLength: 10)
                 ZStack {
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .fill(Color(nsColor: .controlBackgroundColor).opacity(0.8))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
                                 .strokeBorder(isTooWide ? Theme.danger.opacity(0.75) : Theme.stroke, lineWidth: 1)
                         )
                     Image(nsImage: image)
@@ -783,11 +1133,23 @@ struct MenuBarPreviewView: View {
                         .frame(width: image.size.width, height: image.size.height)
                         .scaleEffect(imageScale)
                 }
-                .frame(width: previewWidth, height: 34)
+                .frame(width: previewWidth, height: 36)
                 Text("\(Int(actualWidth)) px")
                     .font(.metric(10))
                     .foregroundColor(isTooWide ? Theme.danger : Theme.textTertiary)
                     .frame(width: 48, alignment: .trailing)
+            }
+            if settings.resolvedMenuBarColorMode == .adaptive {
+                Label {
+                    Text(loc: "Adaptive color uses the menu bar's automatic inverted color.")
+                        .font(.system(size: 10.5))
+                        .foregroundColor(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "circle.lefthalf.filled")
+                        .font(.system(size: 10))
+                        .foregroundColor(settings.accent)
+                }
             }
             if isTooWide {
                 Label {
@@ -844,14 +1206,13 @@ struct MenuBarPreviewView: View {
             layout: settings.resolvedMenuBarLayout,
             compact: settings.menuCompact,
             fontStyle: settings.resolvedMenuBarFontStyle,
+            colorMode: settings.resolvedMenuBarColorMode,
             fontSize: CGFloat(settings.menuBarFontSize)
         )
         return MenuBarImageRenderer.render(input)
     }
 }
 
-/// A single alert rule: an on/off toggle plus a threshold slider with a live
-/// value badge. The slider disables when the rule (or the global switch) is off.
 struct AlertRow: View {
     let label: String
     @Binding var enabled: Bool
@@ -884,7 +1245,6 @@ struct AlertRow: View {
     }
 }
 
-/// Module row inside the reorderable List.
 struct ModuleListRow: View {
     let module: Module
     @Binding var isOn: Bool
@@ -909,33 +1269,9 @@ struct ModuleListRow: View {
     }
 }
 
-struct SegmentChip: View {
-    let label: String
-    let selected: Bool
-    let accent: Color
-    let action: () -> Void
-    var body: some View {
-        Button(action: action) {
-            Text(label)
-                .font(.metric(12))
-                .foregroundColor(selected ? .white : Theme.textSecondary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 6)
-                .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(selected ? accent : Theme.track)
-                )
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 // MARK: - Back-deployment helpers
 
 extension View {
-    /// `.scrollContentBackground(.hidden)` is macOS 13+. On macOS 12 the List's
-    /// background is left as-is (the rounded card behind it still shows through
-    /// the plain list style), so we simply skip the modifier.
     @ViewBuilder
     func hiddenScrollContentBackground() -> some View {
         if #available(macOS 13.0, *) {

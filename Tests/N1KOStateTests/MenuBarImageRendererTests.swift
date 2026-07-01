@@ -41,6 +41,16 @@ final class MenuBarImageRendererTests: XCTestCase {
         XCTAssertGreaterThan(largeImage.size.width, smallImage.size.width)
     }
 
+    func testAdaptiveColorModeUsesTemplateImage() {
+        var colorful = input(layout: .standard, showNetwork: false)
+        colorful.colorMode = .colorful
+        var adaptive = input(layout: .standard, showNetwork: false)
+        adaptive.colorMode = .adaptive
+
+        XCTAssertFalse(MenuBarImageRenderer.render(colorful).isTemplate)
+        XCTAssertTrue(MenuBarImageRenderer.render(adaptive).isTemplate)
+    }
+
     private func input(layout: MenuBarLayout, showNetwork: Bool = true) -> MenuBarImageRenderer.Input {
         MenuBarImageRenderer.Input(
             cpu: 0.42,

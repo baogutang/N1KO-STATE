@@ -15,17 +15,32 @@ struct GaugeGridView: View {
             DashboardSummary(hub: hub)
 
             LazyVGrid(columns: columns, spacing: 10) {
-                if settings.showCPU { cpuTile }
-                if settings.showGPU { gpuTile }
-                if settings.showMemory { memoryTile }
-                if settings.showDisk { diskTile }
-                if settings.showBattery, hub.battery.isPresent { batteryTile }
-                if settings.showNetwork { networkTile }
-                if settings.showSensors { sensorTile }
+                ForEach(visibleModules) { module in
+                    tile(for: module)
+                }
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 14)
+    }
+
+    private var visibleModules: [Module] {
+        settings.orderedModules.filter { module in
+            settings.isVisible(module) && (module != .battery || hub.battery.isPresent)
+        }
+    }
+
+    @ViewBuilder
+    private func tile(for module: Module) -> some View {
+        switch module {
+        case .cpu: cpuTile
+        case .gpu: gpuTile
+        case .memory: memoryTile
+        case .battery: batteryTile
+        case .disk: diskTile
+        case .network: networkTile
+        case .sensors: sensorTile
+        }
     }
 
     private var cpuTile: some View {

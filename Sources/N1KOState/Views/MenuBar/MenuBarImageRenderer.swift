@@ -29,6 +29,7 @@ enum MenuBarImageRenderer {
         /// read as one aggregated readout rather than separate chips.
         var compact: Bool = false
         var fontStyle: MenuBarFontStyle = .rounded
+        var colorMode: MenuBarColorMode = .colorful
         var fontSize: CGFloat = 11
     }
 
@@ -47,13 +48,26 @@ enum MenuBarImageRenderer {
         return img.withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 7, weight: .bold))
     }()
 
-    /// Value color by load; uses system label so it adapts to light/dark menu bars.
+    /// Value color by load in colorful mode. Adaptive mode uses a template image
+    /// so macOS supplies the correct menu-bar foreground/highlight color.
     private static func tint(_ f: Double) -> NSColor {
         switch f {
         case ..<0.6: return .labelColor
         case ..<0.8: return NSColor(srgbRed: 1, green: 0x9F / 255, blue: 0x0A / 255, alpha: 1)
         default:     return NSColor(srgbRed: 1, green: 0x45 / 255, blue: 0x3A / 255, alpha: 1)
         }
+    }
+
+    private static func adaptiveInk(_ mode: MenuBarColorMode) -> NSColor {
+        mode == .adaptive ? .black : .labelColor
+    }
+
+    private static func accent(_ color: NSColor, mode: MenuBarColorMode) -> NSColor {
+        mode == .adaptive ? .black : color
+    }
+
+    private static func valueTint(_ value: Double, mode: MenuBarColorMode) -> NSColor {
+        mode == .adaptive ? .black : tint(value)
     }
 
     // Layout constants.
@@ -114,6 +128,7 @@ enum MenuBarImageRenderer {
 
         let layout = input.layout == .standard && input.compact ? MenuBarLayout.compact : input.layout
         let compact = layout == .compact
+        let plainTags = compact || input.colorMode == .adaptive
         let fonts = makeFonts(style: input.fontStyle, size: input.fontSize)
         let valueSlot = valueSlot(fonts)
         let netRateSlot = netRateSlot(fonts)
@@ -127,7 +142,7 @@ enum MenuBarImageRenderer {
 
         func chipWidth(_ tag: String) -> CGFloat {
             let tagW = (tag as NSString).size(withAttributes: [.font: fonts.tagFont]).width
-            let pad = compact ? 0 : chipPadX * 2
+            let pad = plainTags ? 0 : chipPadX * 2
             return ceil(tagW) + pad + chipValueGap + valueSlot
         }
 
@@ -184,21 +199,24 @@ enum MenuBarImageRenderer {
                 switch layout {
                 case .standard, .compact:
                     drawSegment(seg.kind, fonts: fonts, x: x, width: seg.width,
-                                height: height, compact: compact,
-                                valueSlot: valueSlot, netRateSlot: netRateSlot)
+                                height: height, compact: plainTags,
+                                valueSlot: valueSlot, netRateSlot: netRateSlot,
+                                colorMode: input.colorMode)
                 case .stacked:
                     drawStackedSegment(seg.kind, fonts: fonts, x: x, width: seg.width,
-                                       height: height, netRateSlot: netRateSlot)
+                                       height: height, netRateSlot: netRateSlot,
+                                       colorMode: input.colorMode)
                 case .minimal:
                     drawMinimalSegment(seg.kind, fonts: fonts, x: x, width: seg.width,
-                                       height: height, netRateSlot: netRateSlot)
+                                       height: height, netRateSlot: netRateSlot,
+                                       colorMode: input.colorMode)
                 }
                 x += seg.width
                 if i < segments.count - 1 { x += gap }
             }
             return true
         }
-        image.isTemplate = false
+        image.isTemplate = input.colorMode == .adaptive
         image.accessibilityDescription = accessibilitySummary(input)
         return image
     }
@@ -243,28 +261,32 @@ enum MenuBarImageRenderer {
                                     height: CGFloat,
                                     compact: Bool,
                                     valueSlot: CGFloat,
-                                    netRateSlot: CGFloat) {
+                                    netRateSlot: CGFloat,
+                                    colorMode: MenuBarColorMode) {
         switch seg {
         case let .metric(tag, value, chip):
             drawMetric(tag: tag, value: value, chip: chip, fonts: fonts,
-                       x: x, height: height, valueSlot: valueSlot, compact: compact)
+                       x: x, height: height, valueSlot: valueSlot, compact: compact,
+                       colorMode: colorMode)
         case let .battery(level, charging):
             // Reuse the metric chip styling; the chip color encodes charge state
             // and the value uses the same color so a low battery reads at a glance.
-            drawMetric(tag: "BAT", value: level, chip: batteryChip(level: level, charging: charging),
+            let color = batteryChip(level: level, charging: charging)
+            drawMetric(tag: "BAT", value: level, chip: color,
                        fonts: fonts, x: x, height: height, valueSlot: valueSlot,
-                       compact: compact, valueColor: batteryChip(level: level, charging: charging))
+                       compact: compact, valueColor: accent(color, mode: colorMode),
+                       colorMode: colorMode)
         case let .network(down, up):
             drawNetwork(down: down, up: up, fonts: fonts, x: x, width: width,
-                        height: height, netRateSlot: netRateSlot)
+                        height: height, netRateSlot: netRateSlot, colorMode: colorMode)
         case .divider:
             let bar = NSBezierPath(rect: NSRect(x: x, y: height / 2 - 7, width: 1, height: 14))
-            NSColor.secondaryLabelColor.withAlphaComponent(0.35).setFill()
+            adaptiveInk(colorMode).withAlphaComponent(colorMode == .adaptive ? 0.55 : 0.35).setFill()
             bar.fill()
         case .brand:
-            let attrs = legibleAttrs([
+            let attrs = textAttrs([
                 .font: fonts.valueFont,
-                .foregroundColor: NSColor.labelColor
+                .foregroundColor: adaptiveInk(colorMode)
             ])
             draw("N1KO", attrs: attrs, x: x, height: height)
         }
@@ -275,26 +297,28 @@ enum MenuBarImageRenderer {
                                            x: CGFloat,
                                            width: CGFloat,
                                            height: CGFloat,
-                                           netRateSlot: CGFloat) {
+                                           netRateSlot: CGFloat,
+                                           colorMode: MenuBarColorMode) {
         switch seg {
         case let .metric(tag, value, chip):
             drawStackedMetric(tag: tag, value: value, chip: chip, fonts: fonts,
-                              x: x, width: width, height: height)
+                              x: x, width: width, height: height, colorMode: colorMode)
         case let .battery(level, charging):
             let color = batteryChip(level: level, charging: charging)
             drawStackedMetric(tag: "BAT", value: level, chip: color, fonts: fonts, x: x, width: width,
-                              height: height, valueColor: color)
+                              height: height, valueColor: accent(color, mode: colorMode),
+                              colorMode: colorMode)
         case let .network(down, up):
             drawNetwork(down: down, up: up, fonts: fonts, x: x, width: width,
-                        height: height, netRateSlot: netRateSlot)
+                        height: height, netRateSlot: netRateSlot, colorMode: colorMode)
         case .divider:
             let bar = NSBezierPath(rect: NSRect(x: x, y: height / 2 - 7, width: 1, height: 14))
-            NSColor.secondaryLabelColor.withAlphaComponent(0.25).setFill()
+            adaptiveInk(colorMode).withAlphaComponent(colorMode == .adaptive ? 0.5 : 0.25).setFill()
             bar.fill()
         case .brand:
-            let attrs = legibleAttrs([
+            let attrs = textAttrs([
                 .font: fonts.minimalFont,
-                .foregroundColor: NSColor.labelColor
+                .foregroundColor: adaptiveInk(colorMode)
             ])
             draw("N1KO", attrs: attrs, x: x, height: height)
         }
@@ -305,38 +329,42 @@ enum MenuBarImageRenderer {
                                            x: CGFloat,
                                            width: CGFloat,
                                            height: CGFloat,
-                                           netRateSlot: CGFloat) {
+                                           netRateSlot: CGFloat,
+                                           colorMode: MenuBarColorMode) {
         switch seg {
         case let .metric(tag, value, chip):
             drawMinimalMetric(tag: String(tag.prefix(1)), value: value, chip: chip,
-                              fonts: fonts, x: x, width: width, height: height)
+                              fonts: fonts, x: x, width: width, height: height, colorMode: colorMode)
         case let .battery(level, charging):
             let color = batteryChip(level: level, charging: charging)
-            drawMinimalMetric(tag: "B", value: level, chip: color, fonts: fonts, x: x, width: width, height: height)
+            drawMinimalMetric(tag: "B", value: level, chip: color, fonts: fonts, x: x, width: width,
+                              height: height, colorMode: colorMode)
         case let .network(down, up):
             drawNetwork(down: down, up: up, fonts: fonts, x: x, width: width,
-                        height: height, netRateSlot: netRateSlot)
+                        height: height, netRateSlot: netRateSlot, colorMode: colorMode)
         case .divider:
             let bar = NSBezierPath(rect: NSRect(x: x, y: height / 2 - 6, width: 1, height: 12))
-            NSColor.secondaryLabelColor.withAlphaComponent(0.22).setFill()
+            adaptiveInk(colorMode).withAlphaComponent(colorMode == .adaptive ? 0.45 : 0.22).setFill()
             bar.fill()
         case .brand:
-            let attrs = legibleAttrs([
+            let attrs = textAttrs([
                 .font: fonts.minimalFont,
-                .foregroundColor: NSColor.labelColor
+                .foregroundColor: adaptiveInk(colorMode)
             ])
             draw("N1KO", attrs: attrs, x: x, height: height)
         }
     }
 
     private static func drawMetric(tag: String, value: Double, chip: NSColor, fonts: FontSet, x: CGFloat, height: CGFloat,
-                                   valueSlot: CGFloat, compact: Bool = false, valueColor: NSColor? = nil) {
+                                   valueSlot: CGFloat, compact: Bool = false, valueColor: NSColor? = nil,
+                                   colorMode: MenuBarColorMode) {
         let tagSize = (tag as NSString).size(withAttributes: [.font: fonts.tagFont])
         let chipW: CGFloat
         if compact {
             // No background: the tag is drawn as small colored text instead.
             chipW = ceil(tagSize.width)
-            draw(tag, attrs: legibleAttrs([.font: fonts.tagFont, .foregroundColor: chip]), x: x, height: height)
+            draw(tag, attrs: textAttrs([.font: fonts.tagFont, .foregroundColor: accent(chip, mode: colorMode)]),
+                 x: x, height: height)
         } else {
             // Chip background + white tag.
             let chipH = ceil(tagSize.height) + 2
@@ -352,7 +380,7 @@ enum MenuBarImageRenderer {
         // Value in a fixed-width, right-aligned slot.
         let valueX = x + chipW + chipValueGap
         let str = Formatters.percent(value)
-        let attrs = legibleAttrs([.font: fonts.valueFont, .foregroundColor: valueColor ?? tint(value)])
+        let attrs = textAttrs([.font: fonts.valueFont, .foregroundColor: valueColor ?? valueTint(value, mode: colorMode)])
         let vSize = (str as NSString).size(withAttributes: attrs)
         let vx = valueX + (valueSlot - vSize.width)   // right-align in slot
         draw(str, attrs: attrs, x: vx, height: height)
@@ -362,23 +390,29 @@ enum MenuBarImageRenderer {
                                           height: CGFloat, valueColor: NSColor? = nil) {
         let fonts = makeFonts(style: .rounded, size: 11)
         drawStackedMetric(tag: tag, value: value, chip: chip, fonts: fonts,
-                          x: x, width: width, height: height, valueColor: valueColor)
+                          x: x, width: width, height: height, valueColor: valueColor,
+                          colorMode: .colorful)
     }
 
     private static func drawStackedMetric(tag: String, value: Double, chip: NSColor, fonts: FontSet,
-                                          x: CGFloat, width: CGFloat, height: CGFloat, valueColor: NSColor? = nil) {
-        let tagAttrs = legibleAttrs([.font: fonts.stackedTagFont, .foregroundColor: chip])
+                                          x: CGFloat, width: CGFloat, height: CGFloat, valueColor: NSColor? = nil,
+                                          colorMode: MenuBarColorMode) {
+        let tagAttrs = textAttrs([.font: fonts.stackedTagFont, .foregroundColor: accent(chip, mode: colorMode)])
         let valueString = Formatters.percent(value)
-        let valueAttrs = legibleAttrs([.font: fonts.stackedValueFont, .foregroundColor: valueColor ?? tint(value)])
+        let valueAttrs = textAttrs([
+            .font: fonts.stackedValueFont,
+            .foregroundColor: valueColor ?? valueTint(value, mode: colorMode)
+        ])
         drawCentered(tag, attrs: tagAttrs, x: x, width: width, yCenter: height * 0.68)
         drawCentered(valueString, attrs: valueAttrs, x: x, width: width, yCenter: height * 0.28)
     }
 
     private static func drawMinimalMetric(tag: String, value: Double, chip: NSColor,
-                                          fonts: FontSet, x: CGFloat, width: CGFloat, height: CGFloat) {
+                                          fonts: FontSet, x: CGFloat, width: CGFloat, height: CGFloat,
+                                          colorMode: MenuBarColorMode) {
         let str = "\(tag)\(Int((value * 100).rounded()))"
-        let attrs = legibleAttrs([.font: fonts.minimalFont, .foregroundColor: tint(value)])
-        let tagAttrs = legibleAttrs([.font: fonts.minimalFont, .foregroundColor: chip])
+        let attrs = textAttrs([.font: fonts.minimalFont, .foregroundColor: valueTint(value, mode: colorMode)])
+        let tagAttrs = textAttrs([.font: fonts.minimalFont, .foregroundColor: accent(chip, mode: colorMode)])
         let tagW = (tag as NSString).size(withAttributes: tagAttrs).width
         let totalW = (str as NSString).size(withAttributes: attrs).width
         let start = x + (width - totalW) / 2
@@ -387,17 +421,21 @@ enum MenuBarImageRenderer {
     }
 
     private static func drawNetwork(down: Double, up: Double, fonts: FontSet,
-                                    x: CGFloat, width: CGFloat, height: CGFloat, netRateSlot: CGFloat) {
+                                    x: CGFloat, width: CGFloat, height: CGFloat, netRateSlot: CGFloat,
+                                    colorMode: MenuBarColorMode) {
         let half = height / 2
-        drawNetLine("arrow.down", rate: down, tint: downCol, fonts: fonts,
-                    x: x, width: width, yCenter: half + half / 2, netRateSlot: netRateSlot)
-        drawNetLine("arrow.up", rate: up, tint: upCol, fonts: fonts,
-                    x: x, width: width, yCenter: half / 2, netRateSlot: netRateSlot)
+        drawNetLine("arrow.down", rate: down, tint: accent(downCol, mode: colorMode), fonts: fonts,
+                    x: x, width: width, yCenter: half + half / 2, netRateSlot: netRateSlot,
+                    colorMode: colorMode)
+        drawNetLine("arrow.up", rate: up, tint: accent(upCol, mode: colorMode), fonts: fonts,
+                    x: x, width: width, yCenter: half / 2, netRateSlot: netRateSlot,
+                    colorMode: colorMode)
     }
 
     private static func drawNetLine(_ symbol: String, rate: Double, tint: NSColor,
                                     fonts: FontSet, x: CGFloat, width: CGFloat,
-                                    yCenter: CGFloat, netRateSlot: CGFloat) {
+                                    yCenter: CGFloat, netRateSlot: CGFloat,
+                                    colorMode: MenuBarColorMode) {
         var cursor = x
         let glyph = (symbol == "arrow.down" ? downArrow : upArrow)
         if let glyph {
@@ -407,7 +445,7 @@ enum MenuBarImageRenderer {
             cursor += gs.width + 2
         }
         let str = Formatters.rateCompact(rate)
-        let attrs = legibleAttrs([.font: fonts.rateFont, .foregroundColor: NSColor.labelColor])
+        let attrs = textAttrs([.font: fonts.rateFont, .foregroundColor: adaptiveInk(colorMode)])
         let s = (str as NSString).size(withAttributes: attrs)
         let rx = x + width - netRateSlot + (netRateSlot - s.width)
         (str as NSString).draw(at: NSPoint(x: rx, y: yCenter - s.height / 2), withAttributes: attrs)
@@ -415,16 +453,10 @@ enum MenuBarImageRenderer {
 
     // MARK: - Drawing helpers
 
-    /// Soft shadow so text stays readable on colorful translucent menu-bar wallpapers
-    /// without a heavy background box.
-    private static func legibleAttrs(_ base: [NSAttributedString.Key: Any]) -> [NSAttributedString.Key: Any] {
-        var attrs = base
-        let shadow = NSShadow()
-        shadow.shadowOffset = .zero
-        shadow.shadowBlurRadius = 2.5
-        shadow.shadowColor = NSColor.black.withAlphaComponent(0.45)
-        attrs[.shadow] = shadow
-        return attrs
+    /// Central text attributes hook. Intentionally adds no shadow or glow:
+    /// status-bar glyphs must stay crisp at small sizes.
+    private static func textAttrs(_ base: [NSAttributedString.Key: Any]) -> [NSAttributedString.Key: Any] {
+        base
     }
 
     private static func draw(_ s: String, attrs: [NSAttributedString.Key: Any], x: CGFloat, height: CGFloat) {

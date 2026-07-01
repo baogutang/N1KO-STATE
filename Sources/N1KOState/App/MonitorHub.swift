@@ -127,9 +127,14 @@ final class MonitorHub: ObservableObject {
         let s = AppSettings.shared
         let vis = visibility
         let alertMetrics = alerts.requiredMetrics
+        let menuHasCPU = vis.menuBarMetrics.contains(.cpu)
+        let menuHasMemory = vis.menuBarMetrics.contains(.memory)
         let menuHasNet = vis.menuBarMetrics.contains(.network)
         let menuHasGPU = vis.menuBarMetrics.contains(.gpu)
         let menuHasBattery = vis.menuBarMetrics.contains(.battery)
+        let needsCPU = full || vis.popoverOpen || menuHasCPU || alertMetrics.contains(.cpu)
+        let needsMemory = full || vis.popoverOpen || menuHasMemory || alertMetrics.contains(.memory)
+        let historyTick = tickCount % 30 == 0
         // SAFETY: thermal protection + fan curve depend on continuous sensor sampling.
         let needsSensors = full || vis.popoverOpen
             || fans.mode == .curve || fans.mode == .manual
@@ -137,10 +142,14 @@ final class MonitorHub: ObservableObject {
             || alertMetrics.contains(.temperature)
         let needsFans = needsSensors
 
-        cpu.refresh()
-        memory.refresh()
+        if needsCPU || historyTick {
+            cpu.refresh(publish: needsCPU)
+        }
+        if needsMemory || historyTick {
+            memory.refresh(publish: needsMemory)
+        }
 
-        if full || vis.popoverOpen || menuHasNet || tickCount % 5 == 0 {
+        if full || vis.popoverOpen || menuHasNet || historyTick {
             if full || vis.popoverOpen || menuHasNet {
                 // Interface name/IP strings change rarely — rebuild them at most
                 // every 10 ticks; rates stay per-tick fresh.
@@ -194,7 +203,7 @@ final class MonitorHub: ObservableObject {
             }
         }
 
-        if tickCount % 30 == 0 {
+        if historyTick {
             let memFrac = memory.total > 0 ? memory.used / memory.total : 0
             HistoryStore.shared.record(cpu: cpu.totalUsage,
                                        memory: memFrac,
@@ -205,7 +214,9 @@ final class MonitorHub: ObservableObject {
         if full || alertMetrics.contains(.temperature) || needsSensors {
             fans.enforceThermalSafety(peakCelsius: sensors.peakCelsius)
         }
-        evaluateAlerts()
+        if s.alertsEnabled {
+            evaluateAlerts()
+        }
     }
 
     private func evaluateAlerts() {
