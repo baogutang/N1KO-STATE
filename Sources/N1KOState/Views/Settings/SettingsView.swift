@@ -96,11 +96,12 @@ struct SettingsView: View {
                         }
                         .foregroundColor(tab == t ? Theme.textPrimary : Theme.textSecondary)
                         .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
+                        .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
                                 .fill(tab == t ? settings.accent.opacity(0.16) : Color.clear)
                         )
+                        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
                     .buttonStyle(.plain)
                 }
@@ -127,7 +128,7 @@ struct SettingsView: View {
             .padding(.horizontal, 8)
             .padding(.bottom, 14)
         }
-        .frame(width: 224)
+        .frame(width: 216)
         .background(.thinMaterial)
     }
 
@@ -146,15 +147,15 @@ struct SettingsView: View {
     }
 
     private var overviewPage: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            SettingsHeader(title: "Keep the menu bar promise",
-                           subtitle: "Quiet in the background, accurate when visible, and conservative around thermal safety.")
+        VStack(alignment: .leading, spacing: 14) {
+            SettingsHeader(title: "Overview",
+                           subtitle: "Menu bar, popover, sampling, and thermal safety at a glance.")
 
             SettingGroup(title: "Live Preview") {
                 MenuBarPreviewView(hub: hub)
             }
 
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: 10) {
                 OverviewCard(title: "Sampling",
                              value: resourceModeTitle,
                              detail: resourceModeDetail,
@@ -881,13 +882,13 @@ struct SettingsHeader: View {
     var subtitle: String? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 4) {
             Text(loc: title)
-                .font(.system(size: 21, weight: .bold))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundColor(Theme.textPrimary)
             if let subtitle {
                 Text(loc: subtitle)
-                    .font(.system(size: 12))
+                    .font(.system(size: 11.5))
                     .foregroundColor(Theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -997,7 +998,7 @@ struct OverviewCard: View {
     let icon: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: icon)
                     .font(.system(size: 13, weight: .semibold))
@@ -1009,15 +1010,15 @@ struct OverviewCard: View {
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(Theme.textTertiary)
             Text(loc: value)
-                .font(.system(size: 20, weight: .bold))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundColor(Theme.textPrimary)
             Text(loc: detail)
-                .font(.system(size: 11))
+                .font(.system(size: 10.5))
                 .foregroundColor(Theme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 116, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.card)
         )
@@ -1057,7 +1058,10 @@ struct OverviewActionRow: View {
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(Theme.textTertiary)
             }
-            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 7)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

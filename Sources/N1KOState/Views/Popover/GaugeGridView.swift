@@ -5,6 +5,7 @@ struct GaugeGridView: View {
     @ObservedObject var hub: MonitorHub
     @ObservedObject var settings = AppSettings.shared
 
+    private static let tileHeight: CGFloat = 118
     private let columns = [
         GridItem(.flexible(minimum: 138), spacing: 10),
         GridItem(.flexible(minimum: 138), spacing: 10)
@@ -32,19 +33,23 @@ struct GaugeGridView: View {
 
     @ViewBuilder
     private func tile(for module: Module) -> some View {
-        switch module {
-        case .cpu: cpuTile
-        case .gpu: gpuTile
-        case .memory: memoryTile
-        case .battery: batteryTile
-        case .disk: diskTile
-        case .network: networkTile
-        case .sensors: sensorTile
+        Group {
+            switch module {
+            case .cpu: cpuTile
+            case .gpu: gpuTile
+            case .memory: memoryTile
+            case .battery: batteryTile
+            case .disk: diskTile
+            case .network: networkTile
+            case .sensors: sensorTile
+            }
         }
+        .frame(maxWidth: .infinity)
     }
 
     private var cpuTile: some View {
         DashboardGaugeTile(
+            height: Self.tileHeight,
             icon: "cpu",
             title: "CPU",
             fraction: hub.cpu.totalUsage,
@@ -66,6 +71,7 @@ struct GaugeGridView: View {
             vramText = "—"
         }
         return DashboardGaugeTile(
+            height: Self.tileHeight,
             icon: "sparkles",
             title: "GPU",
             fraction: hub.gpu.utilization,
@@ -81,6 +87,7 @@ struct GaugeGridView: View {
     private var memoryTile: some View {
         let usedFraction = hub.memory.total > 0 ? hub.memory.used / hub.memory.total : 0
         return DashboardGaugeTile(
+            height: Self.tileHeight,
             icon: "memorychip",
             title: "Memory",
             fraction: usedFraction,
@@ -98,6 +105,7 @@ struct GaugeGridView: View {
         let volume = primaryVolume
         let used = volume?.fraction ?? 0
         return DashboardGaugeTile(
+            height: Self.tileHeight,
             icon: "internaldrive",
             title: "Disk",
             fraction: used,
@@ -113,6 +121,7 @@ struct GaugeGridView: View {
 
     private var batteryTile: some View {
         DashboardGaugeTile(
+            height: Self.tileHeight,
             icon: hub.battery.isCharging ? "battery.100.bolt" : "battery.75",
             title: "Battery",
             fraction: hub.battery.percentage,
@@ -127,7 +136,7 @@ struct GaugeGridView: View {
     }
 
     private var networkTile: some View {
-        NetworkDashboardTile(network: hub.network)
+        NetworkDashboardTile(network: hub.network, height: Self.tileHeight)
     }
 
     private var sensorTile: some View {
@@ -137,6 +146,7 @@ struct GaugeGridView: View {
             : "\(hub.fans.fans.count)"
         let rpmValue = hub.fans.fans.first.map { "\($0.rpm) RPM" } ?? "—"
         return DashboardGaugeTile(
+            height: Self.tileHeight,
             icon: "thermometer",
             title: "Sensors",
             fraction: peak.map { min($0 / 110, 1) } ?? 0,
@@ -262,6 +272,7 @@ private struct DashboardDetail: Identifiable {
 }
 
 private struct DashboardGaugeTile: View {
+    let height: CGFloat
     let icon: String
     let title: String
     let fraction: Double
@@ -313,7 +324,7 @@ private struct DashboardGaugeTile: View {
             }
         }
         .padding(10)
-        .frame(maxWidth: .infinity, minHeight: 118, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Theme.card)
@@ -327,9 +338,10 @@ private struct DashboardGaugeTile: View {
 
 private struct NetworkDashboardTile: View {
     @ObservedObject var network: NetworkMonitor
+    let height: CGFloat
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 6) {
                 Image(systemName: "network")
                     .font(.system(size: 10, weight: .semibold))
@@ -343,7 +355,7 @@ private struct NetworkDashboardTile: View {
                     .frame(width: 7, height: 7)
             }
 
-            VStack(spacing: 7) {
+            VStack(spacing: 5) {
                 rateRow(icon: "arrow.down", label: "Download", value: Formatters.rate(network.downloadRate), color: Theme.info)
                 rateRow(icon: "arrow.up", label: "Upload", value: Formatters.rate(network.uploadRate), color: Theme.ok)
             }
@@ -363,7 +375,7 @@ private struct NetworkDashboardTile: View {
             }
         }
         .padding(10)
-        .frame(maxWidth: .infinity, minHeight: 118, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Theme.card)
@@ -379,7 +391,7 @@ private struct NetworkDashboardTile: View {
             Image(systemName: icon)
                 .font(.system(size: 9, weight: .bold))
                 .foregroundColor(color)
-                .frame(width: 18, height: 18)
+                .frame(width: 17, height: 17)
                 .background(
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
                         .fill(color.opacity(0.15))
@@ -389,7 +401,7 @@ private struct NetworkDashboardTile: View {
                     .font(.system(size: 8.5, weight: .semibold))
                     .foregroundColor(Theme.textTertiary)
                 Text(value)
-                    .font(.metric(11, weight: .bold))
+                    .font(.metric(10.5, weight: .bold))
                     .foregroundColor(Theme.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)

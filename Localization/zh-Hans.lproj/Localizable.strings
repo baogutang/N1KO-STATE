@@ -270,6 +270,7 @@
 /* Settings center redesign */
 "Settings Center" = "设置中心";
 "Overview" = "总览";
+"Menu bar, popover, sampling, and thermal safety at a glance." = "菜单栏、弹窗、采样和温度安全一屏掌握。";
 "Sampling & Performance" = "采样与占用";
 "Advanced" = "高级";
 "Current Cost" = "当前占用";
