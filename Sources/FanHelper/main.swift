@@ -41,6 +41,7 @@ private func markFanDirty() {
 }
 
 private func clearFanDirty() {
+    guard FileManager.default.fileExists(atPath: fanDirtyPath) else { return }
     do {
         try FileManager.default.removeItem(atPath: fanDirtyPath)
     } catch {
@@ -89,8 +90,8 @@ final class HelperService: NSObject, FanControlHelperProtocol {
     func setFanSpeedV2(_ fanIndex: Int, rpm: Int, reply: @escaping (Int) -> Void) {
         smcQueue.async {
             do {
-                markFanDirty()
                 try SMCKit.forceFan(fanIndex, rpm: Double(rpm))
+                markFanDirty()
                 self.didForce = true
                 if SMCKit.hasFSModeSwitch() {
                     self.forcedTargets = [fanIndex: Double(rpm)]
@@ -202,13 +203,13 @@ final class HelperService: NSObject, FanControlHelperProtocol {
                     clearFanDirty()
                     self.didForce = false
                 } else {
+                    try SMCKit.autoFan(fanIndex)
                     self.forcedTargets[fanIndex] = nil
                     if self.forcedTargets.isEmpty {
                         self.stopForcingLocked()
                         clearFanDirty()
                         self.didForce = false
                     }
-                    try SMCKit.autoFan(fanIndex)
                 }
                 reply(true)
             } catch {
@@ -368,6 +369,7 @@ signal(SIGTERM, SIG_IGN)
 let sigterm = DispatchSource.makeSignalSource(signal: SIGTERM, queue: smcQueue)
 sigterm.setEventHandler {
     try? SMCKit.autoAllFans()
+    clearFanDirty()
     _ = SMCKit.close()
     exit(EXIT_SUCCESS)
 }

@@ -47,9 +47,6 @@ final class HistoryStore {
         for s in Series.allCases { buffers[s] = [] }
         ioQueue.async { [weak self] in
             self?.loadFromDisk()
-            self?.lock.lock()
-            self?.diskLoaded = true
-            self?.lock.unlock()
         }
     }
 
@@ -139,11 +136,22 @@ final class HistoryStore {
     }
 
     private func loadFromDisk() {
-        guard let data = try? Data(contentsOf: persistURL),
-              let p = try? JSONDecoder().decode(Persisted.self, from: data) else { return }
-        for s in Series.allCases {
-            if let v = p.buffers[s.rawValue] { buffers[s] = Array(v.suffix(capacity)) }
+        let loadedBuffers: [Series: [Double]]
+        if let data = try? Data(contentsOf: persistURL),
+           let persisted = try? JSONDecoder().decode(Persisted.self, from: data) {
+            var decoded: [Series: [Double]] = [:]
+            for series in Series.allCases {
+                decoded[series] = Array((persisted.buffers[series.rawValue] ?? []).suffix(capacity))
+            }
+            loadedBuffers = decoded
+        } else {
+            loadedBuffers = Dictionary(uniqueKeysWithValues: Series.allCases.map { ($0, []) })
         }
+
+        lock.lock()
+        buffers = loadedBuffers
+        diskLoaded = true
+        lock.unlock()
     }
 }
 

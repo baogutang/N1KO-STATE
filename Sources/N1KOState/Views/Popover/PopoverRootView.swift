@@ -22,12 +22,22 @@ struct PopoverRootView: View {
         return max(320, min(560, screen - 140))
     }
 
+    private var visibleModules: [Module] {
+        settings.orderedModules.filter { module in
+            guard settings.isVisible(module) else { return false }
+            if module == .battery { return hub.battery.isPresent }
+            return true
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
 
             Group {
-                if settings.popoverStyle == "gauges" {
+                if visibleModules.isEmpty {
+                    emptyState
+                } else if settings.popoverStyle == "gauges" {
                     ScrollView(.vertical, showsIndicators: true) {
                         GaugeGridView(hub: hub)
                             .background(GeometryReader { g in
@@ -37,11 +47,9 @@ struct PopoverRootView: View {
                 } else {
                     ScrollView(.vertical, showsIndicators: true) {
                         VStack(spacing: 10) {
-                            ForEach(settings.orderedModules) { module in
-                                if settings.isVisible(module) {
-                                    card(for: module)
-                                        .transition(.opacity)
-                                }
+                            ForEach(visibleModules) { module in
+                                card(for: module)
+                                    .transition(.opacity)
                             }
                         }
                         .padding(.horizontal, Theme.padding)
@@ -76,6 +84,34 @@ struct PopoverRootView: View {
         }
     }
 
+    private var emptyState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "square.grid.2x2")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundColor(Theme.textTertiary)
+            Text(loc: "No modules enabled")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(Theme.textPrimary)
+            Text(loc: "Open Settings to choose what appears in the popover.")
+                .font(.system(size: 10.5))
+                .foregroundColor(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+            Button(action: { SettingsWindowController.shared.show(fans: hub.fans, hub: hub, tab: .popover) }) {
+                Text(loc: "Open Settings")
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(settings.accent)
+            .controlSize(.small)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, Theme.padding)
+        .padding(.vertical, 28)
+        .background(GeometryReader { g in
+            Color.clear.preference(key: PopoverHeightKey.self, value: g.size.height)
+        })
+        .accessibilityElement(children: .combine)
+    }
+
     private var header: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8) {
@@ -90,17 +126,25 @@ struct PopoverRootView: View {
                     Image(systemName: "gearshape")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(Theme.textSecondary)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .help("Settings".loc)
+                .accessibilityLabel("Settings".loc)
+                .accessibilityHint("Opens N1KO-STATE settings.".loc)
 
                 Button(action: { NSApp.terminate(nil) }) {
                     Image(systemName: "power")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(Theme.textSecondary)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .help("Quit N1KO-STATE".loc)
+                .accessibilityLabel("Quit N1KO-STATE".loc)
+                .accessibilityHint("Closes the app and restores automatic fan control.".loc)
             }
 
             if settings.popoverStyle == "gauges" {

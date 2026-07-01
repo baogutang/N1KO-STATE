@@ -36,6 +36,18 @@ final class BatteryMonitor: ObservableObject {
     private var powerRunLoopSource: CFRunLoopSource?
     private var lastSmartBatteryRead = Date.distantPast
     private let smartBatteryInterval: TimeInterval = 300
+    private let foregroundSmartBatteryInterval: TimeInterval = 60
+    private var missingPowerSourceReads = 0
+    private let missingPowerSourceConfirmations = 3
+
+    private struct SmartBatterySnapshot {
+        var cycleCount: Int?
+        var healthFraction: Double?
+        var temperatureC: Double?
+        var watts: Double?
+        var designCapacity: Int?
+        var maxCapacity: Int?
+    }
 
     /// Health is considered degraded below this fraction (matches Apple's
     /// "Service Recommended" guidance around 80%).
@@ -71,19 +83,22 @@ final class BatteryMonitor: ObservableObject {
         if isPresent {
             history.append(percentage)
             if history.count > historyCapacity { history.removeFirst(history.count - historyCapacity) }
-            refreshSmartBattery(force: popoverOpen)
+            refreshSmartBattery(foreground: popoverOpen)
             objectWillChange.send()
         }
     }
 
-    func refreshSmartBattery(force: Bool = false) {
+    func refreshSmartBattery(force: Bool = false, foreground: Bool = false) {
         guard !desktopConfirmed, isPresent else { return }
         let now = Date()
-        guard force || now.timeIntervalSince(lastSmartBatteryRead) >= smartBatteryInterval else { return }
+        let interval = foreground ? foregroundSmartBatteryInterval : smartBatteryInterval
+        guard force || now.timeIntervalSince(lastSmartBatteryRead) >= interval else { return }
         lastSmartBatteryRead = now
         monitorWorkQueue.async { [weak self] in
-            self?.readSmartBattery()
-            DispatchQueue.main.async { self?.objectWillChange.send() }
+            let snapshot = Self.readSmartBatterySnapshot()
+            DispatchQueue.main.async {
+                self?.applySmartBatterySnapshot(snapshot)
+            }
         }
     }
 
@@ -99,8 +114,10 @@ final class BatteryMonitor: ObservableObject {
         guard let src = IOPSNotificationCreateRunLoopSource({ ctx in
             guard let ctx else { return }
             let monitor = Unmanaged<BatteryMonitor>.fromOpaque(ctx).takeUnretainedValue()
-            monitor.readPowerSources()
-            DispatchQueue.main.async { monitor.objectWillChange.send() }
+            DispatchQueue.main.async {
+                monitor.readPowerSources()
+                monitor.objectWillChange.send()
+            }
         }, context)?.takeRetainedValue() else { return }
         powerRunLoopSource = src
         CFRunLoopAddSource(CFRunLoopGetMain(), src, .defaultMode)
@@ -114,17 +131,25 @@ final class BatteryMonitor: ObservableObject {
               let first = sources.first,
               let desc = IOPSGetPowerSourceDescription(snapshot, first)?.takeUnretainedValue() as? [String: Any]
         else {
-            isPresent = false
-            desktopConfirmed = true
+            missingPowerSourceReads += 1
+            if missingPowerSourceReads >= missingPowerSourceConfirmations {
+                isPresent = false
+                desktopConfirmed = true
+            }
             return
         }
 
         let present = (desc[kIOPSIsPresentKey] as? Bool) ?? false
         guard present else {
-            isPresent = false
-            desktopConfirmed = true
+            missingPowerSourceReads += 1
+            if missingPowerSourceReads >= missingPowerSourceConfirmations {
+                isPresent = false
+                desktopConfirmed = true
+            }
             return
         }
+        missingPowerSourceReads = 0
+        desktopConfirmed = false
         isPresent = true
 
         let cur = (desc[kIOPSCurrentCapacityKey] as? Int) ?? 0
@@ -147,44 +172,65 @@ final class BatteryMonitor: ObservableObject {
 
     // MARK: - AppleSmartBattery (cycles, health, temperature, power)
 
-    private func readSmartBattery() {
+    private static func readSmartBatterySnapshot() -> SmartBatterySnapshot {
         guard let matching = IOServiceMatching("AppleSmartBattery") else {
-            cycleCount = nil; healthFraction = nil; temperatureC = nil; watts = nil
-            designCapacity = nil; maxCapacity = nil
-            return
+            return SmartBatterySnapshot()
         }
         // IOServiceGetMatchingService consumes the matching dictionary reference.
         let service = IOServiceGetMatchingService(kIOMainPortDefault, matching)
         guard service != 0 else {
-            cycleCount = nil; healthFraction = nil; temperatureC = nil; watts = nil
-            designCapacity = nil; maxCapacity = nil
-            return
+            return SmartBatterySnapshot()
         }
         defer { IOObjectRelease(service) }
 
         var unmanaged: Unmanaged<CFMutableDictionary>?
         guard IORegistryEntryCreateCFProperties(service, &unmanaged, kCFAllocatorDefault, 0) == KERN_SUCCESS,
-              let props = unmanaged?.takeRetainedValue() as? [String: Any] else { return }
+              let props = unmanaged?.takeRetainedValue() as? [String: Any] else {
+            return SmartBatterySnapshot()
+        }
 
-        cycleCount = props["CycleCount"] as? Int
-
+        let cycleCount = props["CycleCount"] as? Int
         let design = props["DesignCapacity"] as? Int
         let rawMax = (props["AppleRawMaxCapacity"] as? Int)
             ?? (props["NominalChargeCapacity"] as? Int)
             ?? (props["MaxCapacity"] as? Int)
-        designCapacity = design
-        maxCapacity = rawMax
+        let health: Double?
         if let d = design, d > 0, let m = rawMax, m > 0 {
-            healthFraction = min(Double(m) / Double(d), 1.0)
+            health = min(Double(m) / Double(d), 1.0)
+        } else {
+            health = nil
         }
 
+        let temperature: Double?
         if let temp = props["Temperature"] as? Int {
-            temperatureC = Double(temp) / 100.0
+            temperature = Double(temp) / 100.0
+        } else {
+            temperature = nil
         }
 
+        let power: Double?
         if let mV = props["Voltage"] as? Int {
             let mA = (props["Amperage"] as? Int) ?? 0
-            watts = (Double(mV) / 1000.0) * (Double(mA) / 1000.0)
+            power = (Double(mV) / 1000.0) * (Double(mA) / 1000.0)
+        } else {
+            power = nil
         }
+
+        return SmartBatterySnapshot(cycleCount: cycleCount,
+                                    healthFraction: health,
+                                    temperatureC: temperature,
+                                    watts: power,
+                                    designCapacity: design,
+                                    maxCapacity: rawMax)
+    }
+
+    private func applySmartBatterySnapshot(_ snapshot: SmartBatterySnapshot) {
+        cycleCount = snapshot.cycleCount
+        healthFraction = snapshot.healthFraction
+        temperatureC = snapshot.temperatureC
+        watts = snapshot.watts
+        designCapacity = snapshot.designCapacity
+        maxCapacity = snapshot.maxCapacity
+        objectWillChange.send()
     }
 }

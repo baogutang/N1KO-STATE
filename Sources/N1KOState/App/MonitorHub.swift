@@ -5,21 +5,26 @@ import Combine
 struct MonitorVisibility {
     var popoverOpen = false
     var menuBarMetrics: Set<MenuBarMetric> = []
+    var popoverModules: Set<Module> = []
+
+    func popoverShows(_ module: Module) -> Bool {
+        popoverOpen && popoverModules.contains(module)
+    }
 
     func needsNetworkRates(menuBarHasNet: Bool) -> Bool {
-        popoverOpen || menuBarHasNet
+        popoverShows(.network) || menuBarHasNet
     }
 
     func needsNetworkInfo(menuBarHasNet: Bool) -> Bool {
-        popoverOpen || menuBarHasNet
+        popoverShows(.network) || menuBarHasNet
     }
 
     func needsGPU(menuBarHasGPU: Bool) -> Bool {
-        popoverOpen || menuBarHasGPU
+        popoverShows(.gpu) || menuBarHasGPU
     }
 
     func needsBattery(menuBarHasBattery: Bool) -> Bool {
-        popoverOpen || menuBarHasBattery
+        popoverShows(.battery) || menuBarHasBattery
     }
 
 }
@@ -96,6 +101,7 @@ final class MonitorHub: ObservableObject {
     private var lastCurveApply = Date.distantPast
     private let curveHysteresis = 3.0
     private let curveMinInterval: TimeInterval = 15
+    private var lastHistorySample = Date.distantPast
 
     func start() {
         interval = AppSettings.shared.refreshInterval
@@ -104,29 +110,39 @@ final class MonitorHub: ObservableObject {
             .sink { [weak self] in self?.interval = $0 }
             .store(in: &cancellables)
         syncVisibilityFromSettings()
-        let settingsPub = [
-            AppSettings.shared.$menuCPU.map { _ in () }.eraseToAnyPublisher(),
-            AppSettings.shared.$menuGPU.map { _ in () }.eraseToAnyPublisher(),
-            AppSettings.shared.$menuMemory.map { _ in () }.eraseToAnyPublisher(),
-            AppSettings.shared.$menuNetwork.map { _ in () }.eraseToAnyPublisher(),
-            AppSettings.shared.$menuBattery.map { _ in () }.eraseToAnyPublisher(),
-            AppSettings.shared.$cpuAlert.map { _ in () }.eraseToAnyPublisher(),
-            AppSettings.shared.$memAlert.map { _ in () }.eraseToAnyPublisher(),
-            AppSettings.shared.$tempAlert.map { _ in () }.eraseToAnyPublisher(),
-            AppSettings.shared.$diskAlert.map { _ in () }.eraseToAnyPublisher(),
-            AppSettings.shared.$batteryAlert.map { _ in () }.eraseToAnyPublisher(),
-            AppSettings.shared.$alertsEnabled.map { _ in () }.eraseToAnyPublisher()
+        let appSettings = AppSettings.shared
+        let settingsPub: [AnyPublisher<Void, Never>] = [
+            appSettings.$menuCPU.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$menuGPU.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$menuMemory.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$menuNetwork.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$menuBattery.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$showCPU.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$showGPU.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$showMemory.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$showDisk.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$showNetwork.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$showSensors.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$showBattery.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$moduleOrder.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$popoverStyle.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$cpuAlert.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$memAlert.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$tempAlert.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$diskAlert.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$batteryAlert.map { _ in () }.eraseToAnyPublisher(),
+            appSettings.$alertsEnabled.map { _ in () }.eraseToAnyPublisher()
         ]
         Publishers.MergeMany(settingsPub)
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.syncVisibilityFromSettings() }
             .store(in: &cancellables)
         alerts.onAuthorizationComplete = { [weak self] in self?.evaluateAlerts() }
-        alerts.requestAuthorization()
-        fans.startReconcileLoop()
+        alerts.refreshAuthorizationStatus()
         FanCurveController.shared = fans
         disk.startVolumeWatching()
         battery.start()
+        syncVisibilityFromSettings()
         reconcileBatterySettings()
         tick(full: true)
         restart()
@@ -156,6 +172,11 @@ final class MonitorHub: ObservableObject {
         if s.menuBattery, battery.isPresent { metrics.insert(.battery) }
         if s.menuNetwork { metrics.insert(.network) }
         visibility.menuBarMetrics = metrics
+        visibility.popoverModules = Set(s.orderedModules.filter { module in
+            guard s.isVisible(module) else { return false }
+            if module == .battery { return battery.isPresent }
+            return true
+        })
     }
 
     private func reconcileBatterySettings() {
@@ -191,16 +212,26 @@ final class MonitorHub: ObservableObject {
         let menuHasNet = vis.menuBarMetrics.contains(.network)
         let menuHasGPU = vis.menuBarMetrics.contains(.gpu)
         let menuHasBattery = vis.menuBarMetrics.contains(.battery)
+        let popoverNeedsCPU = vis.popoverShows(.cpu)
+        let popoverNeedsGPU = vis.popoverShows(.gpu)
+        let popoverNeedsMemory = vis.popoverShows(.memory)
+        let popoverNeedsBattery = vis.popoverShows(.battery)
+        let popoverNeedsDisk = vis.popoverShows(.disk)
+        let popoverNeedsNetwork = vis.popoverShows(.network)
+        let popoverNeedsSensors = vis.popoverShows(.sensors)
+        let popoverNeedsProcesses = popoverNeedsCPU || popoverNeedsMemory
         let menuNeedsCPU = menuHasCPU && menuBarTick
         let menuNeedsMemory = menuHasMemory && menuBarTick
         let menuNeedsNet = menuHasNet && menuBarTick
         let menuNeedsGPU = menuHasGPU && menuBarTick
-        let needsCPU = full || vis.popoverOpen || menuNeedsCPU || alertMetrics.contains(.cpu)
-        let needsMemory = full || vis.popoverOpen || menuNeedsMemory || alertMetrics.contains(.memory)
-        let historyTick = tickCount % 30 == 0
+        let needsCPU = full || popoverNeedsCPU || menuNeedsCPU || alertMetrics.contains(.cpu)
+        let needsMemory = full || popoverNeedsMemory || menuNeedsMemory || alertMetrics.contains(.memory)
+        let now = Date()
+        let historyTick = now.timeIntervalSince(lastHistorySample) >= 30
+        if historyTick { lastHistorySample = now }
         var displayChanged = full || vis.popoverOpen || menuNeedsCPU || menuNeedsMemory || menuNeedsNet || menuNeedsGPU
         // SAFETY: thermal protection + fan curve depend on continuous sensor sampling.
-        let needsSensors = full || vis.popoverOpen
+        let needsSensors = full || popoverNeedsSensors
             || fans.mode == .curve || fans.mode == .manual
             || s.fanCurveEnabled
             || alertMetrics.contains(.temperature)
@@ -213,8 +244,8 @@ final class MonitorHub: ObservableObject {
             memory.refresh(publish: needsMemory)
         }
 
-        if full || vis.popoverOpen || menuNeedsNet || historyTick {
-            if full || vis.popoverOpen || menuNeedsNet {
+        if full || popoverNeedsNetwork || menuNeedsNet || historyTick {
+            if full || popoverNeedsNetwork || menuNeedsNet {
                 // Interface name/IP strings change rarely — rebuild them at most
                 // every 10 ticks; rates stay per-tick fresh.
                 network.refresh(includeInterfaceInfo: full || tickCount % 10 == 0)
@@ -227,42 +258,42 @@ final class MonitorHub: ObservableObject {
             disk.refreshVolumesNow()
         }
 
-        if full || vis.popoverOpen || menuNeedsGPU {
+        if full || popoverNeedsGPU || menuNeedsGPU {
             gpu.refresh()
         }
 
-        if battery.shouldPollFromTick(popoverOpen: vis.popoverOpen,
+        if battery.shouldPollFromTick(popoverOpen: popoverNeedsBattery,
                                       menuBarShowsBattery: menuHasBattery,
                                       alertNeedsBattery: alertMetrics.contains(.battery)) {
-            let intervalTicks = vis.popoverOpen ? 2 : 30
-            if full || vis.popoverOpen || tickCount % intervalTicks == 0 {
-                battery.refreshFromTick(popoverOpen: vis.popoverOpen)
+            let intervalTicks = popoverNeedsBattery ? 2 : 30
+            if full || popoverNeedsBattery || tickCount % intervalTicks == 0 {
+                battery.refreshFromTick(popoverOpen: popoverNeedsBattery)
                 displayChanged = true
             }
         }
 
-        if full || vis.popoverOpen || needsSensors {
-            if full || vis.popoverOpen || (tickCount % 3 == 0) || needsSensors && tickCount % 30 == 0 {
+        if full || popoverNeedsSensors || needsSensors {
+            if full || popoverNeedsSensors || (tickCount % 3 == 0) || needsSensors && tickCount % 30 == 0 {
                 sensors.refresh()
             }
         }
 
         if full || needsFans {
-            if full || vis.popoverOpen || tickCount % 3 == 0 {
+            if full || popoverNeedsSensors || tickCount % 3 == 0 {
                 fans.refresh()
                 if needsFans { applyFanCurveIfNeeded() }
             }
         }
 
-        if full || vis.popoverOpen {
+        if full || popoverNeedsDisk {
             if full || tickCount % 3 == 0 {
                 disk.refreshIO()
                 displayChanged = true
             }
         }
 
-        if full || vis.popoverOpen {
-            if full || tickCount % 5 == 0, s.showCPU || s.showMemory {
+        if full || popoverNeedsProcesses {
+            if full || tickCount % 5 == 0 {
                 processes.refresh()
             }
         }

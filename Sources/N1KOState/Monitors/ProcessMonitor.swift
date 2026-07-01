@@ -18,7 +18,7 @@ final class ProcessMonitor: ObservableObject {
 
     private let queue = monitorWorkQueue
     private var lastRun = Date.distantPast
-    private let minInterval: TimeInterval = 5.0
+    private let minInterval: TimeInterval = 10.0
     private var inFlight = false
 
     func refresh(force: Bool = false) {

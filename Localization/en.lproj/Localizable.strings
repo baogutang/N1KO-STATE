@@ -359,3 +359,14 @@
 "Open settings from the menu bar to see a live popover preview." = "Open settings from the menu bar to see a live popover preview.";
 "No battery detected on this Mac." = "No battery detected on this Mac.";
 "No battery detected on this Mac. Battery will not appear in the menu bar." = "No battery detected on this Mac. Battery will not appear in the menu bar.";
+"No modules enabled" = "No modules enabled";
+"Open Settings to choose what appears in the popover." = "Open Settings to choose what appears in the popover.";
+"Open Settings" = "Open Settings";
+"Closes the app and restores automatic fan control." = "Closes the app and restores automatic fan control.";
+"Manual Fan Control" = "Manual Fan Control";
+"Enable Manual Control" = "Enable Manual Control";
+"Manual control temporarily overrides macOS automatic fan management. N1KO-STATE restores automatic control when you quit or when temperatures get too high." = "Manual control temporarily overrides macOS automatic fan management. N1KO-STATE restores automatic control when you quit or when temperatures get too high.";
+"Accent color %@" = "Accent color %@";
+"Chart range %@" = "Chart range %@";
+"%@ threshold" = "%@ threshold";
+"%@ mode" = "%@ mode";

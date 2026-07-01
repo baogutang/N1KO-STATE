@@ -93,6 +93,33 @@ final class MenuBarStatusController: NSObject {
         }
     }
 
+    struct EffectiveMenuMetrics {
+        var showCPU: Bool
+        var showGPU: Bool
+        var showMemory: Bool
+        var showBattery: Bool
+        var showNetwork: Bool
+        var order: [MenuBarMetric]
+
+        var isBrandOnly: Bool {
+            !showCPU && !showGPU && !showMemory && !showBattery && !showNetwork
+        }
+    }
+
+    static func effectiveMenuMetrics(settings: AppSettings, batteryIsPresent: Bool) -> EffectiveMenuMetrics {
+        let showBattery = settings.menuBattery && batteryIsPresent
+        return EffectiveMenuMetrics(showCPU: settings.menuCPU,
+                                    showGPU: settings.menuGPU,
+                                    showMemory: settings.menuMemory,
+                                    showBattery: showBattery,
+                                    showNetwork: settings.menuNetwork,
+                                    order: settings.orderedMenuBarMetrics)
+    }
+
+    private func effectiveMenuMetrics() -> EffectiveMenuMetrics {
+        Self.effectiveMenuMetrics(settings: AppSettings.shared, batteryIsPresent: hub.snapshot.batteryIsPresent)
+    }
+
     private func renderSignature() -> String {
         let settings = AppSettings.shared
         let snapshot = hub.snapshot
@@ -103,14 +130,16 @@ final class MenuBarStatusController: NSObject {
             "cm:\(settings.resolvedMenuBarColorMode.rawValue)",
             "fz:\(settings.menuBarFontSize)"
         ]
-        parts.append(contentsOf: settings.orderedMenuBarMetrics.map(\.rawValue))
-        if settings.menuCPU { parts.append("cpu:\(Int(snapshot.cpuUsage * 100))") }
-        if settings.menuGPU { parts.append("gpu:\(Int(snapshot.gpuUtilization * 100))") }
-        if settings.menuMemory { parts.append("mem:\(Int(snapshot.memoryFraction * 100))") }
-        if settings.menuBattery, snapshot.batteryIsPresent {
+        let effective = effectiveMenuMetrics()
+        parts.append(contentsOf: effective.order.map(\.rawValue))
+        parts.append("brandOnly:\(effective.isBrandOnly)")
+        if effective.showCPU { parts.append("cpu:\(Int(snapshot.cpuUsage * 100))") }
+        if effective.showGPU { parts.append("gpu:\(Int(snapshot.gpuUtilization * 100))") }
+        if effective.showMemory { parts.append("mem:\(Int(snapshot.memoryFraction * 100))") }
+        if effective.showBattery {
             parts.append("bat:\(Int(snapshot.batteryPercentage * 100)):\(snapshot.batteryIsCharging)")
         }
-        if settings.menuNetwork {
+        if effective.showNetwork {
             parts.append("dn:\(Formatters.rateCompact(snapshot.networkDownloadRate))")
             parts.append("up:\(Formatters.rateCompact(snapshot.networkUploadRate))")
         }
@@ -120,15 +149,7 @@ final class MenuBarStatusController: NSObject {
     private func buildImage() -> NSImage {
         let settings = AppSettings.shared
         let snapshot = hub.snapshot
-        var showCPU = settings.menuCPU
-        var showGPU = settings.menuGPU
-        let showMem = settings.menuMemory
-        let showBat = settings.menuBattery
-        let showNet = settings.menuNetwork
-        if !showCPU && !showGPU && !showMem && !showBat && !showNet {
-            showCPU = true
-            showGPU = true
-        }
+        let effective = effectiveMenuMetrics()
         let input = MenuBarImageRenderer.Input(
             cpu: snapshot.cpuUsage,
             gpu: snapshot.gpuUtilization,
@@ -137,12 +158,12 @@ final class MenuBarStatusController: NSObject {
             batteryCharging: snapshot.batteryIsCharging,
             down: snapshot.networkDownloadRate,
             up: snapshot.networkUploadRate,
-            showCPU: showCPU,
-            showGPU: showGPU,
-            showMem: showMem,
-            showBattery: showBat,
-            showNet: showNet,
-            metricOrder: settings.orderedMenuBarMetrics,
+            showCPU: effective.showCPU,
+            showGPU: effective.showGPU,
+            showMem: effective.showMemory,
+            showBattery: effective.showBattery,
+            showNet: effective.showNetwork,
+            metricOrder: effective.order,
             height: Self.barHeight,
             layout: settings.resolvedMenuBarLayout,
             compact: settings.menuCompact,

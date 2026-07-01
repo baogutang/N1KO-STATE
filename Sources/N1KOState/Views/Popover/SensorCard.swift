@@ -147,6 +147,8 @@ private struct FanRow: View {
     @State private var userMode: FanControlMode?
     @State private var target: Double = 0
     @State private var didInit = false
+    @State private var showingManualConfirmation = false
+    @State private var pendingManualRPM: Int?
 
     private var canControl: Bool {
         controller.supportsControl && fan.maxRPM > fan.minRPM
@@ -224,14 +226,14 @@ private struct FanRow: View {
                         .foregroundColor(Theme.info)
                 }
 
-                Picker("", selection: Binding(
+                Picker("%@ mode".locf(fan.name), selection: Binding(
                     get: { effectiveMode },
                     set: { newMode in
-                        userMode = newMode
                         if newMode == .auto {
+                            userMode = .auto
                             controller.disableManual(fanId: fan.id)
                         } else {
-                            controller.enableManual(fanId: fan.id, rpm: Int(target))
+                            requestManual(rpm: Int(target))
                         }
                     }
                 )) {
@@ -263,8 +265,7 @@ private struct FanRow: View {
                         .tint(Theme.accent)
                         .onChange(of: target) { v in
                             if isCurveActive {
-                                userMode = .manual
-                                controller.enableManual(fanId: fan.id, rpm: Int(v))
+                                requestManual(rpm: Int(v))
                             } else {
                                 controller.updateManualRPM(fanId: fan.id, rpm: Int(v))
                             }
@@ -294,6 +295,20 @@ private struct FanRow: View {
                 userMode = nil
             }
         }
+        .alert("Manual Fan Control".loc, isPresented: $showingManualConfirmation) {
+            Button("Cancel".loc, role: .cancel) {
+                pendingManualRPM = nil
+                userMode = nil
+            }
+            Button("Enable Manual Control".loc) {
+                guard let rpm = pendingManualRPM else { return }
+                userMode = .manual
+                controller.enableManual(fanId: fan.id, rpm: rpm)
+                pendingManualRPM = nil
+            }
+        } message: {
+            Text("Manual control temporarily overrides macOS automatic fan management. N1KO-STATE restores automatic control when you quit or when temperatures get too high.".loc)
+        }
     }
 
     private func initTarget() {
@@ -302,5 +317,15 @@ private struct FanRow: View {
         let start = controller.manualTargets[fan.id]
             ?? (fan.targetRPM > 0 ? fan.targetRPM : fan.rpm)
         target = Double(min(max(start, fan.minRPM), max(fan.maxRPM, fan.minRPM + 1)))
+    }
+
+    private func requestManual(rpm: Int) {
+        if controller.isManual(fan.id) || controller.appliedFanIDs.contains(fan.id) {
+            userMode = .manual
+            controller.enableManual(fanId: fan.id, rpm: rpm)
+        } else {
+            pendingManualRPM = rpm
+            showingManualConfirmation = true
+        }
     }
 }

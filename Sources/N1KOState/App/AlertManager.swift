@@ -39,9 +39,17 @@ final class AlertManager {
     /// Minimum gap between repeat notifications for the same rule.
     private let cooldown: TimeInterval = 300
 
+    enum AuthorizationStatus: Equatable {
+        case unsupported
+        case notDetermined
+        case denied
+        case authorized
+    }
+
     private var armed: Set<Rule> = Set(Rule.allCases)   // ready to fire
     private var lastFired: [Rule: Date] = [:]
-    private var authorized = false
+    private(set) var authorizationStatus: AuthorizationStatus = AlertManager.notificationsSupported ? .notDetermined : .unsupported
+    private var authorized: Bool { authorizationStatus == .authorized }
     /// Called once when notification authorization completes (granted or denied).
     var onAuthorizationComplete: (() -> Void)?
 
@@ -52,13 +60,37 @@ final class AlertManager {
 
     // MARK: - Authorization
 
-    /// Requests notification permission once, at launch.
+    /// Requests notification permission after the user enables alerts.
     func requestAuthorization() {
-        guard Self.notificationsSupported else { return }
+        guard Self.notificationsSupported else {
+            authorizationStatus = .unsupported
+            return
+        }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { [weak self] granted, _ in
             DispatchQueue.main.async {
-                self?.authorized = granted
+                self?.authorizationStatus = granted ? .authorized : .denied
                 self?.onAuthorizationComplete?()
+            }
+        }
+    }
+
+    func refreshAuthorizationStatus() {
+        guard Self.notificationsSupported else {
+            authorizationStatus = .unsupported
+            return
+        }
+        UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
+            DispatchQueue.main.async {
+                switch settings.authorizationStatus {
+                case .authorized, .provisional, .ephemeral:
+                    self?.authorizationStatus = .authorized
+                case .denied:
+                    self?.authorizationStatus = .denied
+                case .notDetermined:
+                    self?.authorizationStatus = .notDetermined
+                @unknown default:
+                    self?.authorizationStatus = .notDetermined
+                }
             }
         }
     }
@@ -127,7 +159,7 @@ final class AlertManager {
     }
 
     private func fireIfReady(_ rule: Rule, title: String, body: String) {
-        guard armed.contains(rule) else { return }
+        guard armed.contains(rule), authorized, Self.notificationsSupported else { return }
         if let last = lastFired[rule], Date().timeIntervalSince(last) < cooldown { return }
         armed.remove(rule)
         lastFired[rule] = Date()

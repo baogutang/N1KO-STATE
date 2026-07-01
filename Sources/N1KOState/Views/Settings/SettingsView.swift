@@ -35,6 +35,25 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         }
     }
 
+    var searchTokens: [String] {
+        switch self {
+        case .overview:
+            return ["status", "preview", "sampling", "safety", "cost", "summary"]
+        case .menuBar:
+            return ["cpu", "gpu", "memory", "network", "battery", "layout", "font", "color", "width"]
+        case .popover:
+            return ["modules", "cards", "gauges", "dashboard", "chart", "battery", "disk"]
+        case .sampling:
+            return ["refresh", "performance", "battery", "background", "process", "history", "network", "real time"]
+        case .sensors:
+            return ["fan", "helper", "authorization", "rpm", "curve", "temperature", "fahrenheit", "smc"]
+        case .alerts:
+            return ["notification", "permission", "threshold", "cpu", "memory", "disk", "battery", "temperature"]
+        case .advanced:
+            return ["language", "theme", "appearance", "accent", "login", "startup", "update", "license", "log", "diagnostic", "about"]
+        }
+    }
+
     static var grouped: [(group: SettingsGroup, tabs: [SettingsTab])] {
         SettingsGroup.allCases.compactMap { group in
             let tabs = allCases.filter { $0.group == group }
@@ -65,6 +84,7 @@ struct SettingsView: View {
     @ObservedObject var settings = AppSettings.shared
     @ObservedObject private var chartRange = ChartRangeStore.shared
     @ObservedObject var fans: FanControlService
+    @ObservedObject private var navigation: SettingsNavigationModel
     var hub: MonitorHub?
     @State private var tab: SettingsTab
     @State private var exportMessage: String?
@@ -72,10 +92,11 @@ struct SettingsView: View {
     @State private var moduleFilter = ""
     @State private var settingsSearch = ""
 
-    init(fans: FanControlService, hub: MonitorHub? = nil, initialTab: SettingsTab? = nil) {
+    init(fans: FanControlService, hub: MonitorHub? = nil, initialTab: SettingsTab? = nil, navigation: SettingsNavigationModel = SettingsNavigationModel()) {
         self.fans = fans
         self.hub = hub
-        _tab = State(initialValue: initialTab ?? .overview)
+        self.navigation = navigation
+        _tab = State(initialValue: initialTab ?? navigation.selectedTab)
     }
 
     private let languages: [(code: String, label: String)] = [
@@ -102,6 +123,12 @@ struct SettingsView: View {
                minHeight: 600, idealHeight: 720, maxHeight: .infinity)
         .controlSize(.small)
         .background(Theme.surfaceMaterial)
+        .onChange(of: navigation.selectedTab) { selected in
+            if tab != selected { tab = selected }
+        }
+        .onChange(of: tab) { selected in
+            if navigation.selectedTab != selected { navigation.selectedTab = selected }
+        }
         .id(settings.language)
         .id(settings.appTheme)
     }
@@ -175,7 +202,9 @@ struct SettingsView: View {
         guard !query.isEmpty else { return SettingsTab.grouped }
         return SettingsTab.grouped.compactMap { section in
             let tabs = section.tabs.filter {
-                $0.rawValue.loc.lowercased().contains(query) || section.group.title.lowercased().contains(query)
+                $0.rawValue.loc.lowercased().contains(query)
+                    || section.group.title.lowercased().contains(query)
+                    || $0.searchTokens.contains { $0.loc.lowercased().contains(query) || $0.lowercased().contains(query) }
             }
             return tabs.isEmpty ? nil : (section.group, tabs)
         }
@@ -567,7 +596,13 @@ struct SettingsView: View {
                            subtitle: "Get a notification when a metric crosses a limit.")
 
             SettingGroup(title: nil) {
-                ToggleRow(label: "Enable alerts", isOn: $settings.alertsEnabled, accent: settings.accent)
+                ToggleRow(label: "Enable alerts", isOn: Binding(
+                    get: { settings.alertsEnabled },
+                    set: { enabled in
+                        settings.alertsEnabled = enabled
+                        if enabled { hub?.alerts.requestAuthorization() }
+                    }
+                ), accent: settings.accent)
             }
 
             SettingGroup(title: "Thresholds") {
@@ -624,7 +659,7 @@ struct SettingsView: View {
             SettingGroup(title: "Basics") {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Language") {
-                        Picker("", selection: $settings.language) {
+                        Picker("Language".loc, selection: $settings.language) {
                             ForEach(languages, id: \.code) { lang in
                                 Text(lang.code == LocalizationManager.system ? "System".loc : lang.label)
                                     .tag(lang.code)
@@ -648,15 +683,19 @@ struct SettingsView: View {
                     SettingsRow(label: "Accent Color") {
                         HStack(spacing: 10) {
                             ForEach(AppSettings.accentPalette, id: \.self) { hex in
-                                Circle()
-                                    .fill(Color(hex: hex))
-                                    .frame(width: 22, height: 22)
-                                    .overlay(
-                                        Circle().strokeBorder(Theme.textPrimary.opacity(0.85),
-                                                              lineWidth: settings.accentHex == hex ? 2 : 0)
-                                    )
-                                    .onTapGesture { settings.accentHex = hex }
-                                    .help("#\(String(format: "%06X", hex))")
+                                Button(action: { settings.accentHex = hex }) {
+                                    Circle()
+                                        .fill(Color(hex: hex))
+                                        .frame(width: 24, height: 24)
+                                        .overlay(
+                                            Circle().strokeBorder(Theme.textPrimary.opacity(0.85),
+                                                                  lineWidth: settings.accentHex == hex ? 2 : 0)
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Accent color %@".locf(String(format: "#%06X", hex)))
+                                .accessibilityAddTraits(settings.accentHex == hex ? .isSelected : [])
+                                .help("#\(String(format: "%06X", hex))")
                             }
                             Divider().frame(height: 20).overlay(Theme.stroke)
                             ColorPicker("", selection: Binding(
@@ -671,7 +710,7 @@ struct SettingsView: View {
                     if LoginItem.isAvailable {
                         SettingsDivider()
                         SettingsRow(label: "Launch at login") {
-                            Toggle("", isOn: Binding(get: { launchAtLogin },
+                            Toggle("Launch at login".loc, isOn: Binding(get: { launchAtLogin },
                                                      set: { launchAtLogin = $0; LoginItem.set($0) }))
                                 .labelsHidden()
                                 .toggleStyle(.switch)
@@ -1145,6 +1184,8 @@ struct SettingsPillSelector<T: Hashable>: View {
                     )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(option.1.loc)
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
         }
     }
 }
@@ -1528,6 +1569,8 @@ struct AlertRow: View {
                 .tint(accent)
                 .disabled(!enabled || disabled)
                 .opacity(enabled ? 1 : 0.4)
+                .accessibilityLabel("%@ threshold".locf(label.loc))
+                .accessibilityValue(format(value))
         }
     }
 }
@@ -1556,7 +1599,7 @@ struct ModuleListRow: View {
                 }
             }
             Spacer()
-            Toggle("", isOn: $isOn)
+            Toggle(module.localizedTitle, isOn: $isOn)
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .tint(accent)

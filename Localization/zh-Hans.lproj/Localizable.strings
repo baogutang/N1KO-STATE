@@ -361,3 +361,14 @@
 "Open settings from the menu bar to see a live popover preview." = "从菜单栏打开设置以查看弹窗实时预览。";
 "No battery detected on this Mac." = "此 Mac 未检测到电池。";
 "No battery detected on this Mac. Battery will not appear in the menu bar." = "此 Mac 未检测到电池，菜单栏不会显示电量。";
+"No modules enabled" = "未启用任何模块";
+"Open Settings to choose what appears in the popover." = "打开设置选择弹窗中显示的内容。";
+"Open Settings" = "打开设置";
+"Closes the app and restores automatic fan control." = "关闭应用并恢复自动风扇控制。";
+"Manual Fan Control" = "手动风扇控制";
+"Enable Manual Control" = "启用手动控制";
+"Manual control temporarily overrides macOS automatic fan management. N1KO-STATE restores automatic control when you quit or when temperatures get too high." = "手动控制会临时覆盖 macOS 自动风扇管理。退出 N1KO-STATE 或温度过高时会恢复自动控制。";
+"Accent color %@" = "强调色 %@";
+"Chart range %@" = "图表范围 %@";
+"%@ threshold" = "%@ 阈值";
+"%@ mode" = "%@ 模式";

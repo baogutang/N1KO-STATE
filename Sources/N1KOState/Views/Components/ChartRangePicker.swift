@@ -28,6 +28,8 @@ struct ChartRangePicker: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Chart range %@".locf(r.rawValue.uppercased()))
+                .accessibilityAddTraits(displayedRange == r.rawValue ? .isSelected : [])
             }
             Spacer(minLength: 0)
         }
