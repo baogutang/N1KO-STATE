@@ -1,0 +1,84 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>N1KO-STATE</title>
+        <item>
+            <title>1.0.12</title>
+            <pubDate>Wed, 01 Jul 2026 10:00:18 +0000</pubDate>
+            <sparkle:version>112</sparkle:version>
+            <sparkle:shortVersionString>1.0.12</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[# N1KO-STATE v1.0.12
+
+**Dashboard and settings UI refresh** — cleaner gauge dashboard alignment, a redesigned settings experience with live previews, and full menu-bar layout controls preserved.
+
+**仪表盘与设置页 UI 焕新** — 仪表盘卡片对齐更整齐，设置页支持实时预览，并完整保留菜单栏布局选项。
+
+---
+
+## Download / 下载
+
+| Asset | Description |
+|-------|-------------|
+| **N1KO-STATE.dmg** | Universal binary (Apple Silicon + Intel). Drag to Applications. |
+| **N1KO-STATE-sparkle.zip** | In-app updater archive used by Sparkle. Normal manual installs should use the DMG. |
+| **appcast.xml** | Sparkle update feed for automatic update checks. |
+
+**Install note:** If macOS blocks the ad-hoc signed app on first launch, run `xattr -cr /Applications/N1KO-STATE.app` in Terminal. You can also right-click **N1KO-STATE.app** -> **Open** on first launch.
+
+**安装说明：** 如果首次打开被 macOS 拦截，优先在「终端」执行 `xattr -cr /Applications/N1KO-STATE.app`。也可以右键 **N1KO-STATE.app** -> **打开**（仅首次需要）。
+
+---
+
+## What's New / 本版本内容
+
+### Gauge Dashboard Layout / 仪表盘布局优化
+
+- Reworked the gauges popover into a consistent vertical card layout: icon header, centered ring gauge, and aligned detail rows.
+- Unified the network tile with the same structure as CPU, GPU, memory, disk, and sensors cards.
+- Moved the quick summary (CPU, memory, download) into compact pills in the popover header.
+- Increased popover width to 360pt with cleaner spacing and 12pt card corners.
+
+- 仪表盘弹窗改为统一的垂直卡片布局：图标标题、居中环形图、对齐的详情行。
+- 网络卡片与其他模块使用相同结构，消除高低不齐。
+- 将 CPU / 内存 / 下载摘要移入标题栏 Pill，节省垂直空间。
+- 弹窗宽度增至 360pt，间距与圆角更清爽。
+
+### Settings Center Refresh / 设置中心重构
+
+- Redesigned the settings window with grouped sidebar navigation, search, and accent selection states.
+- Added live popover preview on the Popover tab and an expanded menu-bar preview on the Menu Bar tab.
+- Preserved all existing menu-bar controls: metric toggles, color mode, layout (Standard / Compact / Stacked / Minimal), font style, and font size.
+- Window size updated to 980×660 for a less cramped layout.
+
+- 设置窗口采用分组侧边栏、搜索和 accent 选中态。
+- 弹窗页新增实时预览；菜单栏页右侧提供更大的实时预览。
+- 完整保留菜单栏设置：指标开关、颜色模式、布局（标准 / 紧凑 / 堆叠 / 极简）、字体样式与字号。
+- 窗口尺寸调整为 980×660，阅读更舒适。
+
+### Versioning / 版本同步
+
+- Updated app version metadata to `1.0.12` / build `112`.
+- Updated README version badge and footer.
+
+- 应用版本元数据更新为 `1.0.12` / build `112`。
+- README 版本徽章和页脚同步更新。
+
+---
+
+## Regression verified / 回归验证
+
+- `swift build` passed
+- Localization strings added for settings groups and preview labels
+- `plutil -lint` on Info.plist recommended before release
+
+---
+
+## Full changelog / 完整变更
+
+**Full changelog:** [v1.0.12 tag](https://github.com/baogutang/N1KO-STATE/releases/tag/v1.0.12)
+]]></description>
+            <enclosure url="https://github.com/baogutang/N1KO-STATE/releases/download/v1.0.12/N1KO-STATE-sparkle.zip" length="3535296" type="application/octet-stream" sparkle:edSignature="yOcwx/WOLFYPi+4t7DNWYxpevKWcU6l8Mcs6qRBgZvWpxLDzSjbdjIcTMytvzXqqBK7S1L/WhgmuclPJCG/6BQ=="/>
+        </item>
+    </channel>
+</rss>

@@ -39,6 +39,9 @@ jobs:
           TAG="${GITHUB_REF_NAME#v}"
           NOTES=".github/release-notes/v${TAG}.md"
           cp "$NOTES" build/sparkle/N1KO-STATE-sparkle.md
+          if [[ -f appcast.xml ]]; then
+            cp appcast.xml build/sparkle/appcast.xml
+          fi
           printf '%s' "$SPARKLE_PRIVATE_KEY" | \
             .build/artifacts/sparkle/Sparkle/bin/generate_appcast \
               --ed-key-file - \
@@ -48,6 +51,19 @@ jobs:
               -o build/appcast.xml \
               build/sparkle
           test -f build/appcast.xml
+          cp build/appcast.xml /tmp/release-appcast.xml
+
+      - name: Publish appcast to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout main
+          git pull --ff-only origin main
+          cp /tmp/release-appcast.xml appcast.xml
+          git add appcast.xml
+          git diff --staged --quiet || git commit -m "Publish appcast for ${{ github.ref_name }} [skip ci]"
+          git push origin main
 
       - name: Resolve release notes
         id: notes
