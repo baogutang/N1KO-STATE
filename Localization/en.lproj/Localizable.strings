@@ -12,6 +12,8 @@
 "Load" = "Load";
 "Cores" = "Cores";
 "Uptime" = "Uptime";
+"Run" = "Run";
+"Stress" = "Stress";
 "Freq" = "Freq";
 "Top Processes" = "Top Processes";
 
@@ -370,3 +372,11 @@
 "Chart range %@" = "Chart range %@";
 "%@ threshold" = "%@ threshold";
 "%@ mode" = "%@ mode";
+"Active Metrics" = "Active Metrics";
+"Popover Modules" = "Popover Modules";
+"Quick Links" = "Quick Links";
+"Popover modules" = "Popover modules";
+"Currently shown in the menu bar." = "Currently shown in the menu bar.";
+"Enabled in gauge dashboard." = "Enabled in gauge dashboard.";
+"Enabled in card layout." = "Enabled in card layout.";
+"%d items" = "%d items";

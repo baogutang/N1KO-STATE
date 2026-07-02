@@ -114,6 +114,7 @@ struct SettingsView: View {
                 page
                     .padding(.horizontal, 28)
                     .padding(.vertical, 24)
+                    .frame(maxWidth: 780, alignment: .leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -137,16 +138,21 @@ struct SettingsView: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("N1KO STATE")
-                    .font(.system(size: 15, weight: .heavy, design: .rounded))
-                    .foregroundColor(Theme.textPrimary)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 0) {
+                    Text("N1KO ")
+                        .font(.system(size: 14, weight: .heavy, design: .rounded))
+                        .foregroundColor(Theme.textPrimary)
+                    Text("STATE")
+                        .font(.system(size: 14, weight: .heavy, design: .rounded))
+                        .foregroundColor(settings.accent)
+                }
                 Text(loc: "Settings")
-                    .font(.system(size: 11.5))
+                    .font(.system(size: 11))
                     .foregroundColor(Theme.textSecondary)
             }
-            .padding(.horizontal, 10)
-            .padding(.top, 20)
+            .padding(.horizontal, 7)
+            .padding(.top, 12)
 
             TextField("Search settings".loc, text: $settingsSearch)
                 .textFieldStyle(.roundedBorder)
@@ -192,7 +198,7 @@ struct SettingsView: View {
             .padding(.horizontal, 8)
             .padding(.bottom, 12)
         }
-        .frame(width: 220)
+        .frame(width: 224)
         .frame(maxHeight: .infinity)
         .background(.thinMaterial)
     }
@@ -225,56 +231,51 @@ struct SettingsView: View {
     }
 
     private var overviewPage: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
             SettingsHeader(title: "Overview",
                            subtitle: "Menu bar, popover, sampling, and thermal safety at a glance.")
 
             SettingGroup(title: "Live Preview") {
-                MenuBarPreviewView(hub: hub)
+                MenuBarPreviewView(hub: hub, expanded: true)
             }
 
-            HStack(alignment: .top, spacing: 10) {
+            HStack(alignment: .top, spacing: 9) {
                 OverviewCard(title: "Sampling",
                              value: resourceModeTitle,
                              detail: resourceModeDetail,
                              badge: resourceModeBadge,
                              color: resourceModeColor,
                              icon: "speedometer")
-                OverviewCard(title: "Safety",
-                             value: safetyStatusLabel,
-                             detail: safetyStatusDetail,
-                             badge: safetyStatusBadge,
-                             color: safetyStatusColor,
-                             icon: "shield.checkered")
-                OverviewCard(title: "Attention",
-                             value: "\(attentionItems.count)",
-                             detail: attentionSummary,
-                             badge: attentionItems.isEmpty ? "Clean" : "Review",
-                             color: attentionItems.isEmpty ? Theme.ok : Theme.warn,
-                             icon: "exclamationmark.triangle")
+                OverviewCard(title: "Active Metrics",
+                             value: "\(activeMenuMetricCount)",
+                             detail: "Currently shown in the menu bar.",
+                             badge: "\(activeMenuMetricCount)",
+                             color: settings.accent,
+                             icon: "menubar.rectangle")
+                OverviewCard(title: "Popover Modules",
+                             value: "\(activePopoverModuleCount)",
+                             detail: settings.popoverStyle == "gauges"
+                                ? "Enabled in gauge dashboard."
+                                : "Enabled in card layout.",
+                             badge: "\(activePopoverModuleCount)",
+                             color: Theme.info,
+                             icon: "rectangle.on.rectangle")
             }
 
-            SettingGroup(title: "Recommended Actions") {
+            SettingGroup(title: "Quick Links", flush: true) {
                 VStack(spacing: 0) {
                     OverviewActionRow(icon: "menubar.rectangle",
                                       title: "Menu bar display",
-                                      detail: "Preview width, color mode, and visible metrics.",
-                                      status: "Active metrics: %d".locf(activeMenuMetricCount)) {
+                                      detail: "",
+                                      status: "%d items".locf(activeMenuMetricCount)) {
                         tab = .menuBar
                     }
                     SettingsDivider()
-                    OverviewActionRow(icon: "speedometer",
-                                      title: "Sampling cost",
-                                      detail: "Choose the background refresh profile.",
-                                      status: resourceModeTitle) {
-                        tab = .sampling
-                    }
-                    SettingsDivider()
-                    OverviewActionRow(icon: "thermometer.medium",
-                                      title: "Sensors and fans",
-                                      detail: "Check helper status and thermal controls.",
-                                      status: safetyStatusBadge) {
-                        tab = .sensors
+                    OverviewActionRow(icon: "rectangle.on.rectangle",
+                                      title: "Popover modules",
+                                      detail: "",
+                                      status: "%d items".locf(activePopoverModuleCount)) {
+                        tab = .popover
                     }
                 }
             }
@@ -286,12 +287,14 @@ struct SettingsView: View {
     }
 
     private var menuBarPage: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 16) {
             SettingsHeader(title: "Menu Bar",
                            subtitle: "Choose the always-visible readout and keep it legible in every menu-bar state.")
 
-            HStack(alignment: .top, spacing: 20) {
-                SettingGroup(title: "Metrics") {
+            HStack(alignment: .top, spacing: 18) {
+                SettingGroup(title: "Metrics",
+                             subtitle: "Choose which metrics appear in the menu bar widget.",
+                             flush: true) {
                     List {
                         ForEach(settings.orderedMenuBarMetrics) { m in
                             MenuBarMetricRow(
@@ -314,15 +317,11 @@ struct SettingsView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(loc: "Live Preview")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(Theme.textTertiary)
-                    SettingGroup(title: nil) {
-                        MenuBarPreviewView(hub: hub, expanded: true)
-                    }
-                    .frame(width: Theme.popoverWidth)
+                VStack(alignment: .leading, spacing: 7) {
+                    LivePreviewLabel()
+                    MenuBarPreviewView(hub: hub, expanded: true)
                 }
+                .frame(width: Theme.popoverWidth)
             }
 
             SettingGroup(title: "Appearance") {
@@ -384,11 +383,11 @@ struct SettingsView: View {
     }
 
     private var popoverPage: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 16) {
             SettingsHeader(title: "Popover",
                            subtitle: "Control the click-open panel separately from the always-on menu bar.")
 
-            HStack(alignment: .top, spacing: 20) {
+            HStack(alignment: .top, spacing: 18) {
                 VStack(alignment: .leading, spacing: 14) {
                     SettingGroup(title: "Display Options") {
                         VStack(alignment: .leading, spacing: 16) {
@@ -405,16 +404,19 @@ struct SettingsView: View {
                                 label: "Chart Range",
                                 options: HistoryStore.Range.allCases.map { ($0.rawValue, $0.rawValue.uppercased()) },
                                 selection: $chartRange.range,
-                                accent: settings.accent
+                                accent: settings.accent,
+                                columns: 4
                             )
                         }
                     }
 
-                    SettingGroup(title: "Modules") {
-                        VStack(alignment: .leading, spacing: 10) {
+                    SettingGroup(title: "Modules", flush: true) {
+                        VStack(alignment: .leading, spacing: 0) {
                             TextField("Search modules".loc, text: $moduleFilter)
                                 .textFieldStyle(.roundedBorder)
-                                .frame(maxWidth: 260)
+                                .padding(.horizontal, 14)
+                                .padding(.top, 7)
+                                .padding(.bottom, 5)
                             List {
                                 ForEach(filteredModules) { m in
                                     ModuleListRow(
@@ -440,20 +442,25 @@ struct SettingsView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(loc: "Live Preview")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(Theme.textTertiary)
+                VStack(alignment: .leading, spacing: 7) {
+                    LivePreviewLabel()
                     if let hub {
                         PopoverPreviewView(hub: hub)
                     } else {
-                        SettingGroup(title: nil) {
-                            Text(loc: "Open settings from the menu bar to see a live popover preview.")
-                                .font(.system(size: 11.5))
-                                .foregroundColor(Theme.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .frame(width: Theme.popoverWidth, alignment: .leading)
-                        }
+                        Text(loc: "Open settings from the menu bar to see a live popover preview.")
+                            .font(.system(size: 11.5))
+                            .foregroundColor(Theme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(width: Theme.popoverWidth, alignment: .leading)
+                            .padding(14)
+                            .background(
+                                RoundedRectangle(cornerRadius: Theme.settingsCardRadius, style: .continuous)
+                                    .fill(Theme.card)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Theme.settingsCardRadius, style: .continuous)
+                                    .strokeBorder(Theme.stroke, lineWidth: 1)
+                            )
                     }
                 }
             }
@@ -653,12 +660,12 @@ struct SettingsView: View {
     }
 
     private var advancedPage: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 16) {
             SettingsHeader(title: "Advanced",
                            subtitle: "Language, appearance, startup, diagnostics, and maintenance.")
-            SettingGroup(title: "Basics") {
+            SettingGroup(title: "Basics", flush: true) {
                 VStack(spacing: 0) {
-                    SettingsRow(label: "Language") {
+                    SettingsCardRow(label: "Language") {
                         Picker("Language".loc, selection: $settings.language) {
                             ForEach(languages, id: \.code) { lang in
                                 Text(lang.code == LocalizationManager.system ? "System".loc : lang.label)
@@ -666,27 +673,29 @@ struct SettingsView: View {
                             }
                         }
                         .labelsHidden()
-                        .frame(width: 170)
+                        .frame(width: 150)
                     }
                     SettingsDivider()
-                    SettingsChoiceGroup(
-                        label: "Appearance",
-                        options: [
-                            ("system", "System"),
-                            ("light", "Light"),
-                            ("dark", "Dark")
-                        ],
-                        selection: $settings.appTheme,
-                        accent: settings.accent
-                    )
+                    SettingsCardRow(label: "Appearance") {
+                        SettingsPillSelector(
+                            options: [
+                                ("system", "System"),
+                                ("light", "Light"),
+                                ("dark", "Dark")
+                            ],
+                            selection: $settings.appTheme,
+                            accent: settings.accent,
+                            inline: true
+                        )
+                    }
                     SettingsDivider()
-                    SettingsRow(label: "Accent Color") {
-                        HStack(spacing: 10) {
+                    SettingsCardRow(label: "Accent Color") {
+                        HStack(spacing: 8) {
                             ForEach(AppSettings.accentPalette, id: \.self) { hex in
                                 Button(action: { settings.accentHex = hex }) {
                                     Circle()
                                         .fill(Color(hex: hex))
-                                        .frame(width: 24, height: 24)
+                                        .frame(width: 22, height: 22)
                                         .overlay(
                                             Circle().strokeBorder(Theme.textPrimary.opacity(0.85),
                                                                   lineWidth: settings.accentHex == hex ? 2 : 0)
@@ -695,25 +704,23 @@ struct SettingsView: View {
                                 .buttonStyle(.plain)
                                 .accessibilityLabel("Accent color %@".locf(String(format: "#%06X", hex)))
                                 .accessibilityAddTraits(settings.accentHex == hex ? .isSelected : [])
-                                .help("#\(String(format: "%06X", hex))")
                             }
-                            Divider().frame(height: 20).overlay(Theme.stroke)
                             ColorPicker("", selection: Binding(
                                 get: { Color(hex: settings.accentHex) },
                                 set: { if let hex = $0.toHexInt() { settings.accentHex = hex } }
                             ), supportsOpacity: false)
                             .labelsHidden()
-                            Text(loc: "Custom")
-                                .font(.system(size: 11)).foregroundColor(Theme.textSecondary)
+                            .frame(width: 22, height: 22)
                         }
                     }
                     if LoginItem.isAvailable {
                         SettingsDivider()
-                        SettingsRow(label: "Launch at login") {
+                        SettingsCardRow(label: "Launch at login") {
                             Toggle("Launch at login".loc, isOn: Binding(get: { launchAtLogin },
                                                      set: { launchAtLogin = $0; LoginItem.set($0) }))
                                 .labelsHidden()
                                 .toggleStyle(.switch)
+                                .controlSize(.small)
                                 .tint(settings.accent)
                         }
                     }
@@ -722,7 +729,7 @@ struct SettingsView: View {
 
             SettingGroup(title: "Maintenance") {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(verbatim: "N1KO-STATE \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.15")")
+                    Text(verbatim: "N1KO-STATE \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.17")")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(Theme.textPrimary)
                     Text(loc: "A modern macOS system monitor.")
@@ -762,6 +769,10 @@ struct SettingsView: View {
     private var activeMenuMetricCount: Int {
         [settings.menuCPU, settings.menuGPU, settings.menuMemory, settings.menuNetwork, settings.menuBattery]
             .filter { $0 }.count
+    }
+
+    private var activePopoverModuleCount: Int {
+        settings.orderedModules.filter { settings.isVisible($0) }.count
     }
 
     private var resourceModeTitle: String {
@@ -990,34 +1001,66 @@ struct SettingsSidebarItem: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 Image(systemName: tab.icon)
-                    .font(.system(size: 12, weight: .semibold))
-                    .frame(width: 20)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(isSelected ? accent : Theme.textSecondary)
+                    .frame(width: 16)
                 Text(loc: tab.rawValue)
-                    .font(.system(size: 12.5, weight: isSelected ? .semibold : .medium))
+                    .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
+                    .foregroundColor(isSelected ? Theme.textPrimary : Theme.textSecondary)
                 Spacer(minLength: 0)
             }
-            .foregroundColor(isSelected ? Theme.textPrimary : Theme.textSecondary)
-            .padding(.leading, 12)
-            .padding(.trailing, 10)
-            .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 7)
+            .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
             .background(
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(isSelected ? accent.opacity(0.14) : Color.clear)
-                    if isSelected {
-                        RoundedRectangle(cornerRadius: 2, style: .continuous)
-                            .fill(accent)
-                            .frame(width: 3)
-                            .padding(.vertical, 7)
-                    }
-                }
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isSelected ? accent.opacity(0.12) : Color.clear)
             )
             .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 3)
+    }
+}
+
+struct LivePreviewLabel: View {
+    @State private var pulse = false
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(Theme.ok)
+                .frame(width: 6, height: 6)
+                .shadow(color: Theme.ok.opacity(pulse ? 0.08 : 0.22), radius: pulse ? 2 : 3)
+                .opacity(pulse ? 0.55 : 1)
+            Text(loc: "Live Preview")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(Theme.textTertiary)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
+                pulse = true
+            }
+        }
+    }
+}
+
+struct SettingsCardRow<Accessory: View>: View {
+    let label: String
+    @ViewBuilder var accessory: Accessory
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Text(loc: label)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(Theme.textPrimary)
+            Spacer(minLength: 16)
+            accessory
+        }
+        .padding(.horizontal, 14)
+        .frame(minHeight: 46)
     }
 }
 
@@ -1026,42 +1069,56 @@ struct SettingsHeader: View {
     var subtitle: String? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 5) {
             Text(loc: title)
-                .font(.system(size: 18, weight: .bold))
+                .font(.system(size: 20, weight: .bold))
                 .foregroundColor(Theme.textPrimary)
             if let subtitle {
                 Text(loc: subtitle)
-                    .font(.system(size: 11.5))
+                    .font(.system(size: 12))
                     .foregroundColor(Theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .padding(.bottom, 4)
     }
 }
 
 struct SettingGroup<Content: View>: View {
     let title: String?
+    var subtitle: String? = nil
     var compact = false
+    var flush = false
     @ViewBuilder var content: Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: compact ? 7 : 8) {
+        VStack(alignment: .leading, spacing: 0) {
             if let title {
-                Text(title.loc.uppercased())
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(Theme.textTertiary)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title.loc)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Theme.textPrimary)
+                    if let subtitle {
+                        Text(subtitle.loc)
+                            .font(.system(size: 11))
+                            .foregroundColor(Theme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(.horizontal, 15)
+                .padding(.top, 12)
+                .padding(.bottom, flush ? 0 : 2)
             }
             content
-                .padding(compact ? 10 : 12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.card)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.stroke, lineWidth: 1)
-                )
+                .padding(flush ? EdgeInsets() : EdgeInsets(top: compact ? 8 : 10, leading: 15, bottom: 13, trailing: 15))
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.settingsCardRadius, style: .continuous).fill(Theme.card)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.settingsCardRadius, style: .continuous).strokeBorder(Theme.stroke, lineWidth: 1)
+        )
     }
 }
 
@@ -1134,31 +1191,32 @@ struct SettingsPillSelector<T: Hashable>: View {
     @Binding var selection: T
     let accent: Color
     var columns: Int = 0
+    var inline: Bool = false
 
     private var gridColumns: [GridItem] {
         let count = max(columns, 1)
-        return Array(repeating: GridItem(.flexible(), spacing: 6, alignment: .leading), count: count)
+        return Array(repeating: GridItem(.flexible(), spacing: 2, alignment: .leading), count: count)
     }
 
     var body: some View {
         Group {
-            if columns > 1 {
-                LazyVGrid(columns: gridColumns, alignment: .leading, spacing: 6) {
+            if columns > 1 && !inline {
+                LazyVGrid(columns: gridColumns, alignment: .leading, spacing: 2) {
                     pillButtons
                 }
             } else {
-                HStack(spacing: 6) {
+                HStack(spacing: 2) {
                     pillButtons
                 }
             }
         }
-        .padding(4)
+        .padding(3)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
                 .fill(Theme.track)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
                 .strokeBorder(Theme.stroke, lineWidth: 1)
         )
     }
@@ -1171,16 +1229,17 @@ struct SettingsPillSelector<T: Hashable>: View {
                 selection = option.0
             } label: {
                 Text(loc: option.1)
-                    .font(.system(size: 11.5, weight: isSelected ? .semibold : .medium))
-                    .foregroundColor(isSelected ? .white : Theme.textSecondary)
+                    .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
+                    .foregroundColor(isSelected ? Theme.textPrimary : Theme.textSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
+                    .frame(maxWidth: inline ? nil : .infinity)
+                    .padding(.horizontal, inline ? 8 : 10)
+                    .padding(.vertical, inline ? 6 : 7)
                     .background(
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(isSelected ? accent : Color.clear)
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(isSelected ? Theme.card : Color.clear)
+                            .shadow(color: isSelected ? Color.black.opacity(0.07) : .clear, radius: 1, y: 1)
                     )
             }
             .buttonStyle(.plain)
@@ -1294,10 +1353,10 @@ struct OverviewCard: View {
         .padding(12)
         .frame(maxWidth: .infinity, minHeight: 116, alignment: .topLeading)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.card)
+            RoundedRectangle(cornerRadius: Theme.settingsCardRadius, style: .continuous).fill(Theme.card)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Theme.stroke, lineWidth: 1)
+            RoundedRectangle(cornerRadius: Theme.settingsCardRadius, style: .continuous).strokeBorder(Theme.stroke, lineWidth: 1)
         )
     }
 }
@@ -1320,9 +1379,11 @@ struct OverviewActionRow: View {
                     Text(loc: title)
                         .font(.system(size: 12.5, weight: .medium))
                         .foregroundColor(Theme.textPrimary)
-                    Text(loc: detail)
-                        .font(.system(size: 11))
-                        .foregroundColor(Theme.textSecondary)
+                    if !detail.isEmpty {
+                        Text(loc: detail)
+                            .font(.system(size: 11))
+                            .foregroundColor(Theme.textSecondary)
+                    }
                 }
                 Spacer()
                 Text(loc: status)
@@ -1332,8 +1393,8 @@ struct OverviewActionRow: View {
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(Theme.textTertiary)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 7)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
@@ -1509,20 +1570,23 @@ struct MenuBarPreviewView: View {
     }
 
     private func previewChrome(image: NSImage, previewWidth: CGFloat, imageScale: CGFloat, isTooWide: Bool) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.8))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(isTooWide ? Theme.danger.opacity(0.75) : Theme.stroke, lineWidth: 1)
-                )
-            Image(nsImage: image)
-                .interpolation(.high)
-                .frame(width: image.size.width, height: image.size.height)
-                .scaleEffect(imageScale)
+        HStack {
+            if expanded { Spacer(minLength: 0) }
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .strokeBorder(isTooWide ? Theme.danger.opacity(0.75) : Theme.stroke, lineWidth: 1)
+                    )
+                Image(nsImage: image)
+                    .interpolation(.high)
+                    .frame(width: image.size.width, height: image.size.height)
+                    .scaleEffect(imageScale)
+            }
+            .frame(width: previewWidth, height: expanded ? 42 : 36)
+            if !expanded { Spacer(minLength: 0) }
         }
-        .frame(width: previewWidth, height: expanded ? 42 : 36)
-        .frame(maxWidth: .infinity)
     }
 }
 
@@ -1533,11 +1597,12 @@ struct PopoverPreviewView: View {
     var body: some View {
         PopoverRootView(hub: hub)
             .frame(width: Theme.popoverWidth)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .strokeBorder(Theme.stroke, lineWidth: 1)
             )
+            .shadow(color: Color.black.opacity(0.06), radius: 10, y: 4)
     }
 }
 

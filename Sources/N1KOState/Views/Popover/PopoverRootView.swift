@@ -122,34 +122,27 @@ struct PopoverRootView: View {
                     .font(.system(size: 14, weight: .heavy, design: .rounded))
                     .foregroundColor(settings.accent)
                 Spacer(minLength: 4)
-                Button(action: { SettingsWindowController.shared.show(fans: hub.fans, hub: hub) }) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(Theme.textSecondary)
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
+                headerIconButton(
+                    systemName: "gearshape",
+                    help: "Settings".loc,
+                    label: "Settings".loc,
+                    hint: "Opens N1KO-STATE settings.".loc
+                ) {
+                    SettingsWindowController.shared.show(fans: hub.fans, hub: hub)
                 }
-                .buttonStyle(.plain)
-                .help("Settings".loc)
-                .accessibilityLabel("Settings".loc)
-                .accessibilityHint("Opens N1KO-STATE settings.".loc)
 
-                Button(action: { NSApp.terminate(nil) }) {
-                    Image(systemName: "power")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(Theme.textSecondary)
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
+                headerIconButton(
+                    systemName: "power",
+                    help: "Quit N1KO-STATE".loc,
+                    label: "Quit N1KO-STATE".loc,
+                    hint: "Closes the app and restores automatic fan control.".loc
+                ) {
+                    NSApp.terminate(nil)
                 }
-                .buttonStyle(.plain)
-                .help("Quit N1KO-STATE".loc)
-                .accessibilityLabel("Quit N1KO-STATE".loc)
-                .accessibilityHint("Closes the app and restores automatic fan control.".loc)
             }
 
             if settings.popoverStyle == "gauges" {
                 DashboardHeaderSummary(hub: hub)
-                    .padding(.top, 8)
             }
         }
         .padding(.horizontal, Theme.padding)
@@ -160,5 +153,26 @@ struct PopoverRootView: View {
                 alignment: .bottom
             )
         )
+    }
+
+    /// Icon-only control with a fixed 28×28 hit target — header background is not clickable.
+    private func headerIconButton(
+        systemName: String,
+        help: String,
+        label: String,
+        hint: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(Theme.textSecondary)
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
+        .accessibilityLabel(label)
+        .accessibilityHint(hint)
     }
 }

@@ -12,6 +12,8 @@
 "Load" = "负载";
 "Cores" = "核心";
 "Uptime" = "运行时间";
+"Run" = "运行";
+"Stress" = "压力";
 "Freq" = "频率";
 "Top Processes" = "占用最高进程";
 
@@ -372,3 +374,11 @@
 "Chart range %@" = "图表范围 %@";
 "%@ threshold" = "%@ 阈值";
 "%@ mode" = "%@ 模式";
+"Active Metrics" = "活跃指标";
+"Popover Modules" = "弹窗模块";
+"Quick Links" = "快捷入口";
+"Popover modules" = "弹窗模块";
+"Currently shown in the menu bar." = "菜单栏当前显示。";
+"Enabled in gauge dashboard." = "仪表盘已启用。";
+"Enabled in card layout." = "卡片布局已启用。";
+"%d items" = "%d 项";

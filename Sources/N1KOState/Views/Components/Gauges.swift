@@ -43,51 +43,32 @@ struct RingGauge: View {
     }
 }
 
-/// Premium dashboard ring with spring-animated arc, soft glow, and custom center content.
+/// Dashboard ring with spring-animated arc and custom center content.
 struct DashboardRingGauge<Center: View>: View {
     var fraction: Double
     var color: Color
-    var lineWidth: CGFloat = 7
+    var lineWidth: CGFloat = Theme.gaugeRingLineWidth
     var size: CGFloat = Theme.gaugeRingSize
     @ViewBuilder var center: () -> Center
 
     @State private var animatedFraction: Double = 0
-    @State private var glowPulse = false
 
     var body: some View {
         ZStack {
             Circle()
-                .stroke(color.opacity(glowPulse ? 0.22 : 0.12), lineWidth: lineWidth + 10)
-                .blur(radius: 6)
-                .animation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true), value: glowPulse)
-
-            Circle()
-                .stroke(Theme.track.opacity(0.9), style: StrokeStyle(lineWidth: lineWidth))
+                .stroke(Theme.track, style: StrokeStyle(lineWidth: lineWidth))
 
             Circle()
                 .trim(from: 0, to: CGFloat(min(max(animatedFraction, 0), 1)))
-                .stroke(
-                    AngularGradient(
-                        gradient: Gradient(colors: [
-                            color.opacity(0.55),
-                            color,
-                            color.opacity(0.85)
-                        ]),
-                        center: .center,
-                        startAngle: .degrees(-90),
-                        endAngle: .degrees(270)
-                    ),
-                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
-                )
+                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .shadow(color: color.opacity(0.28), radius: 4, x: 0, y: 0)
 
             center()
-                .frame(width: innerDiameter)
+                .frame(width: innerDiameter, height: innerDiameter)
         }
         .frame(width: size, height: size)
         .onAppear {
-            glowPulse = true
+            animatedFraction = 0
             withAnimation(.spring(response: 0.72, dampingFraction: 0.78)) {
                 animatedFraction = fraction
             }
@@ -100,43 +81,51 @@ struct DashboardRingGauge<Center: View>: View {
     }
 
     private var innerDiameter: CGFloat {
-        max(size - lineWidth * 2 - 14, 44)
+        max(size - Theme.gaugeRingInnerInset * 2, 48)
     }
 }
 
-/// Animated center stack for dashboard rings: primary value + compact detail rows.
+/// Center stack for dashboard rings: primary value + label/value detail rows.
 struct DashboardRingCenter: View, Equatable {
     let primaryValue: String
     let primaryColor: Color
     let details: [DashboardRingDetail]
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 3) {
             Text(primaryValue)
-                .font(.metric(15, weight: .heavy))
+                .font(.metric(14, weight: .heavy))
                 .foregroundColor(primaryColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.62)
                 .animation(.spring(response: 0.42, dampingFraction: 0.86), value: primaryValue)
 
-            VStack(spacing: 2) {
+            VStack(spacing: 1) {
                 ForEach(details) { detail in
-                    Text(detailText(detail))
-                        .font(.metric(7.5, weight: .semibold))
-                        .foregroundColor(detail.placeholder ? .clear : Theme.textSecondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.55)
-                        .frame(maxWidth: .infinity)
+                    if detail.placeholder {
+                        Text(" ")
+                            .font(.metric(7, weight: .semibold))
+                            .foregroundColor(.clear)
+                            .lineLimit(1)
+                    } else {
+                        HStack(spacing: 3) {
+                            Text(loc: detail.label)
+                                .font(.system(size: 7, weight: .medium))
+                                .foregroundColor(Theme.textTertiary)
+                                .fixedSize()
+                            Text(detail.value)
+                                .font(.metric(7, weight: .semibold))
+                                .foregroundColor(Theme.textSecondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.55)
+                        }
+                        .frame(maxWidth: 72)
                         .animation(.easeOut(duration: 0.28), value: detail.value)
+                    }
                 }
             }
         }
         .multilineTextAlignment(.center)
-    }
-
-    private func detailText(_ detail: DashboardRingDetail) -> String {
-        guard !detail.placeholder else { return " " }
-        return "\(detail.label.loc) \(detail.value)"
     }
 }
 

@@ -107,13 +107,16 @@ enum Theme {
     // MARK: - Metrics
 
     static let cardRadius: CGFloat = 14
+    static let settingsCardRadius: CGFloat = 12
     static let padding: CGFloat = 14
     static let cardPadding: CGFloat = 14
     static let popoverWidth: CGFloat = 360
-    static let gaugeGridSpacing: CGFloat = 12
+    static let gaugeGridSpacing: CGFloat = 10
     static let gaugeTileRadius: CGFloat = 12
-    static let gaugeRingSize: CGFloat = 92
-    static let gaugeTileHeight: CGFloat = 148
+    static let gaugeRingSize: CGFloat = 100
+    static let gaugeRingLineWidth: CGFloat = 5
+    static let gaugeRingInnerInset: CGFloat = 18
+    static let gaugeTileHeight: CGFloat = 158
 }
 
 extension Color {

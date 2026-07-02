@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=980" />
+  <title>N1KO STATE — Settings Demo v4</title>
+  <style>
+    :root {
+      --accent:#5E5CE6; --ok:#32D74B; --info:#0A84FF; --warn:#FF9F0A; --danger:#FF453A;
+      --gpu:#FF6482; --memory:#BF5AF2;
+      --bg:#E8E8EE; --sidebar:#DFE0E8; --surface:#F8F8FA; --card:#FFF; --inset:#EEEEF3;
+      --stroke:rgba(0,0,0,.07); --stroke-2:rgba(0,0,0,.10); --track:rgba(0,0,0,.045);
+      --text:rgba(0,0,0,.9); --text-2:rgba(0,0,0,.5); --text-3:rgba(0,0,0,.35);
+      --hover:rgba(0,0,0,.035); --active:rgba(94,92,230,.12);
+      --pop-surface:#FFF; --pop-header:#F8F8FA; --pop-card:#FFF; --pop-track:rgba(0,0,0,.055);
+      --shadow:0 28px 72px rgba(0,0,0,.16); --spring:cubic-bezier(.22,1.12,.36,1);
+      --r-win:14px; --r-card:12px; --preview-w:360px; --sidebar-w:224px;
+    }
+    [data-theme="dark"]{
+      --bg:#08090C; --sidebar:#0E1015; --surface:#12141A; --card:#181B23; --inset:#1A1E27;
+      --stroke:rgba(255,255,255,.07); --stroke-2:rgba(255,255,255,.11); --track:rgba(255,255,255,.055);
+      --text:rgba(255,255,255,.93); --text-2:rgba(255,255,255,.54); --text-3:rgba(255,255,255,.36);
+      --hover:rgba(255,255,255,.04); --active:rgba(94,92,230,.18);
+      --pop-surface:#14161C; --pop-header:#171A22; --pop-card:rgba(28,30,38,.65); --pop-track:rgba(255,255,255,.08);
+      --shadow:0 32px 90px rgba(0,0,0,.55);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:22px 14px 36px;-webkit-font-smoothing:antialiased}
+    .intro{width:min(1000px,100%);margin-bottom:16px}
+    .intro h1{font-size:15px;font-weight:650;letter-spacing:-.025em}
+    .intro p{font-size:12px;color:var(--text-2);line-height:1.55;margin-top:5px;max-width:68ch}
+    .intro-bar{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+    .chip{font:inherit;font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1px solid var(--stroke);background:var(--card);cursor:pointer}
+    .chip.on{background:var(--accent);border-color:transparent;color:#fff}
+
+    .win{width:min(1000px,100%);height:748px;border-radius:var(--r-win);border:1px solid var(--stroke-2);box-shadow:var(--shadow);background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
+    .tb{height:40px;display:flex;align-items:center;padding:0 14px;background:var(--inset);border-bottom:1px solid var(--stroke)}
+    .dots{display:flex;gap:7px;margin-right:12px}.dots i{width:11px;height:11px;border-radius:50%;display:block}
+    .dots i:nth-child(1){background:#FF5F57}.dots i:nth-child(2){background:#FEBC2E}.dots i:nth-child(3){background:#28C840}
+    .tb span{flex:1;text-align:center;font-size:12px;font-weight:600;color:var(--text-2);margin-right:34px}
+    .shell{display:flex;flex:1;min-height:0}
+    .side{width:var(--sidebar-w);background:var(--sidebar);border-right:1px solid var(--stroke);display:flex;flex-direction:column;padding:12px 9px 9px;flex-shrink:0}
+    .brand{padding:2px 7px 11px}.brand b{font-size:14px;font-weight:800;letter-spacing:-.03em;font-family:"SF Pro Rounded",system-ui,sans-serif}
+    .brand b em{font-style:normal;color:var(--accent)}.brand small{display:block;font-size:11px;color:var(--text-2);margin-top:2px}
+    .search{position:relative;padding:0 3px 9px}.search input{width:100%;font:inherit;font-size:12px;padding:7px 10px 7px 27px;border-radius:8px;border:1px solid var(--stroke);background:var(--card);color:var(--text);outline:none}
+    .search::after{content:"⌕";position:absolute;left:13px;top:7px;color:var(--text-3);pointer-events:none}
+    .nav{flex:1;overflow-y:auto}.ng{margin-bottom:12px}.ng>label{display:block;font-size:10px;font-weight:600;color:var(--text-3);padding:0 7px 4px}
+    .nb{display:flex;align-items:center;gap:8px;width:100%;border:none;background:transparent;color:var(--text-2);font:inherit;font-size:12px;font-weight:500;text-align:left;padding:7px 8px;border-radius:8px;cursor:pointer}
+    .nb:hover{background:var(--hover);color:var(--text)}.nb.on{background:var(--active);color:var(--text);font-weight:600}
+    .nb .ic{width:16px;text-align:center;font-size:11px}.nb.on .ic{color:var(--accent)}
+    .sfoot{border-top:1px solid var(--stroke);padding:9px 7px 2px;margin-top:3px;font-size:10px;color:var(--text-3)}
+    .sfoot strong{display:block;font-size:13px;font-weight:700;color:var(--text);margin:3px 0}
+    .main{flex:1;overflow-y:auto;background:var(--surface)}
+    .pad{padding:24px 28px 30px;max-width:780px;animation:fadeUp .3s var(--spring)}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+    .ph{margin-bottom:20px}.ph h2{font-size:20px;font-weight:700;letter-spacing:-.035em}.ph p{font-size:12px;color:var(--text-2);line-height:1.55;margin-top:5px}
+    .stack{display:flex;flex-direction:column;gap:16px}
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:var(--r-card);overflow:hidden}
+    .ch{padding:12px 15px 0}.ch h3{font-size:13px;font-weight:600}.ch p{font-size:11px;color:var(--text-2);margin-top:3px;line-height:1.45}
+    .cb{padding:10px 15px 13px}.cb.flush{padding:0}
+    .field{margin-bottom:13px}.field:last-child{margin-bottom:0}
+    .fl{font-size:12px;font-weight:500;margin-bottom:3px}.fd{font-size:11px;color:var(--text-2);margin-bottom:7px;line-height:1.45}
+    .seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;background:var(--track);border:1px solid var(--stroke);border-radius:9px}
+    .seg.g2{display:grid;grid-template-columns:1fr 1fr;width:100%}
+    .seg.g3{display:grid;grid-template-columns:1fr 1fr 1fr;width:100%}
+    .seg button{font:inherit;font-size:11px;font-weight:500;padding:6px 10px;border:none;border-radius:6px;background:transparent;color:var(--text-2);cursor:pointer;transition:.14s var(--spring);white-space:nowrap}
+    .seg button.on{background:var(--card);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.07)}
+    .sw{width:34px;height:20px;border-radius:10px;background:var(--track);border:1px solid var(--stroke);position:relative;cursor:pointer;flex-shrink:0}
+    .sw.on{background:var(--accent);border-color:transparent}
+    .sw::after{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:2px;left:2px;box-shadow:0 1px 2px rgba(0,0,0,.18);transition:transform .2s var(--spring)}
+    .sw.on::after{transform:translateX(14px)}.sw.off{opacity:.45;pointer-events:none}
+    .mrow{display:flex;align-items:center;gap:9px;padding:9px 13px}.mrow:hover{background:var(--hover)}
+    .mrow+.mrow{border-top:1px solid var(--stroke)}.mrow .h{color:var(--text-3);font-size:11px;cursor:grab;width:12px;opacity:.45}
+    .mrow .ic{width:17px;text-align:center;font-size:11px}.mrow .bd{flex:1}.mrow .t{font-size:12px;font-weight:500}.mrow .n{font-size:10px;color:var(--text-3);margin-top:1px}.mrow.dim{opacity:.6}
+    .mb-top{display:flex;gap:18px;align-items:flex-start}.mb-left{flex:1;min-width:0}
+    .mb-right{width:var(--preview-w);flex-shrink:0;position:sticky;top:0}
+    .pv-label{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:600;color:var(--text-3);margin-bottom:7px}
+    .live-dot{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 20%,transparent);animation:pulse 2s ease infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+    .pv-wrap{transition:transform .32s var(--spring)}.pv-wrap.bump{animation:pvBump .36s var(--spring)}
+    @keyframes pvBump{0%{transform:scale(1)}45%{transform:scale(1.01)}100%{transform:scale(1)}}
+
+    /* ── Real menu-bar preview chrome (matches MenuBarPreviewView) ── */
+    .mb-chrome-box{
+      background:color-mix(in srgb,var(--inset) 80%,var(--card));
+      border:1px solid var(--stroke);
+      border-radius:8px;
+      min-height:42px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      padding:4px 8px;
+      overflow:hidden;
+      transition:width .28s var(--spring),border-color .2s;
+    }
+    .mb-chrome-box.too-wide{border-color:color-mix(in srgb,var(--danger) 75%,var(--stroke))}
+    .mb-widget{display:inline-flex;align-items:center;gap:6px;font-variant-numeric:tabular-nums;white-space:nowrap}
+    .mb-widget.fs-rounded{font-family:"SF Pro Rounded",system-ui,sans-serif}
+    .mb-widget.fs-system{font-family:-apple-system,system-ui,sans-serif}
+    .mb-widget.fs-mono{font-family:ui-monospace,Menlo,monospace}
+    .mb-widget.layout-stacked{gap:4px}
+    .mb-widget.layout-minimal{gap:5px}
+    .mb-metric{display:inline-flex;align-items:center;gap:4px}
+    .mb-chip{display:inline-block;padding:1px 4px;border-radius:3px;font-size:.72em;font-weight:900;color:#fff;line-height:1.35;letter-spacing:-.02em}
+    .mb-tag-plain{font-size:.68em;font-weight:900;letter-spacing:-.02em}
+    .mb-val{font-weight:600;min-width:28px;text-align:right}
+    .mb-val.warn{color:var(--warn)}.mb-val.bad{color:var(--danger)}
+    .mb-adaptive .mb-val,.mb-adaptive .mb-net-rate{color:var(--text)}
+    .mb-adaptive .mb-chip{background:transparent!important;padding:0;color:var(--text)!important;font-weight:800}
+    .mb-stack{display:inline-flex;flex-direction:column;align-items:center;line-height:1.05;gap:1px}
+    .mb-stack .t{font-size:.62em;font-weight:800;letter-spacing:-.02em}
+    .mb-stack .v{font-size:.82em;font-weight:600}
+    .mb-min{font-weight:600}.mb-min .l{font-weight:800}
+    .mb-div{width:1px;height:14px;background:var(--text-3);opacity:.35;margin:0 1px;flex-shrink:0}
+    .mb-net{display:inline-flex;flex-direction:column;gap:1px;line-height:1.1}
+    .mb-netline{display:flex;align-items:center;gap:2px}
+    .mb-netline .arr{font-size:.65em;font-weight:900;width:8px;text-align:center}
+    .mb-netline .arr.down{color:var(--info)}.mb-netline .arr.up{color:var(--ok)}
+    .mb-net-rate{font-size:.78em;font-weight:500}
+    .pv-meta{display:flex;justify-content:space-between;margin-top:8px;font-size:10px}
+    .pv-meta .k{color:var(--text-3);font-weight:600}.pv-meta .v{font-weight:700;font-variant-numeric:tabular-nums}
+    .pv-meta .v.bad{color:var(--danger)}.hint{display:flex;gap:7px;margin-top:8px;font-size:10.5px;color:var(--text-2);line-height:1.45}
+    .hint.warn{color:var(--danger)}
+
+    /* ── Real popover preview (matches PopoverRootView gauges v3.2) ── */
+    .pop-real{width:var(--preview-w);border-radius:14px;border:1px solid var(--stroke);background:var(--pop-surface);overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06)}
+    .pop-real .hdr{padding:10px 14px 8px;background:var(--pop-header);border-bottom:1px solid var(--stroke)}
+    .pop-real .hdr-top{display:flex;align-items:center;gap:6px}
+    .pop-real .hdr-top b{font-size:12px;font-weight:800;font-family:"SF Pro Rounded",system-ui,sans-serif}
+    .pop-real .hdr-top em{font-style:normal;color:var(--accent)}
+    .pop-real .hdr-ico{margin-left:auto;display:flex;gap:2px;color:var(--text-2);font-size:11px}
+    .pop-real .sum{display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--text-3)}
+    .pop-real .sum span{display:flex;align-items:baseline;gap:4px}.pop-real .sum b{color:var(--text);font-weight:700}
+    .pop-real .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px 14px}
+    .pop-real .tile{background:var(--pop-card);border:1px solid var(--stroke);border-radius:12px;padding:9px 9px 11px;display:flex;flex-direction:column;gap:5px;min-height:132px}
+    .pop-real .tile-h{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:600}
+    .pop-real .tile-ic{width:18px;height:18px;border-radius:5px;display:grid;place-items:center;font-size:9px}
+    .pop-real .tile-ring{flex:1;display:flex;align-items:center;justify-content:center}
+    .pop-real .ring{width:72px;height:72px;position:relative}
+    .pop-real .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+    .pop-real .ring-track{fill:none;stroke:var(--pop-track);stroke-width:4}
+    .pop-real .ring-arc{fill:none;stroke-width:4;stroke-linecap:round}
+    .pop-real .ring-c{position:absolute;inset:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px;pointer-events:none}
+    .pop-real .ring-p{font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+    .pop-real .ring-d{font-size:6px;line-height:1.3;color:var(--text-2);display:flex;gap:2px;max-width:52px}
+    .pop-real .ring-d .dl{color:var(--text-3);font-weight:500}.pop-real .ring-d .dv{font-weight:600}
+    .pop-real.cards .grid{grid-template-columns:1fr;gap:8px;padding:10px 14px 14px}
+    .pop-real.cards .tile{min-height:auto;padding:10px 12px;flex-direction:row;align-items:center;gap:10px}
+    .pop-real.cards .tile-ring{display:none}
+    .pop-real.cards .tile-body{flex:1}
+    .pop-real.cards .tile-bar{height:4px;background:var(--pop-track);border-radius:2px;margin-top:5px;overflow:hidden}
+    .pop-real.cards .tile-bar i{display:block;height:100%;border-radius:2px}
+    .pop-real.cards .tile-val{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+
+    .dual{display:flex;gap:18px;align-items:flex-start}.dual-l{flex:1;min-width:0}.dual-r{width:var(--preview-w);flex-shrink:0;position:sticky;top:0}
+    .slider{display:flex;align-items:center;gap:9px}.slider input{flex:1;accent-color:var(--accent)}
+    .slider .num{font-size:11px;font-weight:600;color:var(--text-2);min-width:28px;text-align:right;font-variant-numeric:tabular-nums}
+    .btn{font:inherit;font-size:11px;font-weight:600;padding:5px 10px;border-radius:7px;border:1px solid var(--stroke);background:var(--card);cursor:pointer}
+    .r-end{display:flex;justify-content:flex-end;margin-top:2px}
+    select.pick{font:inherit;font-size:11px;padding:5px 8px;border-radius:6px;border:1px solid var(--stroke);background:var(--card);color:var(--text);min-width:130px}
+    .stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+    .stat{padding:13px 14px;background:var(--card);border:1px solid var(--stroke);border-radius:var(--r-card)}
+    .stat .k{font-size:11px;color:var(--text-3)}.stat .v{font-size:17px;font-weight:700;margin:3px 0}.stat .d{font-size:10.5px;color:var(--text-2)}
+    .act{display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border:none;background:transparent;text-align:left;cursor:pointer;font:inherit;color:inherit}
+    .act:hover{background:var(--hover)}.act+.act{border-top:1px solid var(--stroke)}
+    .act .ai{width:27px;height:27px;border-radius:7px;background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent);display:grid;place-items:center;font-size:11px}
+    .act .ab{flex:1}.act .at{font-size:12px;font-weight:500}.act .ad{font-size:11px;color:var(--text-2)}.act .as{font-size:11px;color:var(--text-3)}
+    .row{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:46px}.row+.row{border-top:1px solid var(--stroke)}
+    .row .meta{flex:1}.row .meta .t{font-size:12px;font-weight:500}.row .meta .s{font-size:10.5px;color:var(--text-3);margin-top:1px}
+    .cost-h,.cost-r{display:grid;grid-template-columns:1fr 84px 72px;gap:9px;padding:8px 14px;font-size:10px;font-weight:600;color:var(--text-3)}
+    .cost-r{align-items:start;padding:10px 14px}.cost-r+.cost-r{border-top:1px solid var(--stroke)}
+    .cost-r .n{font-size:12px;font-weight:500;color:var(--text)}.cost-r .d{font-size:10.5px;color:var(--text-2);margin-top:2px}
+    .cost-r .num{font-size:11px;text-align:right;font-variant-numeric:tabular-nums}.cost-h{border-bottom:1px solid var(--stroke)}
+    .notes{width:min(1000px,100%);margin-top:18px;padding:13px 15px;border-radius:var(--r-card);border:1px solid var(--stroke);background:var(--card)}
+    .notes h3{font-size:12px;font-weight:700;margin-bottom:7px}
+    .notes ul{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:5px 16px}
+    .notes li{font-size:11px;color:var(--text-2);line-height:1.45;padding-left:10px;position:relative}
+    .notes li::before{content:"";position:absolute;left:0;top:7px;width:4px;height:4px;border-radius:50%;background:var(--accent)}
+    @media(max-width:860px){.win{height:auto}.shell{flex-direction:column}.side{width:100%}.mb-top,.dual{flex-direction:column}.mb-right,.dual-r{width:100%;position:static}.stats3{grid-template-columns:1fr}.notes ul{grid-template-columns:1fr}}
+  </style>
+</head>
+<body data-theme="light">
+  <div class="intro">
+    <h1>Settings — UI Demo v4</h1>
+    <p>语言 4 项、外观 3 项与 App 一致；菜单栏预览复刻 <code>MenuBarPreviewView</code> 灰底圆角框 + 真实 chip 渲染；弹窗预览复刻仪表盘 v3.2 的 <code>PopoverRootView</code>。</p>
+    <div class="intro-bar">
+      <button class="chip on" id="tl" onclick="setTheme('light')">浅色</button>
+      <button class="chip" id="td" onclick="setTheme('dark')">深色</button>
+      <button class="chip" onclick="nav('menubar')">菜单栏</button>
+      <button class="chip" onclick="nav('popover')">弹窗</button>
+      <button class="chip" onclick="nav('advanced')">高级</button>
+    </div>
+  </div>
+  <div class="win">
+    <div class="tb"><div class="dots"><i></i><i></i><i></i></div><span>N1KO-STATE 设置</span></div>
+    <div class="shell">
+      <aside class="side">
+        <div class="brand"><b>N1KO <em>STATE</em></b><small>设置</small></div>
+        <div class="search"><input id="q" placeholder="搜索设置…" oninput="renderNav()" /></div>
+        <div class="nav" id="nav"></div>
+        <div class="sfoot"><span>当前资源占用</span><strong id="cost-label">低影响</strong></div>
+      </aside>
+      <main class="main"><div class="pad" id="main"></div></main>
+    </div>
+  </div>
+  <div class="notes"><h3>v4 修正</h3><ul>
+    <li>语言：跟随系统 / English / 简体中文 / 繁體中文</li>
+    <li>外观：跟随系统 / 浅色 / 深色（3 段）</li>
+    <li>菜单栏预览 = 灰底控件框 + CPU/GPU/MEM 色块 chip + 网络 ↓↑ 双行</li>
+    <li>弹窗预览 = 360px 真实仪表盘布局（环内详情、顶栏摘要）</li>
+    <li>所有控件变更仍实时联动预览</li>
+  </ul></div>
+
+<script>
+const NAV=[
+  {g:'通用',items:[{id:'overview',ic:'◎',lb:'概览'}]},
+  {g:'显示',items:[{id:'menubar',ic:'▭',lb:'菜单栏'},{id:'popover',ic:'▣',lb:'弹窗'}]},
+  {g:'性能',items:[{id:'sampling',ic:'◷',lb:'采样与性能'}]},
+  {g:'硬件',items:[{id:'sensors',ic:'°',lb:'传感器与风扇'},{id:'alerts',ic:'◉',lb:'警报'}]},
+  {g:'系统',items:[{id:'advanced',ic:'⚙',lb:'高级'}]}
+];
+const MB_ORDER=['cpu','gpu','memory','network','battery'];
+const MB_DATA={
+  cpu:{tag:'CPU',color:'#0A84FF',val:.24,net:false},
+  gpu:{tag:'GPU',color:'#FF6482',val:.18,net:false},
+  memory:{tag:'MEM',color:'#BF5AF2',val:.85,net:false},
+  network:{tag:'NET',color:'#0A84FF',down:'606K',up:'458K',net:true},
+  battery:{tag:'BAT',color:'#32D74B',val:.86,net:false,disabled:true}
+};
+const POP_TILES=[
+  {id:'cpu',title:'CPU',color:'var(--info)',pct:.24,details:[['负载','4.08'],['核心','10'],['运行','1d14h']]},
+  {id:'gpu',title:'GPU',color:'var(--gpu)',pct:.78,details:[['显存','1.3G'],['芯片','M4']]},
+  {id:'memory',title:'内存',color:'var(--warn)',pct:.85,details:[['已用','13.7G'],['空闲','2.3G'],['压力','中']]},
+  {id:'disk',title:'磁盘',color:'var(--accent)',pct:.62,details:[['空闲','87G'],['读取','3.6M'],['写入','3.9M']]},
+  {id:'network',title:'网络',color:'var(--info)',pct:.35,details:[['下载','606K'],['上传','458K'],['IP','10.1.30.2']],online:true},
+  {id:'sensors',title:'传感器',color:'var(--info)',pct:.47,details:[['峰值','52°'],['风扇','1'],['转速','1001rpm']]}
+];
+const R=30,CIRC=2*Math.PI*R;
+const S={
+  tab:'overview',
+  mb:{metrics:{cpu:true,gpu:true,memory:true,network:true,battery:false},colorMode:'colorful',layout:'standard',fontStyle:'rounded',fontSize:12},
+  pop:{style:'gauges',range:'1H',modules:Object.fromEntries(POP_TILES.map(t=>[t.id,true]))},
+  sampling:'low',
+  adv:{language:'zh-Hans',theme:'system'}
+};
+const MAX_W=180;
+
+function $(id){return document.getElementById(id)}
+function pct(v){return Math.round(v*100)+'%'}
+function valClass(v){return v>=.8?'bad':v>=.6?'warn':''}
+function bump(){document.querySelectorAll('.pv-wrap').forEach(e=>{e.classList.remove('bump');void e.offsetWidth;e.classList.add('bump')})}
+
+function visibleMB(){
+  return MB_ORDER.filter(id=>S.mb.metrics[id]&&!MB_DATA[id].disabled).map(id=>({id,...MB_DATA[id]}));
+}
+
+function calcMBWidth(){
+  const fs=S.mb.fontSize; const lay=S.mb.layout; const items=visibleMB();
+  if(!items.length) return 40;
+  let w=16;
+  const plain=S.mb.colorMode==='adaptive'||lay==='compact';
+  items.forEach((m,i)=>{
+    if(m.net){w+=52}else if(lay==='stacked'){w+=34}
+    else if(lay==='minimal'){w+=m.tag[0].length*fs*.55+String(Math.round((m.val||0)*100)).length*fs*.5+4}
+    else{w+=(plain?14:26)+32}
+    if(i<items.length-1&&m.net) w+=8;
+    else if(i<items.length-1) w+=6;
+  });
+  return Math.round(w*(lay==='compact'?.9:1));
+}
+
+function renderMBMetric(m,lay,colorful,fs){
+  const c=m.color; const p=pct(m.val||0); const vc=valClass(m.val||0);
+  const plain=!colorful||lay==='compact';
+  if(lay==='stacked'){
+    return `<span class="mb-stack"><span class="t" style="color:${colorful?c:'var(--text)'}">${m.tag}</span><span class="v ${vc}">${p}</span></span>`;
+  }
+  if(lay==='minimal'){
+    return `<span class="mb-min"><span class="l" style="color:${colorful?c:'var(--text)'}">${m.tag[0]}</span>${Math.round((m.val||0)*100)}</span>`;
+  }
+  const chip=plain
+    ? `<span class="mb-tag-plain" style="color:${colorful?c:'var(--text)'}">${m.tag}</span>`
+    : `<span class="mb-chip" style="background:${c}">${m.tag}</span>`;
+  return `<span class="mb-metric">${chip}<span class="mb-val ${vc}">${p}</span></span>`;
+}
+
+function renderMBNetwork(m,colorful){
+  const ink=colorful?'':'mb-adaptive';
+  return `<span class="mb-net ${ink}">
+    <span class="mb-netline"><span class="arr down">↓</span><span class="mb-net-rate">${m.down}</span></span>
+    <span class="mb-netline"><span class="arr up">↑</span><span class="mb-net-rate">${m.up}</span></span>
+  </span>`;
+}
+
+function renderMenuBarPreview(){
+  const items=visibleMB(); const w=Math.max(calcMBWidth(),88);
+  const tooWide=w>MAX_W; const lay=S.mb.layout; const colorful=S.mb.colorMode==='colorful';
+  const fs=S.mb.fontSize; const fsCls='fs-'+S.mb.fontStyle;
+  let inner='';
+  items.forEach((m,i)=>{
+    if(m.net){
+      if(i>0) inner+=`<span class="mb-div"></span>`;
+      inner+=renderMBNetwork(m,colorful);
+    } else {
+      inner+=renderMBMetric(m,lay,colorful,fs);
+    }
+  });
+  if(!inner) inner=`<span style="opacity:.4;font-size:${fs}px;font-weight:600">N1KO</span>`;
+  return `<div class="pv-wrap">
+    <div class="mb-chrome-box${tooWide?' too-wide':''}" style="width:${Math.min(w+16,320)}px;font-size:${fs}px">
+      <div class="mb-widget layout-${lay} ${fsCls}${colorful?'':' mb-adaptive'}">${inner}</div>
+    </div>
+    <div class="pv-meta"><span class="k">宽度</span><span class="v${tooWide?' bad':''}">${w} px</span></div>
+    ${!colorful?'<div class="hint"><span>◐</span><span>自适应颜色使用菜单栏的自动反色显示。</span></div>':''}
+    ${tooWide?`<div class="hint warn"><span>⚠</span><span>预览超过 ${MAX_W} px，请减少指标、缩小字号或改用堆叠/极简布局。</span></div>`:''}
+  </div>`;
+}
+
+function ringArc(pct,color){
+  const off=CIRC*(1-Math.min(Math.max(pct,0),1));
+  return `<svg viewBox="0 0 72 72"><circle class="ring-track" cx="36" cy="36" r="${R}"/><circle class="ring-arc" cx="36" cy="36" r="${R}" stroke="${color}" stroke-dasharray="${CIRC}" stroke-dashoffset="${off}"/></svg>`;
+}
+function ringDetails(rows){
+  return rows.slice(0,3).map(([l,v])=>`<div class="ring-d"><span class="dl">${l}</span><span class="dv">${v}</span></div>`).join('');
+}
+
+function renderPopoverPreview(){
+  const tiles=POP_TILES.filter(t=>S.pop.modules[t.id]);
+  const gauges=S.pop.style==='gauges';
+  const cells=tiles.map(t=>{
+    if(gauges){
+      return `<div class="tile"><div class="tile-h"><span class="tile-ic" style="background:color-mix(in srgb,${t.color} 11%,transparent);color:${t.color}">◉</span>${t.title}${t.online?'<span style="margin-left:auto;width:5px;height:5px;border-radius:50%;background:var(--ok)"></span>':''}</div>
+        <div class="tile-ring"><div class="ring">${ringArc(t.pct,t.color)}<div class="ring-c"><div class="ring-p" style="color:${t.color}">${pct(t.pct)}</div>${ringDetails(t.details)}</div></div></div></div>`;
+    }
+    return `<div class="tile"><div class="tile-ic" style="background:color-mix(in srgb,${t.color} 11%,transparent);color:${t.color}">◉</div>
+      <div class="tile-body"><div class="tile-h" style="padding:0">${t.title}</div><div class="tile-bar"><i style="width:${t.pct*100}%;background:${t.color}"></i></div></div>
+      <div class="tile-val" style="color:${t.color}">${pct(t.pct)}</div></div>`;
+  }).join('');
+  const sum=[
+    S.pop.modules.cpu?'<span>CPU <b>24%</b></span>':'',
+    S.pop.modules.memory?'<span>内存 <b>85%</b></span>':'',
+    S.pop.modules.network?'<span>网络 <b>606K</b></span>':''
+  ].join('');
+  return `<div class="pv-wrap"><div class="pop-real ${gauges?'':'cards'}">
+    <div class="hdr"><div class="hdr-top"><b>N1KO <em>STATE</em></b><span class="hdr-ico">⚙ ⏻</span></div>
+    ${gauges?`<div class="sum">${sum}</div>`:''}</div>
+    <div class="grid">${cells||'<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-3);font-size:11px">未启用任何模块</div>'}</div>
+  </div></div>`;
+}
+
+function syncUI(){ $('cost-label').textContent={quiet:'安静',low:'低影响',balanced:'均衡',realtime:'实时'}[S.sampling]; refreshPreviews(); updateOverview(); }
+function refreshPreviews(){
+  document.querySelectorAll('[data-mb-preview]').forEach(el=>{el.innerHTML=renderMenuBarPreview()});
+  document.querySelectorAll('[data-pop-preview]').forEach(el=>{el.innerHTML=renderPopoverPreview()});
+  bump();
+}
+
+function buildSeg(g,opts,cur,grid){
+  const cls=grid===3?' g3':grid?' g2':'';
+  return `<div class="seg${cls}">${opts.map(o=>`<button type="button" class="${cur===o.v?'on':''}" onclick="setSeg('${g}','${o.v}',this)">${o.l}</button>`).join('')}</div>`;
+}
+function card(t,d,b,f){return `<section class="card">${t?`<div class="ch"><h3>${t}</h3>${d?`<p>${d}</p>`:''}</div>`:''}<div class="cb${f?' flush':''}">${b}</div></section>`}
+function field(l,d,h){return `<div class="field"><div class="fl">${l}</div>${d?`<div class="fd" id="${d}"></div>`:''}${h}</div>`}
+function sw(on,fn){return `<div class="sw${on?' on':''}" onclick="${fn}"></div>`}
+
+function metricRows(mode,fn){
+  const src=mode==='mb'
+    ? MB_ORDER.map(id=>({id,...MB_DATA[id],name:{cpu:'CPU 使用率',gpu:'GPU 使用率',memory:'内存使用率',network:'网络速度',battery:'电池电量'}[id]}))
+    : POP_TILES.map(t=>({id:t.id,name:t.title,ic:'◉',color:t.color}));
+  return src.map(m=>{
+    const on=mode==='mb'?S.mb.metrics[m.id]:S.pop.modules[m.id];
+    const dis=m.disabled;
+    return `<div class="mrow${dis?' dim':''}"><span class="h">⠿</span><span class="ic" style="color:${m.color}">${m.ic||'◉'}</span><div class="bd"><div class="t">${m.name}</div>${m.note?`<div class="n">${m.note}</div>`:''}</div><div class="sw${on?' on':''}${dis?' off':''}" onclick="${dis?'':`${fn}('${m.id}')`}"></div></div>`;
+  }).join('');
+}
+
+MB_DATA.battery.note='此 Mac 未检测到电池。';
+
+function toggleMetric(id){if(MB_DATA[id].disabled)return;S.mb.metrics[id]=!S.mb.metrics[id];renderPage()}
+function togglePopMod(id){S.pop.modules[id]=!S.pop.modules[id];renderPage()}
+function setSeg(g,v,btn){
+  if(g==='mb-color')S.mb.colorMode=v;
+  if(g==='mb-layout')S.mb.layout=v;
+  if(g==='mb-font')S.mb.fontStyle=v;
+  if(g==='pop-style')S.pop.style=v;
+  if(g==='pop-range')S.pop.range=v;
+  if(g==='sampling')S.sampling=v;
+  if(g==='adv-theme'){S.adv.theme=v;if(v==='light')setTheme('light');else if(v==='dark')setTheme('dark')}
+  btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on')); btn.classList.add('on');
+  if(g==='pop-style')renderPage(); else syncUI();
+  updateFieldDesc();
+}
+function setFontSize(v){S.mb.fontSize=parseFloat(v);$('fs-num').textContent=S.mb.fontSize.toFixed(1);syncUI()}
+function setLanguage(v){S.adv.language=v}
+function resetMenuBar(){Object.assign(S.mb,{metrics:{cpu:true,gpu:true,memory:true,network:true,battery:false},colorMode:'colorful',layout:'standard',fontStyle:'rounded',fontSize:12});renderPage()}
+function updateFieldDesc(){
+  const cd=$('color-detail');if(cd)cd.textContent=S.mb.colorMode==='colorful'?'使用彩色指标强调色。':'使用菜单栏的自动反色显示。';
+  const ld=$('layout-detail');if(ld){const m={standard:'标准',compact:'紧凑',stacked:'堆叠',minimal:'极简'};ld.textContent=m[S.mb.layout]}
+}
+function previewLabel(){return `<div class="pv-label"><span class="live-dot"></span>实时预览</div>`}
+
+const PAGES={
+  overview:()=>`<div class="stack">
+    ${card('实时预览',null,`<div data-mb-preview>${renderMenuBarPreview()}</div>`)}
+    <div class="stats3">
+      <div class="stat"><div class="k">采样</div><div class="v" id="ov-cost">低影响</div><div class="d">弹窗关闭约 30s 一次</div></div>
+      <div class="stat"><div class="k">活跃指标</div><div class="v" id="ov-metrics">4</div><div class="d">菜单栏当前显示</div></div>
+      <div class="stat"><div class="k">弹窗模块</div><div class="v" id="ov-pop-count">6</div><div class="d">仪表盘已启用</div></div>
+    </div>
+    ${card('快捷入口',null,`
+      <button class="act" onclick="nav('menubar')"><span class="ai">▭</span><span class="ab"><div class="at">菜单栏显示</div></span><span class="as" id="ov-mb-count">4 项</span><span>›</span></button>
+      <button class="act" onclick="nav('popover')"><span class="ai">▣</span><span class="ab"><div class="at">弹窗模块</div></span><span class="as" id="ov-pop-count2">6 项</span><span>›</span></button>
+    `,true)}
+  </div>`,
+
+  menubar:()=>`<div class="stack"><div class="mb-top">
+    <div class="mb-left">${card('指标','拖拽排序，开关控制是否在菜单栏显示。',metricRows('mb','toggleMetric'),true)}</div>
+    <div class="mb-right">${previewLabel()}<div data-mb-preview>${renderMenuBarPreview()}</div></div>
+  </div>${card('外观',null,`
+    ${field('颜色模式','color-detail',buildSeg('mb-color',[{v:'colorful',l:'彩色'},{v:'adaptive',l:'菜单栏自适应'}],S.mb.colorMode))}
+    ${field('布局','layout-detail',buildSeg('mb-layout',[{v:'standard',l:'标准'},{v:'compact',l:'紧凑'},{v:'stacked',l:'堆叠'},{v:'minimal',l:'极简'}],S.mb.layout,true))}
+    ${field('字体样式',null,buildSeg('mb-font',[{v:'rounded',l:'圆体'},{v:'system',l:'系统字体'},{v:'mono',l:'等宽'}],S.mb.fontStyle))}
+    ${field('字体大小','保持在推荐宽度内。',`<div class="slider"><input type="range" min="10" max="14" step="0.5" value="${S.mb.fontSize}" oninput="setFontSize(this.value)"><span class="num" id="fs-num">${S.mb.fontSize.toFixed(1)}</span></div>`)}
+    <div class="r-end"><button class="btn" onclick="resetMenuBar()">重置菜单栏</button></div>
+  `)}</div>`,
+
+  popover:()=>`<div class="dual">
+    <div class="dual-l stack">
+      ${card('显示选项',null,`
+        ${field('弹窗样式','切换后右侧预览立即更新。',buildSeg('pop-style',[{v:'cards',l:'卡片'},{v:'gauges',l:'仪表盘'}],S.pop.style))}
+        ${field('图表范围',null,buildSeg('pop-range',[{v:'1H',l:'1H'},{v:'6H',l:'6H'},{v:'24H',l:'24H'},{v:'7D',l:'7D'}],S.pop.range,true))}
+      `)}
+      ${card('模块',null,`<div style="padding:7px 14px 5px"><input placeholder="搜索模块…" style="width:100%;font:inherit;font-size:12px;padding:6px 9px;border-radius:8px;border:1px solid var(--stroke);background:var(--surface);color:var(--text)"></div>${metricRows('pop','togglePopMod')}`,true)}
+    </div>
+    <div class="dual-r">${previewLabel()}<div data-pop-preview>${renderPopoverPreview()}</div></div>
+  </div>`,
+
+  sampling:()=>`<div class="stack">
+    ${card('刷新策略','更低间隔更实时，但会更频繁唤醒应用。',field('刷新间隔',null,buildSeg('sampling',[{v:'quiet',l:'安静'},{v:'low',l:'低影响'},{v:'balanced',l:'均衡'},{v:'realtime',l:'实时'}],S.sampling,true)))}
+    ${card('成本明细',null,`<div class="cost-h"><span>数据源</span><span style="text-align:right">后台</span><span style="text-align:right">可见时</span></div>
+      ${[['CPU / 内存','菜单栏、警报与历史','30s','2s'],['网络','按需更新','停止','2s'],['进程','弹窗打开时','停止','5s'],['传感器 / 风扇','热安全控制','30s','2s'],['磁盘卷','事件驱动','事件','打开时']].map(r=>`<div class="cost-r"><div><div class="n">${r[0]}</div><div class="d">${r[1]}</div></div><div class="num">${r[2]}</div><div class="num">${r[3]}</div></div>`).join('')}`,true)}
+  </div>`,
+
+  sensors:()=>`<div class="stack">${card('显示',null,`
+    <div class="row"><div class="meta"><div class="t">以华氏度显示温度</div></div><div class="sw" onclick="this.classList.toggle('on')"></div></div>
+    <div class="row"><div class="meta"><div class="t">显示各传感器读数</div></div><div class="sw on" onclick="this.classList.toggle('on')"></div></div>`,true)}
+    ${card('风扇控制',null,`<div class="row"><div class="meta"><div class="t">助手状态</div></div><span style="font-size:11px;font-weight:600;color:var(--ok)">已就绪</span></div>`,true)}
+  </div>`,
+
+  alerts:()=>`<div class="stack">${card(null,null,`<div class="row"><div class="meta"><div class="t">启用警报</div><div class="s">需要系统通知权限</div></div><div class="sw on" onclick="this.classList.toggle('on')"></div></div>`,true)}
+    ${card('阈值',null,['CPU 使用率','内存使用率','温度'].map((l,i)=>`<div class="row"><div class="meta"><div class="t">${l}</div></div><div class="sw on" onclick="this.classList.toggle('on')"></div></div>`).join(''),true)}
+  </div>`,
+
+  advanced:()=>`<div class="stack">${card('基础',null,`
+    <div class="row"><div class="meta"><div class="t">语言</div></div>
+      <select class="pick" onchange="setLanguage(this.value)">
+        <option value="system" ${S.adv.language==='system'?'selected':''}>跟随系统</option>
+        <option value="en" ${S.adv.language==='en'?'selected':''}>English</option>
+        <option value="zh-Hans" ${S.adv.language==='zh-Hans'?'selected':''}>简体中文</option>
+        <option value="zh-Hant" ${S.adv.language==='zh-Hant'?'selected':''}>繁體中文</option>
+      </select></div>
+    <div class="row"><div class="meta"><div class="t">外观</div></div>
+      ${buildSeg('adv-theme',[{v:'system',l:'跟随系统'},{v:'light',l:'浅色'},{v:'dark',l:'深色'}],S.adv.theme,3)}</div>
+    <div class="row"><div class="meta"><div class="t">登录时启动</div></div><div class="sw on" onclick="this.classList.toggle('on')"></div></div>
+  `,true)}
+  ${card('更新与许可',null,`<div class="row"><div class="meta"><div class="t">检查更新</div><div class="s">当前 1.0.16</div></div><button class="btn">检查更新</button></div>`,true)}
+  </div>`
+};
+
+const META={
+  overview:{t:'概览',s:'菜单栏、弹窗、采样和热安全状态一览。'},
+  menubar:{t:'菜单栏',s:'选择常驻读数，并确保各种菜单栏状态下都清晰可读。'},
+  popover:{t:'弹窗',s:'控制左键点开的监控面板，与菜单栏读数独立配置。'},
+  sampling:{t:'采样与性能',s:'调整应用在隐藏或可见时的后台工作量。'},
+  sensors:{t:'传感器与风扇',s:'温度显示与风扇控制共享同一安全边界。'},
+  alerts:{t:'警报',s:'指标超过阈值时发送系统通知。'},
+  advanced:{t:'高级',s:'语言、外观、启动项、诊断与维护。'}
+};
+
+function updateOverview(){
+  const mc=visibleMB().filter(m=>!m.net).length; const pc=Object.values(S.pop.modules).filter(Boolean).length;
+  const cl={quiet:'安静',low:'低影响',balanced:'均衡',realtime:'实时'}[S.sampling];
+  [['ov-metrics',mc],['ov-mb-count',mc+' 项'],['ov-pop-count',pc],['ov-pop-count2',pc+' 项'],['ov-cost',cl]].forEach(([id,v])=>{const e=$(id);if(e)e.textContent=v});
+}
+
+function renderNav(){
+  const q=($('q').value||'').trim().toLowerCase();
+  $('nav').innerHTML=NAV.map(s=>{
+    const items=s.items.filter(i=>!q||i.lb.includes(q)||s.g.includes(q));
+    if(!items.length)return '';
+    return `<div class="ng"><label>${s.g}</label>${items.map(i=>`<button class="nb${S.tab===i.id?' on':''}" onclick="nav('${i.id}')"><span class="ic">${i.ic}</span>${i.lb}</button>`).join('')}</div>`;
+  }).join('');
+}
+
+function renderPage(){
+  const m=META[S.tab];
+  $('main').innerHTML=`<div class="ph"><h2>${m.t}</h2><p>${m.s}</p></div>${PAGES[S.tab]()}`;
+  updateFieldDesc(); syncUI();
+}
+
+function nav(id){S.tab=id;renderNav();renderPage()}
+
+function setTheme(t){
+  document.body.dataset.theme=t;
+  $('tl').classList.toggle('on',t==='light');
+  $('td').classList.toggle('on',t==='dark');
+  if(S.adv.theme==='system'||(t==='light'&&S.adv.theme==='light')||(t==='dark'&&S.adv.theme==='dark')) refreshPreviews();
+}
+
+renderNav(); renderPage();
+</script>
+</body>
+</html>

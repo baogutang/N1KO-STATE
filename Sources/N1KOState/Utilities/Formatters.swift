@@ -17,6 +17,16 @@ enum Formatters {
         return String(format: i == 0 ? "%.0f %@" : "%.1f %@", v, units[i])
     }
 
+    /// Compact bytes for gauge ring details ("13.7G", no space).
+    static func bytesCompact(_ b: Double) -> String {
+        let units = ["B", "K", "M", "G", "T"]
+        var v = max(b, 0)
+        var i = 0
+        while v >= 1024 && i < units.count - 1 { v /= 1024; i += 1 }
+        if i == 0 { return String(format: "%.0f%@", v, units[i]) }
+        return String(format: v >= 100 ? "%.0f%@" : "%.1f%@", v, units[i])
+    }
+
     /// Bytes/sec → "1.2 MB/s".
     static func rate(_ bytesPerSec: Double) -> String {
         bytes(bytesPerSec) + "/s"
@@ -41,6 +51,22 @@ enum Formatters {
         if d > 0 { return "\(d)d \(h)h" }
         if h > 0 { return "\(h)h \(m)m" }
         return "\(m)m"
+    }
+
+    /// Compact uptime for gauge ring details ("1d14h", no spaces).
+    static func uptimeCompact(_ seconds: TimeInterval) -> String {
+        let t = Int(max(seconds, 0))
+        let d = t / 86400
+        let h = (t % 86400) / 3600
+        let m = (t % 3600) / 60
+        if d > 0 { return "\(d)d\(h)h" }
+        if h > 0 { return "\(h)h\(m)m" }
+        return "\(m)m"
+    }
+
+    /// Fan speed for gauge ring details ("1001rpm").
+    static func fanRPMCompact(_ rpm: Int) -> String {
+        "\(rpm)rpm"
     }
 
     /// "45°" (or "113°F" when the Fahrenheit preference is on).

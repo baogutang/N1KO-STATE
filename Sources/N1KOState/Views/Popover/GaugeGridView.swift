@@ -16,9 +16,10 @@ struct GaugeGridView: View {
             ForEach(Array(visibleModules.enumerated()), id: \.element.id) { index, module in
                 tile(for: module)
                     .opacity(tilesAppeared ? 1 : 0)
-                    .offset(y: tilesAppeared ? 0 : 10)
+                    .offset(y: tilesAppeared ? 0 : 8)
+                    .scaleEffect(tilesAppeared ? 1 : 0.98)
                     .animation(
-                        .spring(response: 0.55, dampingFraction: 0.82)
+                        .spring(response: 0.62, dampingFraction: 0.82)
                             .delay(Double(index) * 0.045),
                         value: tilesAppeared
                     )
@@ -68,7 +69,7 @@ struct GaugeGridView: View {
             details: ringDetails([
                 ("Load", String(format: "%.2f", snapshot.cpuLoadAverageOne)),
                 ("Cores", snapshot.cpuCoreCount == 0 ? "—" : "\(snapshot.cpuCoreCount)"),
-                ("Uptime", Formatters.uptime(snapshot.cpuUptime))
+                ("Run", Formatters.uptimeCompact(snapshot.cpuUptime))
             ])
         )
     }
@@ -77,10 +78,11 @@ struct GaugeGridView: View {
         let snapshot = hub.snapshot
         let vramText: String
         if snapshot.gpuVRAMTotal > 0 {
-            vramText = Formatters.bytes(snapshot.gpuVRAMUsed)
+            vramText = Formatters.bytesCompact(snapshot.gpuVRAMUsed)
         } else {
             vramText = "—"
         }
+        let chipText = snapshot.gpuIsAvailable ? shortChipName(snapshot.gpuName) : "—"
         return DashboardGaugeTile(
             icon: "sparkles",
             title: "GPU",
@@ -89,7 +91,7 @@ struct GaugeGridView: View {
             color: Theme.gpu,
             details: ringDetails([
                 ("VRAM", vramText),
-                ("Chip", snapshot.gpuIsAvailable ? snapshot.gpuName : "—")
+                ("Chip", chipText)
             ])
         )
     }
@@ -104,9 +106,9 @@ struct GaugeGridView: View {
             value: Formatters.percent(usedFraction),
             color: memoryColor,
             details: ringDetails([
-                ("Used", Formatters.bytes(snapshot.memoryUsed)),
-                ("Free", Formatters.bytes(snapshot.memoryFree)),
-                ("Pressure", snapshot.memoryPressureLevel.rawValue.loc)
+                ("Used", Formatters.bytesCompact(snapshot.memoryUsed)),
+                ("Free", Formatters.bytesCompact(snapshot.memoryFree)),
+                ("Stress", snapshot.memoryPressureLevel.rawValue.loc)
             ])
         )
     }
@@ -121,7 +123,7 @@ struct GaugeGridView: View {
             value: Formatters.percent(used),
             color: Theme.semantic(for: used),
             details: ringDetails([
-                ("Free", snapshot.diskPrimaryFree.map { Formatters.bytes($0) } ?? "—"),
+                ("Free", snapshot.diskPrimaryFree.map { Formatters.bytesCompact($0) } ?? "—"),
                 ("Read", Formatters.rateCompact(snapshot.diskReadRate)),
                 ("Write", Formatters.rateCompact(snapshot.diskWriteRate))
             ])
@@ -166,7 +168,7 @@ struct GaugeGridView: View {
         let snapshot = hub.snapshot
         let peak = snapshot.sensorPeakCelsius
         let fanValue = snapshot.fanCount == 0 ? "—" : "\(snapshot.fanCount)"
-        let rpmValue = snapshot.firstFanRPM.map { "\($0) RPM" } ?? "—"
+        let rpmValue = snapshot.firstFanRPM.map { Formatters.fanRPMCompact($0) } ?? "—"
         return DashboardGaugeTile(
             icon: "thermometer",
             title: "Sensors",
@@ -186,6 +188,13 @@ struct GaugeGridView: View {
         var details = rows.map { DashboardRingDetail(label: $0.0, value: $0.1) }
         while details.count < 3 { details.append(.empty) }
         return Array(details.prefix(3))
+    }
+
+    private func shortChipName(_ name: String) -> String {
+        if name.hasPrefix("Apple ") {
+            return String(name.dropFirst(6))
+        }
+        return name
     }
 
     private var memoryColor: Color {
@@ -220,19 +229,20 @@ struct DashboardHeaderSummary: View {
 
     var body: some View {
         let snapshot = hub.snapshot
-        HStack(spacing: 6) {
-            HeaderSummaryPill(icon: "cpu",
-                              value: Formatters.percent(snapshot.cpuUsage),
-                              color: Theme.semantic(for: snapshot.cpuUsage))
-            HeaderSummaryPill(icon: "memorychip",
-                              value: Formatters.percent(snapshot.memoryFraction),
-                              color: memoryColor)
-            HeaderSummaryPill(icon: "arrow.down",
-                              value: Formatters.rateCompact(snapshot.networkDownloadRate),
-                              color: Theme.info)
+        HStack(spacing: 14) {
+            HeaderSummaryItem(dot: Theme.semantic(for: snapshot.cpuUsage),
+                              label: "CPU",
+                              value: Formatters.percent(snapshot.cpuUsage))
+            HeaderSummaryItem(dot: memoryColor,
+                              label: "Memory",
+                              value: Formatters.percent(snapshot.memoryFraction))
+            HeaderSummaryItem(dot: Theme.info,
+                              label: "Network",
+                              value: Formatters.rateCompact(snapshot.networkDownloadRate))
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 10)
     }
 
     private var memoryColor: Color {
@@ -244,33 +254,27 @@ struct DashboardHeaderSummary: View {
     }
 }
 
-private struct HeaderSummaryPill: View {
-    let icon: String
+private struct HeaderSummaryItem: View {
+    let dot: Color
+    let label: String
     let value: String
-    let color: Color
 
     var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.system(size: 8, weight: .bold))
-                .foregroundColor(color)
+        HStack(alignment: .firstTextBaseline, spacing: 5) {
+            Circle()
+                .fill(dot)
+                .frame(width: 5, height: 5)
+                .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] }
+            Text(loc: label)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(Theme.textTertiary)
             Text(value)
-                .font(.metric(9.5, weight: .bold))
+                .font(.metric(11, weight: .bold))
                 .foregroundColor(Theme.textPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .animation(.spring(response: 0.45, dampingFraction: 0.86), value: value)
         }
-        .padding(.horizontal, 7)
-        .padding(.vertical, 4)
-        .background(
-            Capsule(style: .continuous)
-                .fill(color.opacity(0.12))
-        )
-        .overlay(
-            Capsule(style: .continuous)
-                .strokeBorder(color.opacity(0.2), lineWidth: 1)
-        )
     }
 }
 
@@ -284,19 +288,19 @@ private struct DashboardGaugeTile: View {
     var statusColor: Color?
 
     var body: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 8) {
+        VStack(spacing: 6) {
+            HStack(spacing: 7) {
                 Image(systemName: icon)
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(color)
-                    .frame(width: 22, height: 22)
+                    .frame(width: 20, height: 20)
                     .background(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(color.opacity(0.14))
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .fill(color.opacity(0.11))
                     )
 
                 Text(loc: title)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(Theme.textPrimary)
                     .lineLimit(1)
 
@@ -305,44 +309,30 @@ private struct DashboardGaugeTile: View {
                 if let statusColor {
                     Circle()
                         .fill(statusColor)
-                        .frame(width: 7, height: 7)
-                        .shadow(color: statusColor.opacity(0.45), radius: 3)
+                        .frame(width: 6, height: 6)
                 }
             }
+
+            Spacer(minLength: 0)
 
             DashboardRingGauge(fraction: fraction, color: color) {
                 DashboardRingCenter(primaryValue: value, primaryColor: color, details: details)
             }
-            .frame(maxWidth: .infinity)
+
+            Spacer(minLength: 0)
         }
-        .padding(12)
+        .padding(.horizontal, 10)
+        .padding(.top, 10)
+        .padding(.bottom, 12)
         .frame(maxWidth: .infinity, alignment: .top)
         .frame(height: Theme.gaugeTileHeight)
         .background(
             RoundedRectangle(cornerRadius: Theme.gaugeTileRadius, style: .continuous)
                 .fill(Theme.card)
-                .overlay(
-                    RoundedRectangle(cornerRadius: Theme.gaugeTileRadius, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [color.opacity(0.07), color.opacity(0.01)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                )
         )
         .overlay(
             RoundedRectangle(cornerRadius: Theme.gaugeTileRadius, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [color.opacity(0.22), Theme.stroke],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
+                .strokeBorder(Theme.stroke, lineWidth: 1)
         )
-        .shadow(color: color.opacity(0.08), radius: 10, x: 0, y: 4)
     }
 }
