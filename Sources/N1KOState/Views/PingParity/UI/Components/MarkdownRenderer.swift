@@ -63,6 +63,7 @@ private final class MarkdownTextCache {
     }
 }
 
+@MainActor
 struct MarkdownContentView: View {
     let blocks: [UpdateReleaseNotesBlock]
     let baseColor: Color
@@ -158,6 +159,7 @@ struct MarkdownContentView: View {
     }
 }
 
+@MainActor
 private struct MarkdownListRows: View {
     enum ListStyle {
         case unordered
