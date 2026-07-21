@@ -308,6 +308,7 @@ private struct SessionHoverCompactRow: View {
     }
 }
 
+@MainActor
 struct HoverSessionCard: View {
     let session: SessionState
     let sessionMonitor: SessionMonitor
@@ -447,6 +448,7 @@ private struct HoverConversationCard: View {
     }
 }
 
+@MainActor
 private struct HoverApprovalCard: View {
     let session: SessionState
     let sessionMonitor: SessionMonitor
@@ -770,6 +772,7 @@ private struct HoverSessionPreviewLines: View {
     }
 }
 
+@MainActor
 private struct HoverSessionBadges: View {
     let session: SessionState
     var density: HoverPreviewDensity = .regular

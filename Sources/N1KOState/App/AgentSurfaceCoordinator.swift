@@ -799,42 +799,58 @@ final class AgentSurfaceCoordinator {
         let workspace = NSWorkspace.shared.notificationCenter
         let activeSpace = workspace.addObserver(forName: NSWorkspace.activeSpaceDidChangeNotification,
                                                 object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.reconcile(reason: "active-space", activeSpaceChanged: true) }
+            MainActor.assumeIsolated {
+                self?.reconcile(reason: "active-space", activeSpaceChanged: true)
+            }
         }
         notificationTokens.append((workspace, activeSpace))
         let activation = workspace.addObserver(forName: NSWorkspace.didActivateApplicationNotification,
                                                object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.reconcile(reason: "frontmost-application") }
+            MainActor.assumeIsolated {
+                self?.reconcile(reason: "frontmost-application")
+            }
         }
         notificationTokens.append((workspace, activation))
         let systemSleep = workspace.addObserver(forName: NSWorkspace.willSleepNotification,
                                                 object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.suspend(reason: "system-sleep") }
+            MainActor.assumeIsolated {
+                self?.suspend(reason: "system-sleep")
+            }
         }
         notificationTokens.append((workspace, systemSleep))
         let screenSleep = workspace.addObserver(forName: NSWorkspace.screensDidSleepNotification,
                                                 object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.suspend(reason: "screen-sleep") }
+            MainActor.assumeIsolated {
+                self?.suspend(reason: "screen-sleep")
+            }
         }
         notificationTokens.append((workspace, screenSleep))
         let sessionResign = workspace.addObserver(forName: NSWorkspace.sessionDidResignActiveNotification,
                                                   object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.suspend(reason: "session-resign") }
+            MainActor.assumeIsolated {
+                self?.suspend(reason: "session-resign")
+            }
         }
         notificationTokens.append((workspace, sessionResign))
         let systemWake = workspace.addObserver(forName: NSWorkspace.didWakeNotification,
                                                object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.resume(reason: "system-wake") }
+            MainActor.assumeIsolated {
+                self?.resume(reason: "system-wake")
+            }
         }
         notificationTokens.append((workspace, systemWake))
         let screenWake = workspace.addObserver(forName: NSWorkspace.screensDidWakeNotification,
                                                object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.resume(reason: "screen-wake") }
+            MainActor.assumeIsolated {
+                self?.resume(reason: "screen-wake")
+            }
         }
         notificationTokens.append((workspace, screenWake))
         let sessionActive = workspace.addObserver(forName: NSWorkspace.sessionDidBecomeActiveNotification,
                                                   object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.resume(reason: "session-active") }
+            MainActor.assumeIsolated {
+                self?.resume(reason: "session-active")
+            }
         }
         notificationTokens.append((workspace, sessionActive))
 
@@ -843,7 +859,7 @@ final class AgentSurfaceCoordinator {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
+            MainActor.assumeIsolated {
                 self?.updateDisplayCatalog()
                 self?.reconcile(reason: "screen-parameters")
             }

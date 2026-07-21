@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 struct MarkdownText: View {
     let text: String
     let baseColor: Color

@@ -1780,6 +1780,7 @@ private struct SessionCountIndicator: View {
     }
 }
 
+@MainActor
 private struct ClosedNotchUsageRemainingIndicator: View {
     let providerTitle: String?
     let window: UsageSummaryWindow

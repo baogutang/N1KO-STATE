@@ -553,7 +553,7 @@ private struct BridgeEnvelopeInterventionOption: Codable, Sendable {
 }
 
 struct AnyCodable: Codable, @unchecked Sendable {
-    nonisolated(unsafe) let value: Any
+    let value: Any
 
     init(_ value: Any) {
         self.value = value

@@ -459,6 +459,7 @@ struct PrimarySessionGroup: Identifiable, Equatable {
     }
 }
 
+@MainActor
 private struct SubagentAttachmentRow: View {
     let session: SessionState
     let isSelected: Bool

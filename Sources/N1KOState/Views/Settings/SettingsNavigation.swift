@@ -151,7 +151,7 @@ enum SettingsSearchIndex {
         let terms = query
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
-            .split(whereSeparator: \Character.isWhitespace)
+            .split(whereSeparator: { $0.isWhitespace })
             .map(String.init)
         guard !terms.isEmpty else { return [] }
         return items.filter { item in terms.allSatisfy(item.searchableText.contains) }

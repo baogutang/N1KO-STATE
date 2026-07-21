@@ -22,7 +22,7 @@ struct AgentProcessTreeBuilder: Sendable {
         var tree: [Int: AgentProcessRecord] = [:]
         for line in output.components(separatedBy: .newlines) {
             let parts = line.trimmingCharacters(in: .whitespaces)
-                .split(whereSeparator: \Character.isWhitespace)
+                .split(whereSeparator: { $0.isWhitespace })
             guard parts.count >= 4,
                   let pid = Int(parts[0]),
                   let parentPID = Int(parts[1]) else { continue }
