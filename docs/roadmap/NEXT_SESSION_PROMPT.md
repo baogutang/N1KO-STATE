@@ -19,6 +19,10 @@ DetachedIslandWindowController/DetachedIslandPanelView，并保留 N1KO 公共 A
 profiles。N1KO 已拥有 Claude pseudo-terminal runtime、Codex app-server stdio 双向传输、非 tmux
 follow-up 和 process-tree/tmux focus suppression。
 
+v1.0.18 已于 2026-07-21 从 `4ff76b1` 发布，GitHub Actions run `29799932353` 的 universal DMG、
+DMG 验证、签名 Sparkle appcast 和 GitHub Release 全部成功，main 的 appcast 回写提交为 `c348a93`。
+不要重复发布或移动 v1.0.18 标签，除非用户再次明确要求。
+
 本包只补剩余真实证据：两个互相独立的 24 小时 monitoring-only / Agent-enabled soak，以及可获得
 环境上的 notched/mixed-display、Intel/macOS 12、different-user、real SSH、VoiceOver、lock/unlock、
 fast-user-switch 矩阵。短时 calibration 不能冒充 24 小时。此前 1,093 awake seconds 仍是 partial。

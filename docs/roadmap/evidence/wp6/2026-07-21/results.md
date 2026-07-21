@@ -2,7 +2,7 @@
 
 Status: **Automated gates pass; residual long-duration/manual evidence remains**
 
-Release candidate: v1.0.18 / build 118 working tree based on `09cde29`.
+Released version: v1.0.18 / build 118 from source commit `4ff76b1`; generated appcast commit `c348a93`.
 
 ## Automated validation
 
@@ -18,9 +18,18 @@ Release candidate: v1.0.18 / build 118 working tree based on `09cde29`.
 | public API | Shipping source and linked-symbol scans contain no private CGS/SLS/SkyLight entry point |
 | compatibility/signature | Main app and bridge have `minos 12.0`; strict deep ad-hoc signature verification passes |
 | diff hygiene | `git diff --check` passes |
+| GitHub publication | Actions run `29799932353` passed Xcode 15.4 universal build, DMG verification, signed Sparkle appcast publication and GitHub Release creation |
 
 The three skips are the unmounted installer-DMG filter check, sustained libproc comparison, and live
 pseudo-fullscreen WindowServer latency gate. They are recorded as skips, not passes.
+
+The first tagged CI attempts exposed source-compatibility differences hidden by the local Xcode 26
+toolchain: the WP4 harness needed `-parse-as-library`, and Xcode 15.4 required older-compatible
+concurrency isolation and character-splitting syntax. The compatibility-only fixes are commits
+`77abfef`, `296497c`, and `4ff76b1`. Relevant local build/test gates were rerun as the fixes landed;
+final Actions run `29799932353` passed every release step. The published assets are
+`N1KO-STATE.dmg` (13,004,469 bytes), `N1KO-STATE-sparkle.zip` (11,676,228 bytes), and `appcast.xml`
+with the v1.0.18 enclosure URL and EdDSA signature.
 
 ## Isolated calibration
 
@@ -47,8 +56,8 @@ above closes this harness regression.
 ## Release authorization and residual risk
 
 The user explicitly authorized version upgrade, remote push and GitHub automated publication after
-validation. That authorization allows the v1.0.18 release to proceed with the following evidence
-boundary; it does not relabel missing evidence:
+validation. v1.0.18 was published successfully on 2026-07-21; the following evidence boundary still
+does not become a pass merely because publication completed:
 
 - the required monitoring-only and Agent-enabled **24-hour** runs have not completed;
 - the prior 1,093-awake-second run remains partial only;
@@ -58,4 +67,5 @@ boundary; it does not relabel missing evidence:
   GitHub workflow publishes the project's established release format.
 
 WP6 therefore remains the sole Next package for post-release residual evidence even though all
-remaining code work and locally available automated release gates are complete.
+remaining code work, locally available automated release gates, and the authorized GitHub
+publication are complete.

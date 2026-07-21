@@ -576,3 +576,8 @@ Implementation and verification are in progress; current records:
   remains Next after publication until both 24-hour soaks and unavailable notched/mixed-display,
   Intel/macOS 12, different-user, real-SSH, VoiceOver, lock/unlock and fast-user-switch matrices
   complete; none are represented as passed.
+- v1.0.18 was published on 2026-07-21 from source commit `4ff76b1`. GitHub Actions run
+  `29799932353` passed the Xcode 15.4 arm64+x86_64 build, DMG verification, signed Sparkle appcast
+  generation/publication, release-note resolution, and GitHub Release creation. The workflow wrote
+  the generated appcast to main as `c348a93`. Earlier failed attempts exposed and then closed
+  Xcode-15-only source compatibility issues; they did not publish a partial Release.

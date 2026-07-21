@@ -4,7 +4,7 @@ Status: **WP4/WP5 development is complete; WP6 residual long-duration/manual evi
 
 Last updated: **2026-07-21**
 
-Current checkout audited: **working tree based on `09cde29` / v1.0.18 release candidate**
+Current checkout audited: **v1.0.18 release source `4ff76b1`; main includes the generated appcast commit `c348a93`**
 
 Upstream Agent capability snapshot audited: **`erha19/ping-island` `c9148fc6a66a98f62dc1cac8fde415c2be9f2233` / v0.26.0**
 
@@ -90,9 +90,11 @@ averaged 0.091% awake CPU and 1.57 wakeups/s; Agent Core with 200 sessions avera
 with no growing thread, FD, socket, Agent-resource, or surface-resource counts. See
 [2026-07-21 WP6 evidence](evidence/wp6/2026-07-21/results.md).
 
-The user's explicit release request authorizes v1.0.18 publication despite the remaining evidence
-boundary; it does not convert missing evidence into a pass. The sole Next package is still WP6 until
-both independent 24-hour runs and the unavailable notched/mixed-display, Intel/macOS 12,
+The user explicitly authorized publication with that evidence boundary. GitHub Actions run
+`29799932353` then built and verified the Xcode 15.4 arm64+x86_64 DMG, generated and published the
+signed Sparkle appcast, and published the v1.0.18 GitHub Release from source commit `4ff76b1` on
+2026-07-21. Publication does not convert missing evidence into a pass. The sole Next package is still
+WP6 until both independent 24-hour runs and the unavailable notched/mixed-display, Intel/macOS 12,
 different-user, real-SSH, VoiceOver, lock/unlock, and fast-user-switch matrices are completed. The
 older 1,093-awake-second run remains partial and is not represented as a 24-hour result.
 
