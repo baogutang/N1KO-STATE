@@ -1,5 +1,42 @@
 import SwiftUI
 
+struct ChartAccessibilitySummary: Equatable {
+    enum Trend: String, Equatable {
+        case rising = "rising"
+        case falling = "falling"
+        case steady = "steady"
+    }
+
+    let current: Double
+    let minimum: Double
+    let maximum: Double
+    let trend: Trend
+
+    init?(values: [Double]) {
+        guard let current = values.last,
+              let minimum = values.min(),
+              let maximum = values.max() else { return nil }
+        self.current = current
+        self.minimum = minimum
+        self.maximum = maximum
+
+        let first = values.first ?? current
+        let tolerance = max(abs(maximum - minimum) * 0.05, max(abs(maximum), 1) * 0.01)
+        if current - first > tolerance {
+            trend = .rising
+        } else if first - current > tolerance {
+            trend = .falling
+        } else {
+            trend = .steady
+        }
+    }
+
+    func description(format: (Double) -> String) -> String {
+        "Current %@; range %@ to %@; trend %@"
+            .locf(format(current), format(minimum), format(maximum), trend.rawValue.loc)
+    }
+}
+
 /// Smooth area + line chart for a series of samples.
 /// `maxValue == nil` auto-scales to the series peak (good for network rates);
 /// pass `1` for fractional metrics (CPU / memory).
@@ -8,10 +45,16 @@ struct MetricChart: View {
     var maxValue: Double?
     var color: Color
     var fill: Bool = true
+    var accessibilityName: String = "Metric history"
+    var accessibilityFormatter: (Double) -> String = { String(format: "%.2f", $0) }
 
     var body: some View {
         GeometryReader { geo in
-            let pts = points(in: geo.size)
+            let displayValues = HistoryStore.downsampleForDisplay(
+                values,
+                maxSamples: max(Int(geo.size.width.rounded(.up)), 2)
+            )
+            let pts = points(values: displayValues, in: geo.size)
             ZStack {
                 if fill, pts.count > 1 {
                     areaPath(pts, height: geo.size.height)
@@ -30,16 +73,24 @@ struct MetricChart: View {
                 .stroke(Theme.stroke, lineWidth: 1)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityName.loc)
+        .accessibilityValue(accessibilityDescription)
     }
 
-    private func scaledMax() -> Double {
+    private var accessibilityDescription: String {
+        ChartAccessibilitySummary(values: values)?.description(format: accessibilityFormatter)
+            ?? "No history".loc
+    }
+
+    private func scaledMax(_ values: [Double]) -> Double {
         if let m = maxValue { return max(m, 0.0001) }
         return max(values.max() ?? 1, 0.0001)
     }
 
-    private func points(in size: CGSize) -> [CGPoint] {
+    private func points(values: [Double], in size: CGSize) -> [CGPoint] {
         guard values.count > 1 else { return [] }
-        let m = scaledMax()
+        let m = scaledMax(values)
         let stepX = size.width / CGFloat(values.count - 1)
         return values.enumerated().map { i, v in
             let clamped = min(max(v / m, 0), 1)
@@ -75,7 +126,11 @@ struct Sparkline: View {
 
     var body: some View {
         GeometryReader { geo in
-            let pts = points(in: geo.size)
+            let displayValues = HistoryStore.downsampleForDisplay(
+                values,
+                maxSamples: max(Int(geo.size.width.rounded(.up)), 2)
+            )
+            let pts = points(values: displayValues, in: geo.size)
             if pts.count > 1 {
                 Path { p in
                     p.move(to: pts[0])
@@ -86,7 +141,7 @@ struct Sparkline: View {
         }
     }
 
-    private func points(in size: CGSize) -> [CGPoint] {
+    private func points(values: [Double], in size: CGSize) -> [CGPoint] {
         guard values.count > 1 else { return [] }
         let m = max(maxValue ?? (values.max() ?? 1), 0.0001)
         let stepX = size.width / CGFloat(values.count - 1)

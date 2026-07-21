@@ -4,6 +4,7 @@ struct CPUCard: View {
     @ObservedObject var cpu: CPUMonitor
     @ObservedObject var memory: MemoryMonitor
     @ObservedObject var processes: ProcessMonitor
+    let snapshot: MonitorDisplaySnapshot
     @ObservedObject private var chartRange = ChartRangeStore.shared
     @State private var processSort: ProcessSortMode = .cpu
     @State private var chartValues: [Double] = []
@@ -15,28 +16,30 @@ struct CPUCard: View {
                 CardHeader(icon: "cpu",
                            title: Module.cpu.localizedTitle,
                            accent: Theme.info,
-                           trailing: Formatters.percent(cpu.totalUsage),
-                           trailingColor: Theme.semantic(for: cpu.totalUsage))
+                           trailing: Formatters.percent(snapshot.cpuUsage),
+                           trailingColor: Theme.semantic(for: snapshot.cpuUsage))
 
                 ChartRangePicker(range: $chartRange.range, accent: Theme.accent)
 
-                MetricChart(values: chartValues, maxValue: 1,
-                            color: Theme.semantic(for: cpu.totalUsage))
+                MetricChart(values: chartValues,
+                            maxValue: 1,
+                            color: Theme.semantic(for: snapshot.cpuUsage),
+                            accessibilityName: "CPU usage history",
+                            accessibilityFormatter: Formatters.percent)
                     .frame(height: 52)
-                    .accessibilityLabel("CPU usage chart".loc)
 
                 if !cpu.cores.isEmpty {
                     CoreGrid(cores: cpu.cores)
                 }
 
                 HStack(spacing: 0) {
-                    StatPill(label: "Load 1m", value: String(format: "%.2f", cpu.loadAverage.one),
+                    StatPill(label: "Load 1m", value: String(format: "%.2f", snapshot.cpuLoadAverageOne),
                              help: "Average runnable threads over the last minute.")
                     Spacer()
                     StatPill(label: "Load 5m", value: String(format: "%.2f", cpu.loadAverage.five),
                              help: "Average runnable threads over the last five minutes.")
                     Spacer()
-                    StatPill(label: "Uptime", value: Formatters.uptime(cpu.uptime))
+                    StatPill(label: "Uptime", value: Formatters.uptime(snapshot.cpuUptime))
                     if let f = cpu.frequency {
                         Spacer()
                         StatPill(label: "Freq", value: String(format: "%.1fG", f))

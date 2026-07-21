@@ -28,7 +28,7 @@ final class HistoryStore {
 
     private let sampleInterval: TimeInterval = 30
     private let capacity = 2880
-    private var buffers: [Series: [Double]] = [:]
+    private var buffers: [Series: RingBuffer<Double>] = [:]
     private var lastRecord = Date.distantPast
     private let lock = NSLock()
     private let persistURL: URL
@@ -40,11 +40,17 @@ final class HistoryStore {
     static let maxDisplaySamples = 180
 
     private init() {
-        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("N1KO-STATE", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        persistURL = dir.appendingPathComponent("history.json")
-        for s in Series.allCases { buffers[s] = [] }
+        let environment = ProcessInfo.processInfo.environment
+        let overriddenURL = environment["N1KO_HISTORY_PATH"]
+            .flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0) }
+        let defaultDirectory = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first!.appendingPathComponent("N1KO-STATE", isDirectory: true)
+        let dir = overriddenURL?.deletingLastPathComponent() ?? defaultDirectory
+        persistURL = overriddenURL ?? dir.appendingPathComponent("history.json")
+        try? Self.preparePrivateHistoryFile(at: persistURL)
+        for s in Series.allCases { buffers[s] = RingBuffer(capacity: capacity) }
         ioQueue.async { [weak self] in
             self?.loadFromDisk()
         }
@@ -82,7 +88,7 @@ final class HistoryStore {
             let n = min(60, shortWindow.count)
             return n > 0 ? Array(shortWindow.suffix(n)) : shortWindow
         }
-        let buf = buffers[series] ?? []
+        let buf = buffers[series]?.elements ?? []
         let n = min(range.sampleCount, buf.count)
         let values = n > 0 ? Array(buf.suffix(n)) : []
         return Self.downsampleForDisplay(values)
@@ -99,19 +105,43 @@ final class HistoryStore {
         }
     }
 
+    static func preparePrivateHistoryFile(at url: URL, fileManager: FileManager = .default) throws {
+        let directory = url.deletingLastPathComponent()
+        try fileManager.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
+        try fileManager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
+        if fileManager.fileExists(atPath: url.path) {
+            try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+        }
+    }
+
+    static func writePrivateHistoryData(
+        _ data: Data,
+        to url: URL,
+        fileManager: FileManager = .default
+    ) throws {
+        try preparePrivateHistoryFile(at: url, fileManager: fileManager)
+        try data.write(to: url, options: .atomic)
+        try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+    }
+
     func snapshot() -> [String: [Double]] {
         lock.lock()
         defer { lock.unlock() }
         var out: [String: [Double]] = [:]
-        for (k, v) in buffers { out[k.rawValue] = v }
+        for (k, v) in buffers { out[k.rawValue] = v.elements }
         return out
     }
 
     private func append(_ series: Series, _ value: Double) {
-        var buf = buffers[series] ?? []
-        buf.append(value)
-        if buf.count > capacity { buf.removeFirst(buf.count - capacity) }
-        buffers[series] = buf
+        if let buffer = buffers[series] {
+            buffer.append(value)
+        } else {
+            buffers[series] = RingBuffer(capacity: capacity, elements: [value])
+        }
     }
 
     private struct Persisted: Codable {
@@ -128,37 +158,36 @@ final class HistoryStore {
 
     private func persistToDiskLocked() {
         lock.lock()
-        let payload = Persisted(buffers: buffers.mapKeys { $0.rawValue })
+        let payload = Persisted(buffers: Dictionary(uniqueKeysWithValues: buffers.map {
+            ($0.key.rawValue, $0.value.elements)
+        }))
         let url = persistURL
         lock.unlock()
         guard let data = try? JSONEncoder().encode(payload) else { return }
-        try? data.write(to: url, options: .atomic)
+        try? Self.writePrivateHistoryData(data, to: url)
     }
 
     private func loadFromDisk() {
-        let loadedBuffers: [Series: [Double]]
+        let loadedBuffers: [Series: RingBuffer<Double>]
         if let data = try? Data(contentsOf: persistURL),
            let persisted = try? JSONDecoder().decode(Persisted.self, from: data) {
-            var decoded: [Series: [Double]] = [:]
+            var decoded: [Series: RingBuffer<Double>] = [:]
             for series in Series.allCases {
-                decoded[series] = Array((persisted.buffers[series.rawValue] ?? []).suffix(capacity))
+                decoded[series] = RingBuffer(
+                    capacity: capacity,
+                    elements: Array((persisted.buffers[series.rawValue] ?? []).suffix(capacity))
+                )
             }
             loadedBuffers = decoded
         } else {
-            loadedBuffers = Dictionary(uniqueKeysWithValues: Series.allCases.map { ($0, []) })
+            loadedBuffers = Dictionary(uniqueKeysWithValues: Series.allCases.map {
+                ($0, RingBuffer<Double>(capacity: capacity))
+            })
         }
 
         lock.lock()
         buffers = loadedBuffers
         diskLoaded = true
         lock.unlock()
-    }
-}
-
-private extension Dictionary {
-    func mapKeys<T: Hashable>(_ transform: (Key) -> T) -> [T: Value] {
-        var out: [T: Value] = [:]
-        for (k, v) in self { out[transform(k)] = v }
-        return out
     }
 }

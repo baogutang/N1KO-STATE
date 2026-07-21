@@ -35,6 +35,12 @@ final class MenuBarStatusController: NSObject {
         bindRedraws()
     }
 
+    /// Benchmark-only removal for an isolated background soak process. Normal
+    /// application launches never call this and retain the status item.
+    func removeForPerformanceBenchmark() {
+        NSStatusBar.system.removeStatusItem(statusItem)
+    }
+
     private func bindRedraws() {
         hub.$snapshot
             .receive(on: RunLoop.main)
@@ -81,19 +87,21 @@ final class MenuBarStatusController: NSObject {
     }
 
     private func redraw(force: Bool = false) {
-        redrawScheduled = false
-        let signature = renderSignature()
-        if !force, signature == lastRenderSignature { return }
-        lastRenderSignature = signature
-        let image = buildImage()
-        statusItem.button?.image = image
-        statusItem.length = max(image.size.width + 4, 24)
-        if let label = image.accessibilityDescription {
-            statusItem.button?.setAccessibilityLabel(label)
+        PerformanceDiagnostics.measure(.menuBarRender) {
+            redrawScheduled = false
+            let signature = renderSignature()
+            if !force, signature == lastRenderSignature { return }
+            lastRenderSignature = signature
+            let image = buildImage()
+            statusItem.button?.image = image
+            statusItem.length = max(image.size.width + 4, 24)
+            if let label = image.accessibilityDescription {
+                statusItem.button?.setAccessibilityLabel(label)
+            }
         }
     }
 
-    struct EffectiveMenuMetrics {
+    struct EffectiveMenuMetrics: Equatable {
         var showCPU: Bool
         var showGPU: Bool
         var showMemory: Bool
@@ -150,7 +158,27 @@ final class MenuBarStatusController: NSObject {
         let settings = AppSettings.shared
         let snapshot = hub.snapshot
         let effective = effectiveMenuMetrics()
-        let input = MenuBarImageRenderer.Input(
+        let input = Self.makeRenderInput(
+            snapshot: snapshot,
+            effective: effective,
+            layout: settings.resolvedMenuBarLayout,
+            compact: settings.menuCompact,
+            fontStyle: settings.resolvedMenuBarFontStyle,
+            colorMode: settings.resolvedMenuBarColorMode,
+            fontSize: CGFloat(settings.menuBarFontSize)
+        )
+        return MenuBarImageRenderer.render(input)
+    }
+
+    static func makeRenderInput(snapshot: MonitorDisplaySnapshot,
+                                effective: EffectiveMenuMetrics,
+                                layout: MenuBarLayout,
+                                compact: Bool,
+                                fontStyle: MenuBarFontStyle,
+                                colorMode: MenuBarColorMode,
+                                fontSize: CGFloat) -> MenuBarImageRenderer.Input {
+        MenuBarImageRenderer.Input(
+            generationID: snapshot.generationID,
             cpu: snapshot.cpuUsage,
             gpu: snapshot.gpuUtilization,
             mem: snapshot.memoryFraction,
@@ -165,13 +193,12 @@ final class MenuBarStatusController: NSObject {
             showNet: effective.showNetwork,
             metricOrder: effective.order,
             height: Self.barHeight,
-            layout: settings.resolvedMenuBarLayout,
-            compact: settings.menuCompact,
-            fontStyle: settings.resolvedMenuBarFontStyle,
-            colorMode: settings.resolvedMenuBarColorMode,
-            fontSize: CGFloat(settings.menuBarFontSize)
+            layout: layout,
+            compact: compact,
+            fontStyle: fontStyle,
+            colorMode: colorMode,
+            fontSize: fontSize
         )
-        return MenuBarImageRenderer.render(input)
     }
 
 }

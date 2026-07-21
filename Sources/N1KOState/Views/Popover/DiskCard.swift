@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DiskCard: View {
     @ObservedObject var disk: DiskMonitor
+    let snapshot: MonitorDisplaySnapshot
 
     private let accent = Color(hex: 0x64D2FF)        // cyan
     private let readColor = Color(hex: 0x5E5CE6)     // indigo
@@ -13,7 +14,7 @@ struct DiskCard: View {
                 CardHeader(icon: "internaldrive",
                            title: "Disk",
                            accent: accent,
-                           trailing: disk.volumes.first.map { "%@ free".locf(Formatters.bytes($0.free)) })
+                           trailing: snapshot.diskPrimaryFree.map { "%@ free".locf(Formatters.bytes($0)) })
 
                 if !disk.volumes.isEmpty {
                     HStack(alignment: .top, spacing: 14) {
@@ -29,7 +30,7 @@ struct DiskCard: View {
                                     .foregroundColor(Theme.textSecondary)
                                     .lineLimit(1)
                                 Text(Formatters.bytes(v.total))
-                                    .font(.system(size: 9))
+                                    .font(Theme.TypeScale.caption)
                                     .foregroundColor(Theme.textTertiary)
                             }
                             .frame(maxWidth: .infinity)
@@ -42,14 +43,23 @@ struct DiskCard: View {
 
                 HStack(spacing: 12) {
                     ioBlock(symbol: "arrow.down.circle.fill", label: "Read",
-                            rate: disk.readRate, color: readColor)
+                            rate: snapshot.diskReadRate, color: readColor)
                     ioBlock(symbol: "arrow.up.circle.fill", label: "Write",
-                            rate: disk.writeRate, color: writeColor)
+                            rate: snapshot.diskWriteRate, color: writeColor)
                 }
 
                 ZStack {
-                    MetricChart(values: disk.readHistory, maxValue: nil, color: readColor)
-                    MetricChart(values: disk.writeHistory, maxValue: nil, color: writeColor, fill: false)
+                    MetricChart(values: disk.readHistory,
+                                maxValue: nil,
+                                color: readColor,
+                                accessibilityName: "Disk read history",
+                                accessibilityFormatter: Formatters.rateCompact)
+                    MetricChart(values: disk.writeHistory,
+                                maxValue: nil,
+                                color: writeColor,
+                                fill: false,
+                                accessibilityName: "Disk write history",
+                                accessibilityFormatter: Formatters.rateCompact)
                 }
                 .frame(height: 44)
             }
@@ -63,7 +73,7 @@ struct DiskCard: View {
                 .foregroundColor(color)
             VStack(alignment: .leading, spacing: 1) {
                 Text(label.loc.uppercased())
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(Theme.TypeScale.caption.weight(.semibold))
                     .foregroundColor(Theme.textTertiary)
                 Text(Formatters.rate(rate))
                     .font(.metric(13, weight: .bold))

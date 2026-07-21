@@ -1,0 +1,82 @@
+{
+  "counters" : {
+    "menuBarRender" : {
+      "averageMilliseconds" : 0.50771175000000002,
+      "count" : 12,
+      "maximumMilliseconds" : 1.416625,
+      "totalNanoseconds" : 6092541
+    },
+    "samplerCPU" : {
+      "averageMilliseconds" : 0.51364575000000001,
+      "count" : 12,
+      "maximumMilliseconds" : 4.9402910000000002,
+      "totalNanoseconds" : 6163749
+    },
+    "samplerGPU" : {
+      "averageMilliseconds" : 0.31604158333333332,
+      "count" : 12,
+      "maximumMilliseconds" : 1.1545840000000001,
+      "totalNanoseconds" : 3792499
+    },
+    "samplerMemory" : {
+      "averageMilliseconds" : 0.068715250000000005,
+      "count" : 12,
+      "maximumMilliseconds" : 0.71091599999999999,
+      "totalNanoseconds" : 824583
+    },
+    "samplerNetwork" : {
+      "averageMilliseconds" : 0.038832999999999999,
+      "count" : 1,
+      "maximumMilliseconds" : 0.038832999999999999,
+      "totalNanoseconds" : 38833
+    },
+    "schedulingPlan" : {
+      "averageMilliseconds" : 0.036930533333333335,
+      "count" : 15,
+      "maximumMilliseconds" : 0.094875000000000001,
+      "totalNanoseconds" : 553958
+    },
+    "snapshotCommit" : {
+      "averageMilliseconds" : 0.021715333333333333,
+      "count" : 12,
+      "maximumMilliseconds" : 0.069083000000000006,
+      "totalNanoseconds" : 260584
+    }
+  },
+  "generatedAt" : "2026-07-21T03:31:19Z",
+  "metadata" : {
+    "agentActiveSubprocesses" : "0",
+    "agentActiveTasks" : "0",
+    "agentEnabled" : "true",
+    "agentIngressCount" : "0",
+    "agentPendingResponseRoutes" : "0",
+    "agentRegisteredSubprocesses" : "1",
+    "agentRegisteredTasks" : "0",
+    "agentSessionCount" : "200",
+    "agentSnapshotObservers" : "2",
+    "agentSockets" : "1",
+    "agentSurfaceActiveGlobalMonitors" : "0",
+    "agentSurfaceActiveRetryTasks" : "0",
+    "agentSurfaceSnapshotCompositions" : "0",
+    "agentSurfaceVisible" : "false",
+    "agentTransports" : "1",
+    "agentWatchers" : "1",
+    "historyCPUCount" : "2",
+    "historyMemoryCount" : "2",
+    "historyNetDownCount" : "2",
+    "historyNetUpCount" : "2",
+    "lifecycleCyclesCompleted" : "0",
+    "measurementSeconds" : "30.0",
+    "operatingSystem" : "版本15.7.7（版号24G720）",
+    "pid" : "62273",
+    "scenario" : "agent-core-idle",
+    "scenarioStateValidAtEnd" : "true",
+    "screenSleepEvents" : "0",
+    "screenWakeEvents" : "0",
+    "sessionActiveEvents" : "0",
+    "sessionInactiveEvents" : "0",
+    "systemSleepEvents" : "0",
+    "systemWakeEvents" : "0",
+    "warmupSeconds" : "3.0"
+  }
+}

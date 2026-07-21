@@ -1,0 +1,44 @@
+WP4_NATIVE_PROGRESS cycles=10/100 fullscreenSamples=30 desktopFrames=0 restoreFailures=0
+WP4_NATIVE_PROGRESS cycles=20/100 fullscreenSamples=60 desktopFrames=0 restoreFailures=0
+WP4_NATIVE_PROGRESS cycles=30/100 fullscreenSamples=90 desktopFrames=0 restoreFailures=0
+WP4_NATIVE_PROGRESS cycles=40/100 fullscreenSamples=120 desktopFrames=0 restoreFailures=0
+WP4_NATIVE_PROGRESS cycles=50/100 fullscreenSamples=150 desktopFrames=0 restoreFailures=0
+WP4_NATIVE_PROGRESS cycles=60/100 fullscreenSamples=180 desktopFrames=0 restoreFailures=0
+WP4_NATIVE_PROGRESS cycles=70/100 fullscreenSamples=210 desktopFrames=0 restoreFailures=0
+WP4_NATIVE_PROGRESS cycles=80/100 fullscreenSamples=240 desktopFrames=0 restoreFailures=0
+WP4_NATIVE_PROGRESS cycles=90/100 fullscreenSamples=270 desktopFrames=0 restoreFailures=0
+WP4_NATIVE_PROGRESS cycles=100/100 fullscreenSamples=300 desktopFrames=0 restoreFailures=0
+{
+  "completed" : true,
+  "cyclesCompleted" : 100,
+  "cyclesRequested" : 100,
+  "desktopFramesObservedAfterDidEnter" : 0,
+  "desktopHasFullScreenAuxiliary" : false,
+  "desktopHasFullScreenNone" : true,
+  "desktopRestoreFailures" : 0,
+  "displayBounds" : [
+    [
+      0,
+      0
+    ],
+    [
+      2560,
+      1440
+    ]
+  ],
+  "displayID" : 2,
+  "elapsedSeconds" : 161.292055666,
+  "fullscreenSamples" : 300,
+  "revealPanelConstructed" : false,
+  "screenFrame" : [
+    [
+      0,
+      0
+    ],
+    [
+      2560,
+      1440
+    ]
+  ],
+  "screenSafeAreaTop" : 0
+}

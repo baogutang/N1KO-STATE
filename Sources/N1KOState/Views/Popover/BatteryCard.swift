@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BatteryCard: View {
     @ObservedObject var battery: BatteryMonitor
+    let snapshot: MonitorDisplaySnapshot
 
     var body: some View {
         Card {
@@ -9,7 +10,7 @@ struct BatteryCard: View {
                 CardHeader(icon: symbol,
                            title: "Battery",
                            accent: color,
-                           trailing: Formatters.percent(battery.percentage),
+                           trailing: Formatters.percent(snapshot.batteryPercentage),
                            trailingColor: color)
 
                 HStack(spacing: 8) {
@@ -27,7 +28,7 @@ struct BatteryCard: View {
                     }
                 }
 
-                BatteryBar(fraction: battery.percentage, color: color, charging: battery.isCharging)
+                BatteryBar(fraction: snapshot.batteryPercentage, color: color, charging: snapshot.batteryIsCharging)
                     .frame(height: 16)
 
                 Divider().overlay(Theme.stroke)
@@ -40,7 +41,11 @@ struct BatteryCard: View {
                 }
 
                 if battery.history.count > 1 {
-                    MetricChart(values: battery.history, maxValue: 1, color: color)
+                    MetricChart(values: battery.history,
+                                maxValue: 1,
+                                color: color,
+                                accessibilityName: "Battery history",
+                                accessibilityFormatter: Formatters.percent)
                         .frame(height: 34)
                 }
             }
@@ -50,8 +55,8 @@ struct BatteryCard: View {
     // MARK: - Derived presentation
 
     private var color: Color {
-        if battery.isCharging || battery.onACPower { return Theme.ok }
-        switch battery.percentage {
+        if snapshot.batteryIsCharging || snapshot.batteryOnACPower { return Theme.ok }
+        switch snapshot.batteryPercentage {
         case ..<0.20: return Theme.danger
         case ..<0.40: return Theme.warn
         default: return Theme.textPrimary
@@ -59,8 +64,8 @@ struct BatteryCard: View {
     }
 
     private var symbol: String {
-        if battery.isCharging { return "battery.100.bolt" }
-        switch battery.percentage {
+        if snapshot.batteryIsCharging { return "battery.100.bolt" }
+        switch snapshot.batteryPercentage {
         case ..<0.125: return "battery.0"
         case ..<0.375: return "battery.25"
         case ..<0.625: return "battery.50"
@@ -70,23 +75,23 @@ struct BatteryCard: View {
     }
 
     private var statusIcon: String {
-        if battery.isCharging { return "bolt.fill" }
-        if battery.onACPower { return "powerplug.fill" }
+        if snapshot.batteryIsCharging { return "bolt.fill" }
+        if snapshot.batteryOnACPower { return "powerplug.fill" }
         return "battery.50"
     }
 
     private var statusText: String {
-        if battery.isCharged && battery.onACPower { return "Fully charged" }
-        if battery.isCharging { return "Charging" }
-        if battery.onACPower { return "On AC power" }
+        if snapshot.batteryIsCharged && snapshot.batteryOnACPower { return "Fully charged" }
+        if snapshot.batteryIsCharging { return "Charging" }
+        if snapshot.batteryOnACPower { return "On AC power" }
         return "On battery"
     }
 
     private var timeText: String? {
-        if battery.isCharging, let m = battery.minutesToFull {
+        if snapshot.batteryIsCharging, let m = battery.minutesToFull {
             return "%@ to full".locf(Formatters.uptime(Double(m * 60)))
         }
-        if !battery.onACPower, let m = battery.minutesToEmpty {
+        if !snapshot.batteryOnACPower, let m = battery.minutesToEmpty {
             return "%@ left".locf(Formatters.uptime(Double(m * 60)))
         }
         return nil
@@ -121,10 +126,9 @@ private struct BatteryBar: View {
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
                     .fill(color)
                     .frame(width: max(6, g.size.width * CGFloat(min(max(fraction, 0), 1))))
-                    .animation(.easeInOut(duration: 0.4), value: fraction)
                 if charging {
                     Image(systemName: "bolt.fill")
-                        .font(.system(size: 9, weight: .black))
+                        .font(Theme.TypeScale.caption.weight(.black))
                         .foregroundColor(.white)
                         .frame(width: g.size.width, alignment: .center)
                 }

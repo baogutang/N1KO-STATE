@@ -16,7 +16,6 @@ struct RingGauge: View {
                 .trim(from: 0, to: CGFloat(min(max(fraction, 0), 1)))
                 .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(.easeInOut(duration: 0.45), value: fraction)
             VStack(spacing: 1) {
                 if let value {
                     Text(value)
@@ -25,7 +24,7 @@ struct RingGauge: View {
                 }
                 if let caption {
                     Text(loc: caption)
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(Theme.TypeScale.caption.weight(.semibold))
                         .foregroundColor(Theme.textTertiary)
                 }
             }
@@ -51,15 +50,13 @@ struct DashboardRingGauge<Center: View>: View {
     var size: CGFloat = Theme.gaugeRingSize
     @ViewBuilder var center: () -> Center
 
-    @State private var animatedFraction: Double = 0
-
     var body: some View {
         ZStack {
             Circle()
                 .stroke(Theme.track, style: StrokeStyle(lineWidth: lineWidth))
 
             Circle()
-                .trim(from: 0, to: CGFloat(min(max(animatedFraction, 0), 1)))
+                .trim(from: 0, to: CGFloat(min(max(fraction, 0), 1)))
                 .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
 
@@ -67,17 +64,6 @@ struct DashboardRingGauge<Center: View>: View {
                 .frame(width: innerDiameter, height: innerDiameter)
         }
         .frame(width: size, height: size)
-        .onAppear {
-            animatedFraction = 0
-            withAnimation(.spring(response: 0.72, dampingFraction: 0.78)) {
-                animatedFraction = fraction
-            }
-        }
-        .onChange(of: fraction) { newValue in
-            withAnimation(.spring(response: 0.52, dampingFraction: 0.84)) {
-                animatedFraction = newValue
-            }
-        }
     }
 
     private var innerDiameter: CGFloat {
@@ -98,29 +84,27 @@ struct DashboardRingCenter: View, Equatable {
                 .foregroundColor(primaryColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.62)
-                .animation(.spring(response: 0.42, dampingFraction: 0.86), value: primaryValue)
 
             VStack(spacing: 1) {
                 ForEach(details) { detail in
                     if detail.placeholder {
                         Text(" ")
-                            .font(.metric(7, weight: .semibold))
+                            .font(.metric(10, weight: .semibold))
                             .foregroundColor(.clear)
                             .lineLimit(1)
                     } else {
                         HStack(spacing: 3) {
                             Text(loc: detail.label)
-                                .font(.system(size: 7, weight: .medium))
+                                .font(Theme.TypeScale.caption.weight(.medium))
                                 .foregroundColor(Theme.textTertiary)
                                 .fixedSize()
                             Text(detail.value)
-                                .font(.metric(7, weight: .semibold))
+                                .font(.metric(10, weight: .semibold))
                                 .foregroundColor(Theme.textSecondary)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.55)
                         }
                         .frame(maxWidth: 72)
-                        .animation(.easeOut(duration: 0.28), value: detail.value)
                     }
                 }
             }
@@ -188,12 +172,11 @@ struct CoreGrid: View {
                                 RoundedRectangle(cornerRadius: 2.5, style: .continuous)
                                     .fill(item.color)
                                     .frame(height: max(2, g.size.height * CGFloat(item.core.usage)))
-                                    .animation(.easeOut(duration: 0.35), value: item.core.usage)
                             }
                         }
                         .frame(height: height)
                         Text(item.label)
-                            .font(.system(size: 7, weight: .semibold))
+                            .font(Theme.TypeScale.caption.weight(.semibold))
                             .foregroundColor(Theme.textTertiary)
                     }
                     .frame(maxWidth: .infinity)
@@ -206,10 +189,10 @@ struct CoreGrid: View {
         HStack(spacing: 4) {
             RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 8, height: 8)
             Text("\(text.loc) ·")
-                .font(.system(size: 9, weight: .medium))
+                .font(Theme.TypeScale.caption.weight(.medium))
                 .foregroundColor(Theme.textTertiary)
             + Text(" \(count)")
-                .font(.system(size: 9, weight: .semibold))
+                .font(Theme.TypeScale.caption.weight(.semibold))
                 .foregroundColor(Theme.textSecondary)
         }
     }

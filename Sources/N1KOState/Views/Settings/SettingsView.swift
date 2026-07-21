@@ -1,101 +1,34 @@
 import AppKit
 import Combine
+import N1KOAgentCore
 import SwiftUI
 
-enum SettingsTab: String, CaseIterable, Identifiable {
-    case overview = "Overview"
-    case menuBar = "Menu Bar"
-    case popover = "Popover"
-    case sampling = "Sampling & Performance"
-    case sensors = "Sensors & Fans"
-    case alerts = "Alerts"
-    case advanced = "Advanced"
-
-    var id: String { rawValue }
-
-    var icon: String {
-        switch self {
-        case .overview: return "gauge.with.dots.needle.67percent"
-        case .menuBar: return "menubar.rectangle"
-        case .popover: return "rectangle.on.rectangle"
-        case .sampling: return "speedometer"
-        case .sensors: return "thermometer.medium"
-        case .alerts: return "bell.badge"
-        case .advanced: return "slider.horizontal.3"
-        }
-    }
-
-    var group: SettingsGroup {
-        switch self {
-        case .overview: return .general
-        case .menuBar, .popover: return .display
-        case .sampling: return .performance
-        case .sensors, .alerts: return .hardware
-        case .advanced: return .system
-        }
-    }
-
-    var searchTokens: [String] {
-        switch self {
-        case .overview:
-            return ["status", "preview", "sampling", "safety", "cost", "summary"]
-        case .menuBar:
-            return ["cpu", "gpu", "memory", "network", "battery", "layout", "font", "color", "width"]
-        case .popover:
-            return ["modules", "cards", "gauges", "dashboard", "chart", "battery", "disk"]
-        case .sampling:
-            return ["refresh", "performance", "battery", "background", "process", "history", "network", "real time"]
-        case .sensors:
-            return ["fan", "helper", "authorization", "rpm", "curve", "temperature", "fahrenheit", "smc"]
-        case .alerts:
-            return ["notification", "permission", "threshold", "cpu", "memory", "disk", "battery", "temperature"]
-        case .advanced:
-            return ["language", "theme", "appearance", "accent", "login", "startup", "update", "license", "log", "diagnostic", "about"]
-        }
-    }
-
-    static var grouped: [(group: SettingsGroup, tabs: [SettingsTab])] {
-        SettingsGroup.allCases.compactMap { group in
-            let tabs = allCases.filter { $0.group == group }
-            return tabs.isEmpty ? nil : (group, tabs)
-        }
-    }
-}
-
-enum SettingsGroup: String, CaseIterable {
-    case general
-    case display
-    case performance
-    case hardware
-    case system
-
-    var title: String {
-        switch self {
-        case .general: return "General".loc
-        case .display: return "Display & Popover".loc
-        case .performance: return "Performance".loc
-        case .hardware: return "Hardware".loc
-        case .system: return "System & Advanced".loc
-        }
-    }
-}
-
 struct SettingsView: View {
-    @ObservedObject var settings = AppSettings.shared
+    @ObservedObject var settings: AppSettings
     @ObservedObject private var chartRange = ChartRangeStore.shared
     @ObservedObject var fans: FanControlService
     @ObservedObject private var navigation: SettingsNavigationModel
-    var hub: MonitorHub?
+    @ObservedObject var hub: MonitorHub
+    @ObservedObject private var agentModel: AgentSurfaceModel
+    @ObservedObject private var agentIntegrations = AgentIntegrationController.shared
     @State private var tab: SettingsTab
     @State private var exportMessage: String?
     @State private var launchAtLogin = LoginItem.isEnabled
     @State private var moduleFilter = ""
     @State private var settingsSearch = ""
+    @State private var showingHelperUninstallConfirmation = false
 
-    init(fans: FanControlService, hub: MonitorHub? = nil, initialTab: SettingsTab? = nil, navigation: SettingsNavigationModel = SettingsNavigationModel()) {
+    init(fans: FanControlService,
+         hub: MonitorHub,
+         initialTab: SettingsTab? = nil,
+         navigation: SettingsNavigationModel = SettingsNavigationModel(),
+         agentModel: AgentSurfaceModel? = nil,
+         preferences: AppPreferences = .shared) {
         self.fans = fans
         self.hub = hub
         self.navigation = navigation
+        self.settings = preferences.root
+        self.agentModel = agentModel ?? AgentSurfaceModel()
         _tab = State(initialValue: initialTab ?? navigation.selectedTab)
     }
 
@@ -110,19 +43,28 @@ struct SettingsView: View {
         HStack(spacing: 0) {
             sidebar
             Divider().overlay(Theme.stroke)
-            ScrollView(.vertical, showsIndicators: true) {
-                page
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 24)
-                    .frame(maxWidth: 780, alignment: .leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: true) {
+                    page
+                        .padding(.horizontal, 28)
+                        .padding(.vertical, 24)
+                        .frame(maxWidth: 780, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .onChange(of: navigation.pendingControlID) { control in
+                    guard let control else { return }
+                    DispatchQueue.main.async {
+                        proxy.scrollTo(control, anchor: .top)
+                        navigation.pendingControlID = nil
+                    }
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.surface)
         }
         .frame(minWidth: 900, idealWidth: 980, maxWidth: .infinity,
                minHeight: 600, idealHeight: 720, maxHeight: .infinity)
-        .controlSize(.small)
+        .controlSize(.regular)
         .background(Theme.surfaceMaterial)
         .onChange(of: navigation.selectedTab) { selected in
             if tab != selected { tab = selected }
@@ -157,21 +99,57 @@ struct SettingsView: View {
             TextField("Search settings".loc, text: $settingsSearch)
                 .textFieldStyle(.roundedBorder)
                 .controlSize(.small)
+                .keyboardShortcut("f", modifiers: .command)
                 .padding(.horizontal, 8)
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 14) {
-                    ForEach(filteredSidebarGroups, id: \.group) { section in
+                    if normalizedSearch.isEmpty {
+                        ForEach(SettingsTab.grouped, id: \.group) { section in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(section.group.title)
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundColor(Theme.textTertiary)
+                                    .padding(.horizontal, 10)
+
+                                ForEach(section.tabs) { t in
+                                    SettingsSidebarItem(tab: t, isSelected: tab == t, accent: settings.accent) {
+                                        tab = t
+                                    }
+                                }
+                            }
+                        }
+                    } else if searchResults.isEmpty {
+                        Text(loc: "No settings found")
+                            .font(.system(size: 11))
+                            .foregroundColor(Theme.textSecondary)
+                            .padding(.horizontal, 10)
+                    } else {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(section.group.title)
+                            Text(loc: "Controls")
                                 .font(.system(size: 10, weight: .semibold))
                                 .foregroundColor(Theme.textTertiary)
                                 .padding(.horizontal, 10)
-
-                            ForEach(section.tabs) { t in
-                                SettingsSidebarItem(tab: t, isSelected: tab == t, accent: settings.accent) {
-                                    tab = t
+                            ForEach(searchResults) { result in
+                                Button {
+                                    navigation.navigate(to: result)
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(loc: result.title)
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(Theme.textPrimary)
+                                        Text(loc: result.detail)
+                                            .font(.system(size: 10))
+                                            .foregroundColor(Theme.textSecondary)
+                                            .lineLimit(2)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 7)
+                                    .contentShape(Rectangle())
                                 }
+                                .buttonStyle(.plain)
+                                .accessibilityHint("Opens the matching control.".loc)
                             }
                         }
                     }
@@ -203,17 +181,12 @@ struct SettingsView: View {
         .background(.thinMaterial)
     }
 
-    private var filteredSidebarGroups: [(group: SettingsGroup, tabs: [SettingsTab])] {
-        let query = settingsSearch.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !query.isEmpty else { return SettingsTab.grouped }
-        return SettingsTab.grouped.compactMap { section in
-            let tabs = section.tabs.filter {
-                $0.rawValue.loc.lowercased().contains(query)
-                    || section.group.title.lowercased().contains(query)
-                    || $0.searchTokens.contains { $0.loc.lowercased().contains(query) || $0.lowercased().contains(query) }
-            }
-            return tabs.isEmpty ? nil : (section.group, tabs)
-        }
+    private var normalizedSearch: String {
+        settingsSearch.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var searchResults: [SettingsSearchItem] {
+        SettingsSearchIndex.search(normalizedSearch)
     }
 
     // MARK: Pages
@@ -226,6 +199,7 @@ struct SettingsView: View {
         case .sampling: samplingPage
         case .sensors: sensorsPage
         case .alerts: alertsPage
+        case .agentCenter: agentCenterPage
         case .advanced: advancedPage
         }
     }
@@ -238,6 +212,7 @@ struct SettingsView: View {
             SettingGroup(title: "Live Preview") {
                 MenuBarPreviewView(hub: hub, expanded: true)
             }
+            .id(SettingsControlID.overviewPreview)
 
             HStack(alignment: .top, spacing: 9) {
                 OverviewCard(title: "Sampling",
@@ -254,9 +229,7 @@ struct SettingsView: View {
                              icon: "menubar.rectangle")
                 OverviewCard(title: "Popover Modules",
                              value: "\(activePopoverModuleCount)",
-                             detail: settings.popoverStyle == "gauges"
-                                ? "Enabled in gauge dashboard."
-                                : "Enabled in card layout.",
+                             detail: "Enabled in the Quick Panel.",
                              badge: "\(activePopoverModuleCount)",
                              color: Theme.info,
                              icon: "rectangle.on.rectangle")
@@ -283,7 +256,7 @@ struct SettingsView: View {
     }
 
     private var batteryIsAvailable: Bool {
-        hub?.battery.isPresent == true
+        hub.battery.isPresent
     }
 
     private var menuBarPage: some View {
@@ -316,6 +289,7 @@ struct SettingsView: View {
                     .frame(minHeight: 150)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .id(SettingsControlID.menuBarMetrics)
 
                 VStack(alignment: .leading, spacing: 7) {
                     LivePreviewLabel()
@@ -374,6 +348,7 @@ struct SettingsView: View {
                     }
                 }
             }
+            .id(SettingsControlID.menuBarAppearance)
         }
         .onAppear {
             if settings.menuBattery && !batteryIsAvailable {
@@ -389,17 +364,12 @@ struct SettingsView: View {
 
             HStack(alignment: .top, spacing: 18) {
                 VStack(alignment: .leading, spacing: 14) {
-                    SettingGroup(title: "Display Options") {
+                    SettingGroup(title: "Quick Panel Layout") {
                         VStack(alignment: .leading, spacing: 16) {
-                            SettingsChoiceGroup(
-                                label: "Popover Style",
-                                detail: settings.popoverStyle == "gauges"
-                                    ? "Compact dashboard with ring gauges."
-                                    : "Detailed cards with charts and process lists.",
-                                options: [("cards", "Cards"), ("gauges", "Gauges")],
-                                selection: $settings.popoverStyle,
-                                accent: settings.accent
-                            )
+                            Text(loc: "The Quick Panel uses a health summary and stable module rows. Open one row at a time for charts and controls.")
+                                .font(Theme.TypeScale.body)
+                                .foregroundColor(Theme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
                             SettingsChoiceGroup(
                                 label: "Chart Range",
                                 options: HistoryStore.Range.allCases.map { ($0.rawValue, $0.rawValue.uppercased()) },
@@ -409,6 +379,7 @@ struct SettingsView: View {
                             )
                         }
                     }
+                    .id(SettingsControlID.quickPanelLayout)
 
                     SettingGroup(title: "Modules", flush: true) {
                         VStack(alignment: .leading, spacing: 0) {
@@ -439,29 +410,23 @@ struct SettingsView: View {
                             .frame(minHeight: 220)
                         }
                     }
+                    .id(SettingsControlID.quickPanelModules)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 VStack(alignment: .leading, spacing: 7) {
-                    LivePreviewLabel()
-                    if let hub {
-                        PopoverPreviewView(hub: hub)
-                    } else {
-                        Text(loc: "Open settings from the menu bar to see a live popover preview.")
-                            .font(.system(size: 11.5))
-                            .foregroundColor(Theme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(width: Theme.popoverWidth, alignment: .leading)
-                            .padding(14)
-                            .background(
-                                RoundedRectangle(cornerRadius: Theme.settingsCardRadius, style: .continuous)
-                                    .fill(Theme.card)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: Theme.settingsCardRadius, style: .continuous)
-                                    .strokeBorder(Theme.stroke, lineWidth: 1)
-                            )
-                    }
+                    Text(loc: "Static preview")
+                        .font(Theme.TypeScale.caption)
+                        .foregroundColor(Theme.textSecondary)
+                    QuickPanelPreviewView(
+                        model: .make(
+                            snapshot: hub.snapshot,
+                            modules: settings.orderedModules.filter {
+                                settings.isVisible($0) && ($0 != .battery || hub.snapshot.batteryIsPresent)
+                            }
+                        )
+                    )
+                    .frame(width: Theme.popoverWidth)
                 }
             }
         }
@@ -491,6 +456,7 @@ struct SettingsView: View {
                     columns: 2
                 )
             }
+            .id(SettingsControlID.refreshProfile)
 
             SettingGroup(title: "Cost Map") {
                 VStack(spacing: 0) {
@@ -520,6 +486,7 @@ struct SettingsView: View {
                                        visible: "On open")
                 }
             }
+            .id(SettingsControlID.monitoringCost)
         }
     }
 
@@ -535,6 +502,7 @@ struct SettingsView: View {
                               isOn: $settings.sensorsDetailed, accent: settings.accent)
                 }
             }
+            .id(SettingsControlID.temperatureDisplay)
             SettingGroup(title: "Fan Control") {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 8) {
@@ -554,7 +522,7 @@ struct SettingsView: View {
                         .tint(settings.accent)
                         .disabled(fans.helperState == .installing)
 
-                        Button(action: { fans.uninstallHelper() }) {
+                        Button(action: { showingHelperUninstallConfirmation = true }) {
                             Text(loc: "Uninstall Helper")
                         }
                         .buttonStyle(.bordered)
@@ -572,6 +540,7 @@ struct SettingsView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            .id(SettingsControlID.fanHelper)
             if fans.supportsControl {
                 SettingGroup(title: "Fan Curve") {
                     VStack(alignment: .leading, spacing: 10) {
@@ -588,6 +557,7 @@ struct SettingsView: View {
                         }
                     }
                 }
+                .id(SettingsControlID.fanCurve)
             } else if fans.isAvailable {
                 Text(loc: "This device does not support manual fan control.")
                     .font(.system(size: 11))
@@ -595,6 +565,16 @@ struct SettingsView: View {
             }
         }
         .onAppear { fans.refreshHelperStatus() }
+        .alert("Uninstall N1KO-STATE Fan Helper?".loc,
+               isPresented: $showingHelperUninstallConfirmation) {
+            Button("Cancel".loc, role: .cancel) {}
+            Button("Uninstall Helper".loc, role: .destructive) {
+                fans.uninstallHelper()
+            }
+        } message: {
+            Text("This removes the N1KO-STATE fan helper and restores system automatic fan control."
+                .loc)
+        }
     }
 
     private var alertsPage: some View {
@@ -607,10 +587,11 @@ struct SettingsView: View {
                     get: { settings.alertsEnabled },
                     set: { enabled in
                         settings.alertsEnabled = enabled
-                        if enabled { hub?.alerts.requestAuthorization() }
+                        if enabled { hub.alerts.requestAuthorization() }
                     }
                 ), accent: settings.accent)
             }
+            .id(SettingsControlID.alertMaster)
 
             SettingGroup(title: "Thresholds") {
                 VStack(spacing: 10) {
@@ -655,7 +636,272 @@ struct SettingsView: View {
                              disabled: !settings.alertsEnabled)
                 }
             }
+            .id(SettingsControlID.alertThresholds)
             .opacity(settings.alertsEnabled ? 1 : 0.45)
+        }
+    }
+
+    private var agentCenterPage: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SettingsHeader(
+                title: "Agent Center",
+                subtitle: "Follow supported coding-agent sessions through one N1KO-owned event, migration, and presentation path."
+            )
+
+            HStack(alignment: .top, spacing: 9) {
+                OverviewCard(title: "Active Sessions",
+                             value: "\(agentModel.projection.activeCount)",
+                             detail: "Sessions currently working or waiting.",
+                             badge: "\(agentModel.projection.activeCount)",
+                             color: Theme.info,
+                             icon: "terminal")
+                OverviewCard(title: "Needs Attention",
+                             value: "\(agentModel.projection.attentionCount)",
+                             detail: "Approvals, questions, and failures.",
+                             badge: "\(agentModel.projection.attentionCount)",
+                             color: agentModel.projection.attentionCount > 0 ? Theme.warn : Theme.ok,
+                             icon: "exclamationmark.bubble")
+                OverviewCard(title: "Token Usage",
+                             value: compactAgentUsage(agentModel.projection.usage.totalTokens),
+                             detail: "Cumulative input and output tokens.",
+                             badge: compactAgentUsage(agentModel.projection.usage.totalTokens),
+                             color: settings.accent,
+                             icon: "number")
+            }
+
+            SettingGroup(title: "Session Behavior") {
+                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                    ToggleRow(label: "Enable Agent session awareness",
+                              isOn: $settings.agentBehaviorEnabled,
+                              accent: settings.accent)
+                    Text("Turning this off hides Agent surfaces immediately. Agent Core starts or stays disabled after the next launch so an in-flight authenticated response is never orphaned.".loc)
+                        .font(Theme.TypeScale.secondary)
+                        .foregroundColor(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .id(SettingsControlID.agentBehavior)
+
+            SettingGroup(title: "Agent Island") {
+                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                    ToggleRow(label: "Show Agent Island",
+                              isOn: $settings.agentPresentationEnabled,
+                              accent: settings.accent)
+                    ToggleRow(label: "Allow deliberate top-edge reveal in fullscreen",
+                              isOn: $settings.agentFullscreenRevealEnabled,
+                              accent: settings.accent)
+                    Text("The desktop Island never joins a native fullscreen Space. A separate hidden panel appears only after a top-edge dwell and closes on Escape, pointer exit, Space change, or sleep.".loc)
+                        .font(Theme.TypeScale.secondary)
+                        .foregroundColor(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .id(SettingsControlID.agentPresentation)
+
+            SettingGroup(title: "Island Feedback") {
+                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                    ToggleRow(label: "Animate provider mascots",
+                              isOn: $settings.agentMascotAnimationsEnabled,
+                              accent: settings.accent)
+                    if settings.agentNotificationsTemporarilyMuted {
+                        Button("Resume Agent notifications".loc) {
+                            settings.agentNotificationMuteUntil = nil
+                        }
+                        .buttonStyle(.plain)
+                        .font(Theme.TypeScale.secondary)
+                        .foregroundColor(settings.accent)
+                    }
+                }
+            }
+
+            SettingsHeader(
+                title: "Island Behavior & Display",
+                subtitle: "The pinned behavior, compact presentation, floating mode, usage, and panel sizing controls."
+            )
+            IslandSettingsContent()
+                .id(SettingsControlID.agentIslandSettings)
+
+            SettingsHeader(
+                title: "Sound & Theme Packs",
+                subtitle: "Five event mappings, system sounds, the pinned 8-bit scheme, and OpenPeon / CESP packs."
+            )
+            SoundSettingsContent()
+                .id(SettingsControlID.agentSounds)
+
+            SettingsHeader(
+                title: "Provider Mascots",
+                subtitle: "The pinned per-client mascot mapping and live status preview."
+            )
+            MascotSettingsView()
+                .frame(minHeight: 780)
+                .id(SettingsControlID.agentMascots)
+
+            SettingGroup(title: "Target Display") {
+                SettingsCardRow(label: "Display") {
+                    Picker("Display".loc, selection: $settings.agentTargetDisplayUUID) {
+                        Text("Automatic".loc).tag(AppSettings.automaticDisplaySelection)
+                        ForEach(agentModel.displayOptions) { display in
+                            Text(display.isNotched
+                                 ? "%@ — camera housing".locf(display.title)
+                                 : display.title)
+                                .tag(display.id)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 260)
+                    .accessibilityLabel("Agent target display".loc)
+                }
+            }
+            .id(SettingsControlID.agentTargetDisplay)
+
+            SettingGroup(title: "Provider Integrations", flush: true) {
+                VStack(spacing: 0) {
+                    ForEach(Array(AgentIntegrationRegistry.profiles.enumerated()), id: \.element.id) {
+                        index, profile in
+                        if index > 0 { SettingsDivider() }
+                        HStack(spacing: Theme.Spacing.s) {
+                            Image(systemName: settings.agentSymbolicCompanionEnabled
+                                  ? AgentSymbolicCompanionDescriptor(
+                                      provider: profile.provider
+                                  ).systemSymbolName
+                                  : "terminal")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(settings.accent)
+                                .frame(width: 20)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(profile.displayName)
+                                    .font(Theme.TypeScale.bodyMedium)
+                                    .foregroundColor(Theme.textPrimary)
+                                Text(profile.managedHookAvailable
+                                     ? profile.configurationRelativePath
+                                     : "Runtime detection and focus only".loc)
+                                    .font(Theme.TypeScale.caption)
+                                    .foregroundColor(Theme.textSecondary)
+                                    .lineLimit(1)
+                            }
+                            Spacer()
+                            if profile.managedHookAvailable {
+                                let installed = agentIntegrations.installedProfileIDs.contains(profile.id)
+                                Text(installed ? "Installed".loc : "Not installed".loc)
+                                    .font(Theme.TypeScale.caption)
+                                    .foregroundColor(installed ? Theme.ok : Theme.textTertiary)
+                                Button(installed ? "Remove".loc : "Install".loc) {
+                                    if installed {
+                                        agentIntegrations.removeWithConfirmation(profile: profile)
+                                    } else {
+                                        agentIntegrations.installWithConfirmation(profile: profile)
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .disabled(agentIntegrations.isBusy)
+                            } else {
+                                Text("Runtime only".loc)
+                                    .font(Theme.TypeScale.caption)
+                                    .foregroundColor(Theme.textTertiary)
+                            }
+                        }
+                        .padding(.horizontal, Theme.Spacing.m)
+                        .padding(.vertical, Theme.Spacing.s)
+                    }
+                }
+            }
+            .id(SettingsControlID.agentIntegrations)
+
+            SettingGroup(title: "Capabilities") {
+                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                    ToggleRow(label: "Enable terminal and IDE focus",
+                              isOn: $settings.agentFocusEnabled,
+                              accent: settings.accent)
+                    ToggleRow(label: "Enable tmux pane focus",
+                              isOn: $settings.agentTMUXEnabled,
+                              accent: settings.accent)
+                    ToggleRow(label: "Enable verified remote SSH plans",
+                              isOn: $settings.agentRemoteSSHEnabled,
+                              accent: settings.accent)
+                    ToggleRow(label: "Show symbolic provider companions",
+                              isOn: $settings.agentSymbolicCompanionEnabled,
+                              accent: settings.accent)
+                    Text("Capabilities are off by default. N1KO-STATE performs focus, tmux, or SSH work only after the matching option is enabled and the user invokes an action. No third-party mascot assets are bundled.".loc)
+                        .font(Theme.TypeScale.secondary)
+                        .foregroundColor(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .id(SettingsControlID.agentCapabilities)
+
+            if agentIntegrations.legacyDiscovery.hasImportableData {
+                SettingGroup(title: "Legacy Agent Import") {
+                    VStack(alignment: .leading, spacing: Theme.Spacing.s) {
+                        Text("Compatible provider selections, associations, and aggregate usage are available. Import is read-only and excludes credentials and transient window state.".loc)
+                            .font(Theme.TypeScale.secondary)
+                            .foregroundColor(Theme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Button("Review and Import".loc) {
+                            agentIntegrations.importLegacyWithConfirmation()
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(agentIntegrations.isBusy)
+                    }
+                }
+                .id(SettingsControlID.agentLegacyImport)
+            }
+
+            if let message = agentIntegrations.operationMessage {
+                Text(message)
+                    .font(Theme.TypeScale.secondary)
+                    .foregroundColor(Theme.textSecondary)
+                    .accessibilityLabel(message)
+            }
+
+            SettingGroup(title: "Sessions", flush: true) {
+                VStack(spacing: 0) {
+                    if agentModel.projection.sessions.isEmpty {
+                        Text("No Agent sessions yet.".loc)
+                            .font(Theme.TypeScale.secondary)
+                            .foregroundColor(Theme.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(Theme.Spacing.m)
+                    } else {
+                        ForEach(Array(agentModel.projection.sessions.prefix(8).enumerated()), id: \.element.id) {
+                            index, session in
+                            if index > 0 { SettingsDivider() }
+                            HStack(spacing: Theme.Spacing.s) {
+                                Image(systemName: agentSettingsPhaseIcon(session.phase))
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(agentSettingsPhaseColor(session.phase))
+                                    .frame(width: 18)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(session.title)
+                                        .font(Theme.TypeScale.bodyMedium)
+                                        .foregroundColor(Theme.textPrimary)
+                                        .lineLimit(1)
+                                    Text("%@ · %@".locf(
+                                        session.provider.displayName,
+                                        agentSettingsPhaseTitle(session.phase)
+                                    ))
+                                    .font(Theme.TypeScale.caption)
+                                    .foregroundColor(Theme.textSecondary)
+                                }
+                                Spacer()
+                                Text(compactAgentUsage(session.usage.totalTokens))
+                                    .font(Theme.TypeScale.metric)
+                                    .foregroundColor(Theme.textSecondary)
+                                Button("Focus".loc) {
+                                    agentIntegrations.focus(session: session)
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .disabled(!settings.agentFocusEnabled)
+                            }
+                            .padding(.horizontal, Theme.Spacing.m)
+                            .padding(.vertical, Theme.Spacing.s)
+                            .accessibilityElement(children: .combine)
+                        }
+                    }
+                }
+            }
+            .id(SettingsControlID.agentSessions)
         }
     }
 
@@ -675,6 +921,7 @@ struct SettingsView: View {
                         .labelsHidden()
                         .frame(width: 150)
                     }
+                    .id(SettingsControlID.language)
                     SettingsDivider()
                     SettingsCardRow(label: "Appearance") {
                         SettingsPillSelector(
@@ -688,6 +935,7 @@ struct SettingsView: View {
                             inline: true
                         )
                     }
+                    .id(SettingsControlID.appAppearance)
                     SettingsDivider()
                     SettingsCardRow(label: "Accent Color") {
                         HStack(spacing: 8) {
@@ -713,6 +961,7 @@ struct SettingsView: View {
                             .frame(width: 22, height: 22)
                         }
                     }
+                    .id(SettingsControlID.accentColor)
                     if LoginItem.isAvailable {
                         SettingsDivider()
                         SettingsCardRow(label: "Launch at login") {
@@ -720,16 +969,16 @@ struct SettingsView: View {
                                                      set: { launchAtLogin = $0; LoginItem.set($0) }))
                                 .labelsHidden()
                                 .toggleStyle(.switch)
-                                .controlSize(.small)
                                 .tint(settings.accent)
                         }
+                        .id(SettingsControlID.launchAtLogin)
                     }
                 }
             }
 
             SettingGroup(title: "Maintenance") {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(verbatim: "N1KO-STATE \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.17")")
+                    Text(verbatim: "N1KO-STATE \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.18")")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(Theme.textPrimary)
                     Text(loc: "A modern macOS system monitor.")
@@ -743,6 +992,7 @@ struct SettingsView: View {
                             Text(loc: "Check for Updates…")
                         }
                         .buttonStyle(.bordered)
+                        .id(SettingsControlID.updates)
                         Button(action: openLogFolder) {
                             Text(loc: "Open Log Folder")
                         }
@@ -752,13 +1002,17 @@ struct SettingsView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(settings.accent)
-                        .disabled(hub == nil)
+                        .id(SettingsControlID.diagnostics)
                     }
                     if let exportMessage {
                         Text(exportMessage)
                             .font(.system(size: 10.5))
                             .foregroundColor(Theme.textSecondary)
                     }
+                    Text(loc: "Diagnostic reports are created locally, redact secrets and home paths, and are never uploaded automatically. Review before sharing.")
+                        .font(.system(size: 10.5))
+                        .foregroundColor(Theme.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
@@ -773,6 +1027,52 @@ struct SettingsView: View {
 
     private var activePopoverModuleCount: Int {
         settings.orderedModules.filter { settings.isVisible($0) }.count
+    }
+
+    private func compactAgentUsage(_ value: Int) -> String {
+        switch Double(value) {
+        case 1_000_000...: return String(format: "%.1fM", Double(value) / 1_000_000)
+        case 1_000...: return String(format: "%.1fK", Double(value) / 1_000)
+        default: return "\(value)"
+        }
+    }
+
+    private func agentSettingsPhaseTitle(_ phase: AgentPhase) -> String {
+        switch phase {
+        case .starting: return "Starting".loc
+        case .processing: return "Working".loc
+        case .waitingForApproval: return "Waiting for approval".loc
+        case .waitingForAnswer: return "Waiting for answer".loc
+        case .completed: return "Completed".loc
+        case .interrupted: return "Interrupted".loc
+        case .failed: return "Failed".loc
+        case .ended: return "Ended".loc
+        case .archived: return "Archived".loc
+        }
+    }
+
+    private func agentSettingsPhaseIcon(_ phase: AgentPhase) -> String {
+        switch phase {
+        case .starting: return "clock"
+        case .processing: return "terminal"
+        case .waitingForApproval: return "checkmark.shield"
+        case .waitingForAnswer: return "questionmark.bubble"
+        case .completed: return "checkmark.circle"
+        case .interrupted: return "pause.circle"
+        case .failed: return "exclamationmark.triangle"
+        case .ended: return "stop.circle"
+        case .archived: return "archivebox"
+        }
+    }
+
+    private func agentSettingsPhaseColor(_ phase: AgentPhase) -> Color {
+        switch phase {
+        case .waitingForApproval, .waitingForAnswer: return Theme.warn
+        case .completed: return Theme.ok
+        case .failed: return Theme.danger
+        case .starting, .processing: return Theme.info
+        case .interrupted, .ended, .archived: return Theme.textTertiary
+        }
     }
 
     private var resourceModeTitle: String {
@@ -915,12 +1215,12 @@ struct SettingsView: View {
                     .foregroundColor(Theme.textSecondary)
             }
             HStack {
-                Text("°C").font(.system(size: 9)).foregroundColor(Theme.textTertiary)
+                Text("°C").font(Theme.TypeScale.caption).foregroundColor(Theme.textTertiary)
                 Slider(value: curveTempBinding(index), in: 40...95, step: 1)
                     .tint(settings.accent)
             }
             HStack {
-                Text("%").font(.system(size: 9)).foregroundColor(Theme.textTertiary)
+                Text("%").font(Theme.TypeScale.caption).foregroundColor(Theme.textTertiary)
                 Slider(value: curveRPMBinding(index), in: 0...100, step: 5)
                     .tint(settings.accent)
             }
@@ -980,7 +1280,6 @@ struct SettingsView: View {
     }
 
     private func exportDiagnostic() {
-        guard let hub else { return }
         switch DiagnosticExporter.export(hub: hub) {
         case .success(let url):
             exportMessage = "Saved to %@".locf(url.path)
@@ -1026,23 +1325,14 @@ struct SettingsSidebarItem: View {
 }
 
 struct LivePreviewLabel: View {
-    @State private var pulse = false
-
     var body: some View {
         HStack(spacing: 6) {
-            Circle()
-                .fill(Theme.ok)
-                .frame(width: 6, height: 6)
-                .shadow(color: Theme.ok.opacity(pulse ? 0.08 : 0.22), radius: pulse ? 2 : 3)
-                .opacity(pulse ? 0.55 : 1)
+            Image(systemName: "waveform.path.ecg")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(Theme.ok)
             Text(loc: "Live Preview")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(Theme.textTertiary)
-        }
-        .onAppear {
-            withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
-                pulse = true
-            }
         }
     }
 }
@@ -1422,7 +1712,7 @@ struct PerformanceCostRow: View {
             Spacer(minLength: 12)
             VStack(alignment: .trailing, spacing: 3) {
                 Text(loc: "Background")
-                    .font(.system(size: 9.5, weight: .semibold))
+                    .font(Theme.TypeScale.caption.weight(.semibold))
                     .foregroundColor(Theme.textTertiary)
                 Text(loc: background)
                     .font(.metric(11))
@@ -1431,7 +1721,7 @@ struct PerformanceCostRow: View {
             .frame(width: 82, alignment: .trailing)
             VStack(alignment: .trailing, spacing: 3) {
                 Text(loc: "Visible")
-                    .font(.system(size: 9.5, weight: .semibold))
+                    .font(Theme.TypeScale.caption.weight(.semibold))
                     .foregroundColor(Theme.textTertiary)
                 Text(loc: visible)
                     .font(.metric(11))
@@ -1445,9 +1735,8 @@ struct PerformanceCostRow: View {
 
 struct MenuBarPreviewView: View {
     @ObservedObject var settings = AppSettings.shared
-    var hub: MonitorHub?
+    @ObservedObject var hub: MonitorHub
     var expanded = false
-    @State private var previewTick = 0
 
     var body: some View {
         let image = previewImage
@@ -1508,7 +1797,7 @@ struct MenuBarPreviewView: View {
                         .foregroundColor(Theme.danger)
                 }
             }
-            if settings.menuBattery && !(hub?.battery.isPresent ?? false) {
+            if settings.menuBattery && !hub.snapshot.batteryIsPresent {
                 Label {
                     Text(loc: "No battery detected on this Mac. Battery will not appear in the menu bar.")
                         .font(.system(size: 10.5))
@@ -1521,24 +1810,16 @@ struct MenuBarPreviewView: View {
                 }
             }
         }
-        .id(previewTick)
-        .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
-            previewTick &+= 1
-        }
     }
 
     private var previewImage: NSImage {
-        let memFraction: Double
-        if let hub, hub.memory.total > 0 {
-            memFraction = hub.memory.used / hub.memory.total
-        } else {
-            memFraction = 0.58
-        }
+        let snapshot = hub.snapshot
+        let memFraction = snapshot.memoryTotal > 0 ? snapshot.memoryFraction : 0.58
 
         var showCPU = settings.menuCPU
         var showGPU = settings.menuGPU
         let showMem = settings.menuMemory
-        let showBat = settings.menuBattery && (hub?.battery.isPresent ?? true)
+        let showBat = settings.menuBattery && snapshot.batteryIsPresent
         let showNet = settings.menuNetwork
         if !showCPU && !showGPU && !showMem && !showBat && !showNet {
             showCPU = true
@@ -1546,13 +1827,13 @@ struct MenuBarPreviewView: View {
         }
 
         let input = MenuBarImageRenderer.Input(
-            cpu: hub?.cpu.totalUsage ?? 0.42,
-            gpu: hub?.gpu.utilization ?? 0.18,
+            cpu: snapshot.generationID > 0 ? snapshot.cpuUsage : 0.42,
+            gpu: snapshot.generationID > 0 ? snapshot.gpuUtilization : 0.18,
             mem: memFraction,
-            battery: (hub?.battery.isPresent ?? true) ? (hub?.battery.percentage ?? 0.86) : nil,
-            batteryCharging: hub?.battery.isCharging ?? false,
-            down: hub?.network.downloadRate ?? 1_250_000,
-            up: hub?.network.uploadRate ?? 280_000,
+            battery: snapshot.batteryIsPresent ? snapshot.batteryPercentage : nil,
+            batteryCharging: snapshot.batteryIsCharging,
+            down: snapshot.generationID > 0 ? snapshot.networkDownloadRate : 1_250_000,
+            up: snapshot.generationID > 0 ? snapshot.networkUploadRate : 280_000,
             showCPU: showCPU,
             showGPU: showGPU,
             showMem: showMem,
@@ -1566,7 +1847,9 @@ struct MenuBarPreviewView: View {
             colorMode: settings.resolvedMenuBarColorMode,
             fontSize: CGFloat(settings.menuBarFontSize)
         )
-        return MenuBarImageRenderer.render(input)
+        return PerformanceDiagnostics.measure(.settingsPreviewRender) {
+            MenuBarImageRenderer.render(input)
+        }
     }
 
     private func previewChrome(image: NSImage, previewWidth: CGFloat, imageScale: CGFloat, isTooWide: Bool) -> some View {
@@ -1587,22 +1870,6 @@ struct MenuBarPreviewView: View {
             .frame(width: previewWidth, height: expanded ? 42 : 36)
             if !expanded { Spacer(minLength: 0) }
         }
-    }
-}
-
-struct PopoverPreviewView: View {
-    @ObservedObject var hub: MonitorHub
-    @ObservedObject var settings = AppSettings.shared
-
-    var body: some View {
-        PopoverRootView(hub: hub)
-            .frame(width: Theme.popoverWidth)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(Theme.stroke, lineWidth: 1)
-            )
-            .shadow(color: Color.black.opacity(0.06), radius: 10, y: 4)
     }
 }
 

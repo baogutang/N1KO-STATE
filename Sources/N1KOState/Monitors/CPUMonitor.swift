@@ -2,16 +2,24 @@ import Foundation
 import Combine
 import Darwin
 
-struct CoreSample: Identifiable {
+struct CoreSample: Identifiable, Equatable {
     let id: Int
     let usage: Double
     let isPerformance: Bool
 }
 
-struct LoadAverage {
+struct LoadAverage: Equatable {
     let one: Double
     let five: Double
     let fifteen: Double
+}
+
+struct CPUModuleSnapshot: Equatable {
+    let totalUsage: Double
+    let cores: [CoreSample]
+    let loadAverage: LoadAverage
+    let uptime: TimeInterval
+    let history: [Double]
 }
 
 final class CPUMonitor: ObservableObject {
@@ -24,8 +32,11 @@ final class CPUMonitor: ObservableObject {
     private(set) var frequency: Double?
 
     let historyCapacity = 300
+    private lazy var historyBuffer = RingBuffer<Double>(capacity: historyCapacity)
 
     private var previousTicks: [(user: UInt32, system: UInt32, idle: UInt32, nice: UInt32)] = []
+    private var sampledUsage: Double = 0
+    private var sampledCores: [CoreSample] = []
     private let efficiencyCoreCount: Int
     private let performanceCoreCount: Int
     private let bootDate: Date
@@ -39,16 +50,37 @@ final class CPUMonitor: ObservableObject {
         }
     }
 
-    func refresh(publish: Bool = true) {
-        sampleCores()
-        var loads = [Double](repeating: 0, count: 3)
-        getloadavg(&loads, 3)
-        loadAverage = LoadAverage(one: loads[0], five: loads[1], fifteen: loads[2])
-        uptime = Date().timeIntervalSince(bootDate)
-        if publish { objectWillChange.send() }
+    func sample() -> CPUModuleSnapshot {
+        PerformanceDiagnostics.measure(.samplerCPU) {
+            let coreResult = sampleCores()
+            var loads = [Double](repeating: 0, count: 3)
+            getloadavg(&loads, 3)
+            let load = LoadAverage(one: loads[0], five: loads[1], fifteen: loads[2])
+            historyBuffer.append(coreResult.usage)
+            return CPUModuleSnapshot(
+                totalUsage: coreResult.usage,
+                cores: coreResult.cores,
+                loadAverage: load,
+                uptime: Date().timeIntervalSince(bootDate),
+                history: historyBuffer.elements
+            )
+        }
     }
 
-    private func sampleCores() {
+    func apply(_ sample: CPUModuleSnapshot, publish: Bool = true) {
+        if publish { objectWillChange.send() }
+        totalUsage = sample.totalUsage
+        cores = sample.cores
+        loadAverage = sample.loadAverage
+        uptime = sample.uptime
+        history = sample.history
+    }
+
+    func refresh(publish: Bool = true) {
+        apply(sample(), publish: publish)
+    }
+
+    private func sampleCores() -> (usage: Double, cores: [CoreSample]) {
         var cpuInfo: processor_info_array_t?
         var numCpuInfo: mach_msg_type_number_t = 0
         var numCpus: natural_t = 0
@@ -58,7 +90,9 @@ final class CPUMonitor: ObservableObject {
                                          &numCpus,
                                          &cpuInfo,
                                          &numCpuInfo)
-        guard result == KERN_SUCCESS, let info = cpuInfo else { return }
+        guard result == KERN_SUCCESS, let info = cpuInfo else {
+            return (sampledUsage, sampledCores)
+        }
         defer {
             vm_deallocate(mach_task_self_,
                           vm_address_t(UInt(bitPattern: info)),
@@ -101,11 +135,10 @@ final class CPUMonitor: ObservableObject {
         }
 
         previousTicks = newTicks
-        if totalAll > 0 { totalUsage = totalBusy / totalAll }
-        cores = samples
-
-        history.append(totalUsage)
-        if history.count > historyCapacity { history.removeFirst(history.count - historyCapacity) }
+        let usage = totalAll > 0 ? totalBusy / totalAll : sampledUsage
+        sampledUsage = usage
+        sampledCores = samples
+        return (usage, samples)
     }
 
     private func coreIsPerformance(index: Int, total: Int) -> Bool {

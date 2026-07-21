@@ -4,8 +4,6 @@ import SwiftUI
 struct GaugeGridView: View {
     @ObservedObject var hub: MonitorHub
     @ObservedObject var settings = AppSettings.shared
-    @State private var tilesAppeared = false
-
     private let columns = [
         GridItem(.flexible(), spacing: Theme.gaugeGridSpacing, alignment: .top),
         GridItem(.flexible(), spacing: Theme.gaugeGridSpacing, alignment: .top)
@@ -13,27 +11,13 @@ struct GaugeGridView: View {
 
     var body: some View {
         LazyVGrid(columns: columns, alignment: .leading, spacing: Theme.gaugeGridSpacing) {
-            ForEach(Array(visibleModules.enumerated()), id: \.element.id) { index, module in
+            ForEach(visibleModules) { module in
                 tile(for: module)
-                    .opacity(tilesAppeared ? 1 : 0)
-                    .offset(y: tilesAppeared ? 0 : 8)
-                    .scaleEffect(tilesAppeared ? 1 : 0.98)
-                    .animation(
-                        .spring(response: 0.62, dampingFraction: 0.82)
-                            .delay(Double(index) * 0.045),
-                        value: tilesAppeared
-                    )
             }
         }
         .padding(.horizontal, Theme.padding)
         .padding(.top, 12)
         .padding(.bottom, Theme.padding)
-        .onAppear {
-            tilesAppeared = true
-        }
-        .onDisappear {
-            tilesAppeared = false
-        }
     }
 
     private var visibleModules: [Module] {
@@ -273,7 +257,6 @@ private struct HeaderSummaryItem: View {
                 .foregroundColor(Theme.textPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-                .animation(.spring(response: 0.45, dampingFraction: 0.86), value: value)
         }
     }
 }

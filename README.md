@@ -63,7 +63,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/macOS-12%2B-000000?style=flat-square&logo=apple&logoColor=white" alt="macOS 12+" />
   <img src="https://img.shields.io/badge/Swift-5.9-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift 5.9" />
-  <img src="https://img.shields.io/badge/version-1.0.17-blue?style=flat-square" alt="1.0.17" />
+  <img src="https://img.shields.io/badge/version-1.0.18-blue?style=flat-square" alt="1.0.18" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT" />
 </p>
 
@@ -104,8 +104,10 @@ Left-click the menu bar icon for the live dashboard. Right-click for settings, a
 | 🌀 | **Fan control** | Manual RPM with one-time admin authorization; temperature-based fan curve |
 | 📈 | **History** | 24-hour trend charts (CPU / memory / network) at 30 s granularity |
 | 🔔 | **Alerts** | Configurable thresholds for CPU, memory, temperature, disk space, battery |
+| 🤖 | **Agent Center** | Claude, Codex, Gemini, Qwen, Qoder and more, with source-migrated session UI |
+| 🏝️ | **Agent Island** | Compact, hover, detail, question, completion, sound-pack and mascot surfaces; public-API fullscreen reveal |
 | 🌍 | **Localization** | English, 简体中文, 繁體中文 |
-| ⚡ | **Low overhead** | Visibility-driven sampling — idle ~0.3–0.5% CPU, ~20 MB footprint |
+| ⚡ | **Low overhead** | Visibility-driven sampling; release calibration averaged 0.09% CPU in headless monitoring and Agent-core scenarios |
 
 ### Requirements
 
@@ -157,9 +159,14 @@ Resources/             Info.plist, app icon
 build_app.sh           Build, sign, DMG, smoke test
 ```
 
+### Engineering roadmap
+
+The evidence-backed performance, native UI, Agent Center, unified settings, and notchless-fullscreen implementation roadmap lives in [`docs/roadmap/README.md`](docs/roadmap/README.md). Future implementation tasks should start from the work package marked **Next** there.
+
 ### Credits
 
 - [SMCKit](https://github.com/beltex/SMCKit) — MIT © 2014–2017 beltex (vendored locally)
+- Selected Apache-2.0 Agent Island source and sound assets — see `THIRD_PARTY_NOTICES.md`
 
 ---
 
@@ -178,8 +185,10 @@ build_app.sh           Build, sign, DMG, smoke test
 | 🌀 | **风扇控制** | 手动 RPM（一次性管理员授权）；温度曲线自动调速 |
 | 📈 | **历史趋势** | 24 小时图表（CPU / 内存 / 网络），30 秒粒度 |
 | 🔔 | **告警通知** | CPU、内存、温度、磁盘空间、电量阈值可配置 |
+| 🤖 | **Agent Center** | 支持 Claude、Codex、Gemini、Qwen、Qoder 等客户端与会话 |
+| 🏝️ | **Agent Island** | 同源迁移紧凑、悬停、详情、提问、完成、音效包与宠物界面，并修复无刘海全屏展示 |
 | 🌍 | **多语言** | English · 简体中文 · 繁體中文 |
-| ⚡ | **低占用** | 可见性驱动采样 — 空闲约 0.3–0.5% CPU、~20 MB 内存 |
+| ⚡ | **低占用** | 可见性驱动采样；发布校准中监控与 Agent Core 场景平均约 0.09% CPU |
 
 ### 系统要求
 
@@ -212,9 +221,14 @@ cd N1KO-STATE
 
 产物：`build/N1KO-STATE.app` · DMG：`build/N1KO-STATE.dmg`
 
+### 工程路线
+
+性能优化、原生 UI/动效、Agent Center、统一设置与无刘海全屏适配的证据化实施路线位于 [`docs/roadmap/README.md`](docs/roadmap/README.md)。后续实施任务应从其中标记为 **Next** 的工作包开始。
+
 ### 致谢
 
 - [SMCKit](https://github.com/beltex/SMCKit) — MIT © 2014–2017 beltex（本地 vendored）
+- 选用的 Apache-2.0 Agent Island 源码与音效资产 — 详见 `THIRD_PARTY_NOTICES.md`
 
 ---
 
@@ -271,5 +285,5 @@ cd N1KO-STATE
 ---
 
 <p align="center">
-  <sub>N1KO-STATE · v1.0.17 · Made for macOS power users who want clarity without clutter.</sub>
+  <sub>N1KO-STATE · v1.0.18 · Made for macOS power users who want clarity without clutter.</sub>
 </p>

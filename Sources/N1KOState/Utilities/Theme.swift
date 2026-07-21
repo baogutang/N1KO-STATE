@@ -1,8 +1,9 @@
 import SwiftUI
 import AppKit
 
-/// Centralized design system for N1KO-STATE.
-/// Supports light / dark / system appearance with Liquid Glass materials on macOS Tahoe.
+/// Calm Telemetry design system for N1KO-STATE.
+/// Values are deliberately small in number so every surface shares one visual
+/// language instead of inventing local card, type, spacing, and motion rules.
 enum Theme {
 
     // MARK: - Accent
@@ -24,6 +25,18 @@ enum Theme {
         NSApplication.shared.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
     }
 
+    static var increaseContrast: Bool {
+        NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
+    }
+
+    static var reduceMotion: Bool {
+        NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+    }
+
+    static var differentiateWithoutColor: Bool {
+        NSWorkspace.shared.accessibilityDisplayShouldDifferentiateWithoutColor
+    }
+
     // MARK: - Surfaces (adaptive)
 
     static var surface: Color {
@@ -33,7 +46,10 @@ enum Theme {
         isDark ? Color(hex: 0x1E1E24) : Color(nsColor: .controlBackgroundColor)
     }
     static var stroke: Color {
-        isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.08)
+        if increaseContrast {
+            return isDark ? Color.white.opacity(0.28) : Color.black.opacity(0.30)
+        }
+        return isDark ? Color.white.opacity(0.10) : Color.black.opacity(0.10)
     }
     static var track: Color {
         isDark ? Color.white.opacity(0.08) : Color.black.opacity(0.06)
@@ -59,10 +75,10 @@ enum Theme {
         isDark ? Color.white.opacity(0.95) : Color(nsColor: .labelColor)
     }
     static var textSecondary: Color {
-        isDark ? Color.white.opacity(0.55) : Color(nsColor: .secondaryLabelColor)
+        isDark ? Color.white.opacity(increaseContrast ? 0.82 : 0.64) : Color(nsColor: .secondaryLabelColor)
     }
     static var textTertiary: Color {
-        isDark ? Color.white.opacity(0.45) : Color(nsColor: .tertiaryLabelColor)
+        isDark ? Color.white.opacity(increaseContrast ? 0.72 : 0.50) : Color(nsColor: .tertiaryLabelColor)
     }
 
     // MARK: - Semantic
@@ -74,11 +90,11 @@ enum Theme {
 
     // MARK: - Module Accents
 
-    static let cpu = info
-    static let gpu = Color(hex: 0xFF6482)
-    static let memory = Color(hex: 0xBF5AF2)
-    static let disk = Color(hex: 0x5E5CE6)
-    static let network = info
+    static var cpu: Color { accent }
+    static let gpu = Color(hex: 0x8B7EC8)
+    static let memory = Color(hex: 0x6D77B8)
+    static let disk = Color(hex: 0x5B8FA8)
+    static let network = Color(hex: 0x4C86A8)
 
     static func semantic(for fraction: Double) -> Color {
         switch fraction {
@@ -106,10 +122,10 @@ enum Theme {
 
     // MARK: - Metrics
 
-    static let cardRadius: CGFloat = 14
-    static let settingsCardRadius: CGFloat = 12
-    static let padding: CGFloat = 14
-    static let cardPadding: CGFloat = 14
+    static let cardRadius: CGFloat = Radius.surface
+    static let settingsCardRadius: CGFloat = Radius.surface
+    static let padding: CGFloat = Spacing.l
+    static let cardPadding: CGFloat = Spacing.m
     static let popoverWidth: CGFloat = 360
     static let gaugeGridSpacing: CGFloat = 10
     static let gaugeTileRadius: CGFloat = 12
@@ -117,6 +133,64 @@ enum Theme {
     static let gaugeRingLineWidth: CGFloat = 5
     static let gaugeRingInnerInset: CGFloat = 18
     static let gaugeTileHeight: CGFloat = 158
+
+    enum Spacing {
+        static let xxs: CGFloat = 4
+        static let xs: CGFloat = 8
+        static let s: CGFloat = 12
+        static let m: CGFloat = 16
+        static let l: CGFloat = 24
+    }
+
+    enum Radius {
+        static let control: CGFloat = 8
+        static let surface: CGFloat = 12
+    }
+
+    enum HitTarget {
+        static let icon: CGFloat = 28
+    }
+
+    enum Motion {
+        static let feedback: Double = 0.11
+        static let disclosure: Double = 0.20
+        static let reduced: Double = 0.08
+
+        static func disclosureAnimation(reduceMotion: Bool) -> Animation {
+            reduceMotion
+                ? .easeOut(duration: reduced)
+                : .easeInOut(duration: disclosure)
+        }
+
+        static func feedbackAnimation(reduceMotion: Bool) -> Animation {
+            .easeOut(duration: reduceMotion ? reduced : feedback)
+        }
+    }
+
+    enum TypeScale {
+        static let title = Font.system(size: 17, weight: .semibold)
+        static let section = Font.system(size: 13, weight: .semibold)
+        static let body = Font.system(size: 13, weight: .regular)
+        static let bodyMedium = Font.system(size: 13, weight: .medium)
+        static let secondary = Font.system(size: 11.5, weight: .regular)
+        static let caption = Font.system(size: 10, weight: .medium)
+        static let metric = Font.system(size: 13, weight: .semibold, design: .rounded).monospacedDigit()
+        static let metricLarge = Font.system(size: 15, weight: .semibold, design: .rounded).monospacedDigit()
+
+        static let minimumContentPointSize: CGFloat = 10
+        static let standardBodyPointSize: CGFloat = 13
+    }
+}
+
+/// Press feedback is opacity-only: no scale/offset animation, so it remains
+/// calm and automatically satisfies Reduce Motion.
+struct N1KOButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.68 : 1)
+            .animation(Theme.Motion.feedbackAnimation(reduceMotion: Theme.reduceMotion),
+                       value: configuration.isPressed)
+    }
 }
 
 extension Color {

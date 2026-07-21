@@ -3,6 +3,7 @@ import SwiftUI
 struct SensorCard: View {
     @ObservedObject var sensors: SensorMonitor
     @ObservedObject var fans: FanController
+    let snapshot: MonitorDisplaySnapshot
     @ObservedObject var settings = AppSettings.shared
 
     /// Detailed view lists every sensor; otherwise the grouped buckets.
@@ -17,7 +18,7 @@ struct SensorCard: View {
                 CardHeader(icon: "thermometer",
                            title: "Sensors",
                            accent: Theme.warn,
-                           trailing: sensors.peakCelsius.map { Formatters.temperature($0) })
+                           trailing: snapshot.sensorPeakCelsius.map { Formatters.temperature($0) })
 
                 if !sensors.isAvailable {
                     Text(loc: "Sensors unavailable")
@@ -70,7 +71,7 @@ struct SensorCard: View {
                         }
                         if fans.usesGlobalFanModeSwitch && fans.fans.count > 1 {
                             Text(loc: "This Mac exposes a shared fan-control switch; only one fan can be forced manually at a time.")
-                                .font(.system(size: 9.5))
+                                .font(Theme.TypeScale.caption)
                                 .foregroundColor(Theme.textTertiary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -81,7 +82,7 @@ struct SensorCard: View {
                         }
                         if let err = fans.lastError {
                             Text(err)
-                                .font(.system(size: 9.5))
+                                .font(Theme.TypeScale.caption)
                                 .foregroundColor(Theme.danger)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -188,7 +189,6 @@ private struct FanRow: View {
                     Capsule()
                         .fill(effectiveMode == .manual ? Theme.accent : Theme.semantic(for: fan.fraction))
                         .frame(width: max(3, g.size.width * CGFloat(fan.fraction)))
-                        .animation(.easeOut(duration: 0.35), value: fan.fraction)
                 }
             }
             .frame(height: 4)
@@ -197,14 +197,14 @@ private struct FanRow: View {
                 if helperFailed {
                     HStack(spacing: 6) {
                         Text(controller.lastError ?? "Fan helper could not start. Tap Retry or reinstall.".loc)
-                            .font(.system(size: 9.5))
+                            .font(Theme.TypeScale.caption)
                             .foregroundColor(Theme.danger)
                             .lineLimit(2)
                         Spacer(minLength: 4)
                         Button(action: { controller.warmAuthorization() }) {
                             Text(loc: "Retry")
                         }
-                        .font(.system(size: 9.5, weight: .semibold))
+                        .font(Theme.TypeScale.caption.weight(.semibold))
                         .buttonStyle(.borderedProminent)
                         .controlSize(.small)
                         .disabled(controller.helperState == .installing)
@@ -215,14 +215,14 @@ private struct FanRow: View {
                     HStack(spacing: 6) {
                         ProgressView().controlSize(.small)
                         Text(loc: "Taking over fan control…")
-                            .font(.system(size: 9.5, weight: .medium))
+                            .font(Theme.TypeScale.caption.weight(.medium))
                             .foregroundColor(Theme.info)
                     }
                 }
 
                 if isCurveActive, let pct = controller.curvePercent(for: fan) {
                     Text("Curve active · target %@".locf(Formatters.percent(pct)))
-                        .font(.system(size: 9.5, weight: .semibold))
+                        .font(Theme.TypeScale.caption.weight(.semibold))
                         .foregroundColor(Theme.info)
                 }
 
@@ -247,7 +247,7 @@ private struct FanRow: View {
                 if effectiveMode == .manual || isCurveActive {
                     HStack(spacing: 6) {
                         Text(loc: "Target")
-                            .font(.system(size: 9.5))
+                            .font(Theme.TypeScale.caption)
                             .foregroundColor(Theme.textTertiary)
                         Text("\(Int(target)) RPM")
                             .font(.metric(10))
@@ -255,7 +255,7 @@ private struct FanRow: View {
                         Spacer()
                         if isApplied {
                             Text(loc: "Active")
-                                .font(.system(size: 9, weight: .semibold))
+                                .font(Theme.TypeScale.caption.weight(.semibold))
                                 .foregroundColor(Theme.ok)
                         }
                     }
@@ -271,13 +271,13 @@ private struct FanRow: View {
                             }
                         }
                     HStack {
-                        Text("\(fan.minRPM)").font(.system(size: 8.5)).foregroundColor(Theme.textTertiary)
+                        Text("\(fan.minRPM)").font(Theme.TypeScale.caption).foregroundColor(Theme.textTertiary)
                         Spacer()
-                        Text("\(fan.maxRPM)").font(.system(size: 8.5)).foregroundColor(Theme.textTertiary)
+                        Text("\(fan.maxRPM)").font(Theme.TypeScale.caption).foregroundColor(Theme.textTertiary)
                     }
                 } else {
                     Text(loc: "System automatic fan control")
-                        .font(.system(size: 9.5))
+                        .font(Theme.TypeScale.caption)
                         .foregroundColor(Theme.textTertiary)
                 }
             }
@@ -295,19 +295,20 @@ private struct FanRow: View {
                 userMode = nil
             }
         }
-        .alert("Manual Fan Control".loc, isPresented: $showingManualConfirmation) {
+        .alert("Manual control for %@".locf(fan.name), isPresented: $showingManualConfirmation) {
             Button("Cancel".loc, role: .cancel) {
                 pendingManualRPM = nil
                 userMode = nil
             }
-            Button("Enable Manual Control".loc) {
+            Button("Enable Manual Control".loc, role: .destructive) {
                 guard let rpm = pendingManualRPM else { return }
                 userMode = .manual
                 controller.enableManual(fanId: fan.id, rpm: rpm)
                 pendingManualRPM = nil
             }
         } message: {
-            Text("Manual control temporarily overrides macOS automatic fan management. N1KO-STATE restores automatic control when you quit or when temperatures get too high.".loc)
+            Text("Set %@ to %d RPM? Manual control temporarily overrides macOS automatic fan management. N1KO-STATE restores automatic control when you quit or when temperatures get too high."
+                .locf(fan.name, pendingManualRPM ?? Int(target)))
         }
     }
 

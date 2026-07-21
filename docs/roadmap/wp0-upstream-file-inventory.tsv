@@ -1,0 +1,455 @@
+# upstream	https://github.com/erha19/ping-island.git
+# commit	da130d679e830894240e926184d29751dfd2def1
+path	disposition	license	ownership_and_action
+.github/workflows/pr-checks.yml	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+.github/workflows/release-packages.yml	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+.gitignore	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+AGENTS.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Config/App.xcconfig	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Config/AppStore.xcconfig	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Config/LocalSecrets.example.xcconfig	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+LICENSE.md	reuse	legal-attribution	retain in third-party notices; upstream name is legal attribution only
+NOTICE	reuse	legal-attribution	retain in third-party notices; upstream name is legal attribution only
+PingIsland.xcodeproj/project.pbxproj	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland.xcodeproj/project.xcworkspace/contents.xcworkspacedata	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland.xcodeproj/xcshareddata/xcschemes/PingIsland.xcscheme	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland.xcodeproj/xcshareddata/xcschemes/PingIslandAppStore.xcscheme	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/App/AppDelegate.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/App/AppLaunchConfiguration.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/App/IslandPresentationCoordinator.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/App/PingIslandApp.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/App/ScreenObserver.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/App/WindowManager.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/Assets.xcassets/AccentColor.colorset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/AppIcon.appiconset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/AppIcon.appiconset/icon_1024x1024.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/AppIcon.appiconset/icon_128x128.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/AppIcon.appiconset/icon_16x16.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/AppIcon.appiconset/icon_256x256 1.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/AppIcon.appiconset/icon_256x256.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/AppIcon.appiconset/icon_32x32 1.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/AppIcon.appiconset/icon_32x32.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/AppIcon.appiconset/icon_512x512 1.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/AppIcon.appiconset/icon_512x512.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/AppIcon.appiconset/icon_64x64.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/ClaudeLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/ClaudeLogo.imageset/claude-logo.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/CodeBuddyLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/CodeBuddyLogo.imageset/codebuddy-logo.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/CodexLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/CodexLogo.imageset/codex-logo.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/CopilotLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/CopilotLogo.imageset/copilot-logo.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/CursorLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/CursorLogo.imageset/cursor-logo.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/GeminiLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/GeminiLogo.imageset/gemini-logo.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/HermesLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/HermesLogo.imageset/hermes-logo.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/KimiLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/KimiLogo.imageset/kimi-logo.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/OpenClawLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/OpenClawLogo.imageset/openclaw-logo.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/OpenCodeLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/OpenCodeLogo.imageset/opencode-logo.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/PiLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/PiLogo.imageset/pi-logo.svg	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/QoderLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/QoderLogo.imageset/qoder-logo.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/QoderWorkLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/QoderWorkLogo.imageset/qoderwork-logo.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/QwenLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/QwenLogo.imageset/qwen-logo.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/VSCodeLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/VSCodeLogo.imageset/vscode-logo.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/WorkBuddyLogo.imageset/Contents.json	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Assets.xcassets/WorkBuddyLogo.imageset/workbuddy-logo.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Core/EnergyGovernor.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Core/Ext+NSScreen.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Core/FeatureFlags.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Core/IslandPresentation.swift	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Core/NotchActivityCoordinator.swift	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Core/NotchGeometry.swift	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Core/NotchViewModel.swift	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Core/ScreenNotchMetrics.swift	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Core/ScreenSelector.swift	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Core/Settings.swift	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Core/SoundPackCatalog.swift	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Core/SoundSelector.swift	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Core/UserIdleAutoProtection.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Events/EventMonitor.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Events/EventMonitors.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Info-AppStore.plist	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Info.plist	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Models/ChatMessage.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Models/ClientProfile.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Models/MascotStatus.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Models/SessionEvent.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Models/SessionPhase.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Models/SessionProvider.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Models/SessionState.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Models/TmuxTarget.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Models/ToolResultData.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Resources/Fonts/Silkscreen-Bold.ttf	exclude-until-parity	OFL-1.1	do not bundle in first slice; OFL text is present but N1KO UI uses system typography
+PingIsland/Resources/Fonts/Silkscreen-OFL.txt	exclude-until-parity	OFL-1.1	do not bundle in first slice; OFL text is present but N1KO UI uses system typography
+PingIsland/Resources/PingIsland-AppStore.entitlements	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Resources/PingIsland.entitlements	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Resources/Sounds/8bit_approval_alert.wav	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Resources/Sounds/8bit_boot_jingle.wav	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Resources/Sounds/8bit_complete_ding.wav	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Resources/Sounds/8bit_error_buzz.wav	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Resources/Sounds/8bit_hurt.wav	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Resources/Sounds/8bit_item_pickup.wav	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Resources/Sounds/8bit_menu_highlight.wav	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Resources/Sounds/8bit_menu_select.wav	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Resources/Sounds/8bit_power_up.wav	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Resources/Sounds/8bit_start_chime.wav	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Resources/Sounds/8bit_submit_blip.wav	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Resources/Sounds/8bit_win_jingle.wav	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Resources/Sounds/bubbles_pop.wav	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+PingIsland/Resources/en.lproj/InfoPlist.strings	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Resources/en.lproj/Localizable.strings	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Resources/zh-Hans.lproj/InfoPlist.strings	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Resources/zh-Hans.lproj/Localizable.strings	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Services/Analytics/TelemetryService.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Chat/ChatHistoryManager.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Codex/CodexAppServerMonitor.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Codex/CodexRolloutParser.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Services/Codex/CodexThreadSnapshot.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Services/Diagnostics/DiagnosticsExporter.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Diagnostics/FocusDiagnosticsStore.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Hooks/BridgeRuntimeConfigWriter.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Hooks/BridgeRuntimePaths.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Hooks/HookInstaller.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Hooks/HookSocketServer.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Hooks/HookWalkthroughDemoRunner.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Hooks/RecentInterventionResponseStore.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Remote/RemoteConnectorManager.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Remote/RemoteModels.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Runtime/Claude/ClaudeRuntime.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Runtime/Codex/CodexRuntime.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Runtime/RuntimeCoordinator.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Runtime/RuntimeSessionRegistry.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Runtime/RuntimeSupportPaths.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Runtime/SessionRuntime.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Session/AgentFileWatcher.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Session/ClaudeDesktopWatcher.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Session/ConversationParser.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Services/Session/JSONLInterruptWatcher.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Session/SessionMonitor.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Shared/ClientAppLocator.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Shared/GlobalShortcutManager.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Shared/ProcessExecutor.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Shared/ProcessTreeBuilder.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Shared/TerminalAppRegistry.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/State/FileSyncScheduler.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/State/SessionAssociationStore.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Services/State/SessionStore.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/State/ToolEventProcessor.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Services/Tmux/TmuxController.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Tmux/TmuxPathFinder.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Tmux/TmuxSessionMatcher.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Tmux/TmuxTargetFinder.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Tmux/ToolApprovalHandler.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Update/NotchUserDriver.swift	exclude-until-parity	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/Services/Update/UpdateReleaseNotes.swift	exclude-until-parity	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/Services/Usage/AgentUsageAnalytics.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Services/Usage/ClaudeTranscriptUsage.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Services/Usage/ClaudeUsage.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Services/Usage/CodexUsage.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Services/Usage/UsageSnapshotCacheStore.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Services/Usage/UsageSummaryPresenter.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Services/Window/IDEExtensionInstaller.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Window/SessionLauncher.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Window/TerminalAutomationPermissionCoordinator.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Window/TerminalSessionFocuser.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Window/WindowFinder.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Window/WindowFocuser.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Services/Window/YabaiController.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/UI/Components/ActionButton.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Components/GlobalShortcutHintView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Components/IslandTextField.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Components/MarkdownRenderer.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Components/MascotView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Components/NotchShape.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Components/PixelNumberView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Components/ProcessingSpinner.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Components/ScreenPickerRow.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Components/SessionQuestionForm.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Components/SoundPickerRow.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Components/StatusIcons.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Components/TerminalColors.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/ChatView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/CodexSessionView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/DetachedIslandPanelView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/IslandExpandedRoute.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/IslandOpenedContentView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/MascotSettingsView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/NotchHeaderView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/NotchView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/ReleaseNotesWindowView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/SessionCompletionNotificationView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/SessionConversationPreviewBuilder.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/SessionHoverPreviewView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/SessionListView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/SessionManualAttentionTracker.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/SettingsWindowView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/ToolResultViews.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Views/UsageSummaryStripView.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Window/DetachedIslandWindowController.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Window/NotchViewController.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Window/NotchWindow.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Window/NotchWindowController.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Window/ReleaseNotesWindowController.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Window/SettingsWindowController.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/UI/Window/SettingsWindowDefaults.swift	rewrite	Apache-2.0	second app lifecycle/presentation/updater is forbidden; N1KO owns replacement
+PingIsland/Utilities/ActiveWindowFrameResolver.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Utilities/AppLocalization.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIsland/Utilities/FullscreenAppDetector.swift	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+PingIsland/Utilities/GlobalShortcut.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Utilities/MCPToolFormatter.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Utilities/SessionAttentionSoundEvaluator.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIsland/Utilities/SessionPhaseHelpers.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Utilities/SessionTextSanitizer.swift	reuse	Apache-2.0	selected logic may be copied with Apache notice and prominent modification marker
+PingIsland/Utilities/TerminalVisibilityDetector.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/ActiveWindowFrameResolverTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/AgentUsageAnalyticsTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/AppLanguageTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/AppLaunchConfigurationTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/AppSettingsPersistenceTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/ClaudeApprovalStateTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/ClaudeAskUserQuestionSessionTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/ClaudeDesktopWatcherTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/ClaudeRuntimeExecutableResolutionTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/ClaudeStopHookSemanticsTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/ClaudeTranscriptUsageLoaderTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/ClaudeUsageLoaderTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/ClientProfileIconTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/CodexAppServerMonitorTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/CodexAuxiliaryHookFilterTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/CodexHookPlaceholderTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/CodexHookSessionTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/CodexRolloutParserTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/CodexUsageLoaderTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/DetachedIslandWindowControllerTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/DiagnosticsCommandRunnerTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/DiagnosticsLogRedactorTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/EnergyGovernorTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/FeatureFlagsTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/FullscreenAppDetectorTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/GeminiIntegrationTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/GlobalShortcutTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/HermesIntegrationTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/HookBridgeResponseEncodingTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/HookEventResponseRoutingTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/HookInstallerStatusLineTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/HookInstallerTemporarySettingsTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/HookSocketServerClientInfoTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/HookSocketServerInterventionMatchingTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/IdleRoutePromptsProtectionTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/IslandExpandedRouteResolverTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/IslandTextFieldTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/JSONLInterruptWatcherTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/KimiIntegrationTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/NativeRuntimeSessionStoreTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/NotchViewControllerTransparencyTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/NotchViewModelTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/OpenCodeIntegrationTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/PiIntegrationTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/ProcessTreeBuilderTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/QoderCLIVersionDetectionTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/QoderSubagentSessionTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/QoderWorkContinuationTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/QoderWorkHookEventTimingTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/QwenCodeIntegrationTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/QwenHookCompatibilityPatchTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/RecentInterventionResponseStoreTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/RemoteHookConfigurationTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/RemoteSSHLinkTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/RuntimeSessionRegistryTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/ScreenNotchMetricsTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/SessionAttentionSoundEvaluatorTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/SessionCompletionPreviewBuilderTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/SessionCompletionStateEvaluatorTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/SessionEventLogSummaryTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/SessionInterventionFallbackTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/SessionManualAttentionTrackerTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/SessionMonitorAskUserQuestionTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/SessionMonitorCodexWatcherTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/SessionMonitorNativeRuntimeTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/SessionPhaseProcessingSoundEdgeTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/SessionQuestionFormTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/SessionStateTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/SessionStoreCodexInterventionTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/SessionStoreFileUpdateTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/SessionStoreLivenessSweepTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/SettingsCategoryLabsTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/SettingsPanelViewModelTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/SettingsWindowControllerTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/SoundThemeConfigurationTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/TOMLHookInstallerTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/TelemetryServiceTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/TemporaryReminderMuteTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/TerminalAppRegistryTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/TerminalAutomationPermissionCoordinatorTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/TerminalSessionFocuserTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/UpdateManagerTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/UpdateReleaseNotesParserTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+PingIslandTests/UsageSnapshotCacheStoreTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandTests/UsageSummaryPresenterTests.swift	adapt-behind-protocol	Apache-2.0	port behavior behind N1KO-owned protocol; rename paths and remove singleton/product coupling
+PingIslandUITests/PingIslandUITests.swift	rewrite	Apache-2.0	reimplement in N1KO architecture and product identity; do not copy application shell
+Prototype/.gitignore	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Package.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandApp/Core/AppModel.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandApp/Core/ApprovalCoordinator.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandApp/Core/CodexAppServerMonitor.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandApp/Core/HookInstaller.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandApp/Core/IDEExtensionInstaller.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandApp/Core/LifecycleCoordinator.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandApp/Core/Providers.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandApp/Core/SessionStore.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandApp/Core/SocketServer.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandApp/Core/TerminalLocator.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandApp/IslandApp.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandApp/UI/NotchPanelController.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandApp/UI/NotchRootView.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandApp/UI/SettingsView.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandBridge/main.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandShared/BridgeCodec.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandShared/BridgeDebugLogPolicy.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandShared/BridgeRuntimeConfig.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandShared/HookPayloadMapper.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Sources/IslandShared/Models.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Tests/IslandTests/ApprovalCoordinatorTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Tests/IslandTests/BridgeDebugLogPolicyTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Tests/IslandTests/HookInstallerTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Tests/IslandTests/HookPayloadMapperTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Tests/IslandTests/IDEExtensionAuthorizationTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Tests/IslandTests/IDEExtensionInstallerTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Tests/IslandTests/IslandBridgeE2ETests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Tests/IslandTests/SessionStoreTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Tests/IslandTests/SocketServerTests.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+Prototype/Tests/IslandTests/TestSupport.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+README.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+README.zh-CN.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+default.profraw	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+docs/codex-hook-debugging.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+docs/homebrew-cask-release.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+docs/images/agent-usage-settings.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/demos/ping-island-ask-tool-demo.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/demos/ping-island-question-demo.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/mascots/claude.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/mascots/codebuddy.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/mascots/codex.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/mascots/copilot.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/mascots/cursor.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/mascots/gemini.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/mascots/hermes.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/mascots/kimi.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/mascots/openclaw.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/mascots/opencode.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/mascots/pi.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/mascots/qoder.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/mascots/qwen.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/mascots/trae.gif	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/notch-panel.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/ping-island-0.5.0-buddy-detach-cn.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/ping-island-0.5.0-buddy-detach.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/ping-island-dmg-installer-background.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/ping-island-icon-transparent.svg	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/ping-island-icon.svg	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/product-icons/claude-app-icon.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/product-icons/codebuddy-app-icon.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/product-icons/cursor-app-icon.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/product-icons/opencode-app-icon.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/product-icons/workbuddy-app-icon.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/images/question-panel.png	exclude-until-parity	asset-rights-unproven	do not migrate without per-asset provenance; replace with N1KO-owned resources if needed
+docs/mac-app-store-submission.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+docs/privacy-policy.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+docs/sparkle-release.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+docs/telemetry.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.0.3.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.0.6.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.0.8.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.0.9.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.1.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.1.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.10.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.10.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.11.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.11.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.11.2.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.12.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.13.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.13.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.14.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.15.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.15.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.15.2.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.15.3.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.16.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.17.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.18.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.18.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.19.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.19.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.2.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.20.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.21.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.21.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.22.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.23.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.23.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.24.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.24.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.24.2.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.25.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.25.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.25.2.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.3.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.3.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.3.2.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.4.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.4.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.5.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.5.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.5.2.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.5.3.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.6.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.7.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.7.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.7.2.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.8.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.8.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.9.0.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.9.1.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.9.2.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/0.9.3.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+releases/notes/README.md	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/build-app-store.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/build.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/create-release.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/create-styled-dmg.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/debug-codex-hook.py	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/embed-ping-island-bridge.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/generate-dmg-background.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/generate-keys.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/lib/dmg-layout.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/mascot-export/AutoUpdatePosterExporterMain.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/mascot-export/MascotGIFExporterMain.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/mascot-export/OpenClawPosterExporterMain.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/mascot-export/ReleaseHighlightsPosterExporterMain.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/mascot-export/SSHClaudePosterExporterMain.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/mascot-export/SessionStubs.swift	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/package-release.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/package-unsigned.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/render-app-icons.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/render-auto-update-poster.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/render-codebuddy-workbuddy-poster.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/render-mascots.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/render-openclaw-poster.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/render-release-highlights-posters.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/render-ssh-claude-poster.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package
+scripts/test.sh	exclude-until-parity	Apache-2.0	not in first Claude+Codex core slice; reconsider only in its dependency-satisfied parity package

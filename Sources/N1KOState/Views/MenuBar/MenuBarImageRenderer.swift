@@ -8,7 +8,8 @@ import AppKit
 /// match as precisely at menu-bar sizes.
 enum MenuBarImageRenderer {
 
-    struct Input {
+    struct Input: Equatable {
+        var generationID: UInt64 = 0
         var cpu: Double          // 0...1
         var gpu: Double          // 0...1
         var mem: Double          // 0...1

@@ -2,13 +2,14 @@ import Foundation
 import Combine
 
 /// Which consumers are actively viewing monitor data — drives sampling pruning.
-struct MonitorVisibility {
+struct MonitorVisibility: Equatable {
     var popoverOpen = false
+    var settingsOpen = false
     var menuBarMetrics: Set<MenuBarMetric> = []
     var popoverModules: Set<Module> = []
 
     func popoverShows(_ module: Module) -> Bool {
-        popoverOpen && popoverModules.contains(module)
+        (popoverOpen || settingsOpen) && popoverModules.contains(module)
     }
 
     func needsNetworkRates(menuBarHasNet: Bool) -> Bool {
@@ -29,7 +30,9 @@ struct MonitorVisibility {
 
 }
 
-struct MonitorDisplaySnapshot {
+struct MonitorDisplaySnapshot: Equatable {
+    var generationID: UInt64 = 0
+    var sampledAtUptimeNanoseconds: UInt64 = 0
     var cpuUsage: Double = 0
     var cpuLoadAverageOne: Double = 0
     var cpuCoreCount: Int = 0
@@ -95,13 +98,27 @@ final class MonitorHub: ObservableObject {
 
     private var visibility = MonitorVisibility()
     private var timer: Timer?
-    private var tickCount = 0
+    private let planner = SamplingPlanner()
+    private let lifecyclePolicy = MonitorLifecyclePolicy()
+    private let acquisitionQueue = DispatchQueue(label: "com.n1ko-state.monitor-acquisition",
+                                                 qos: .utility)
+    private var acquisitionInFlight = false
+    private var pendingFullRefresh = false
+    private var fullRefreshCompletions: [(MonitorDisplaySnapshot) -> Void] = []
+    private var generationID: UInt64 = 0
     private var cancellables = Set<AnyCancellable>()
     private var lastCurveTemp: Double?
     private var lastCurveApply = Date.distantPast
     private let curveHysteresis = 3.0
     private let curveMinInterval: TimeInterval = 15
-    private var lastHistorySample = Date.distantPast
+
+    private struct AcquisitionBatch {
+        var cpu: CPUModuleSnapshot?
+        var memory: MemoryModuleSnapshot?
+        var network: NetworkModuleSnapshot?
+        var gpu: GPUModuleSnapshot?
+        var disk: DiskModuleSnapshot?
+    }
 
     func start() {
         interval = AppSettings.shared.refreshInterval
@@ -142,6 +159,14 @@ final class MonitorHub: ObservableObject {
         FanCurveController.shared = fans
         disk.startVolumeWatching()
         battery.start()
+        lifecyclePolicy.onChange = { [weak self] previous, current in
+            guard let self else { return }
+            let resumed = (!previous.presentationAllowed && current.presentationAllowed)
+            if resumed {
+                self.recoverAfterWake()
+            }
+        }
+        lifecyclePolicy.start()
         syncVisibilityFromSettings()
         reconcileBatterySettings()
         tick(full: true)
@@ -152,11 +177,29 @@ final class MonitorHub: ObservableObject {
         visibility.popoverOpen = visible
         syncVisibilityFromSettings()
         if visible {
-            disk.refreshVolumesNow()
             battery.refreshSmartBattery(force: true)
             processes.refresh(force: true)
             tick(full: true)
         }
+    }
+
+    func setSettingsVisible(_ visible: Bool) {
+        visibility.settingsOpen = visible
+        syncVisibilityFromSettings()
+        if visible { tick(full: true) }
+    }
+
+    /// Resets rate baselines and requests a complete coherent generation. The
+    /// acquisition queue ordering guarantees the reset happens before sampling.
+    /// Repeated requests coalesce without dropping the full refresh.
+    func recoverAfterWake(completion: ((MonitorDisplaySnapshot) -> Void)? = nil) {
+        if let completion { fullRefreshCompletions.append(completion) }
+        acquisitionQueue.async { [weak self] in
+            self?.network.resetBaseline()
+            self?.disk.resetBaseline()
+        }
+        planner.reset()
+        tick(full: true)
     }
 
     func flushHistory() {
@@ -188,6 +231,7 @@ final class MonitorHub: ObservableObject {
 
     private func restart() {
         timer?.invalidate()
+        planner.reset()
         let t = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             self?.tick(full: false)
         }
@@ -196,164 +240,148 @@ final class MonitorHub: ObservableObject {
         timer = t
     }
 
-    private var menuBarSampleStride: Int {
-        if interval < 0.75 { return 1 }
-        return max(1, Int(ceil(2.0 / max(interval, 0.1))))
+    private func tick(full: Bool) {
+        let planningInterval = PerformanceDiagnostics.begin(.schedulingPlan)
+        let s = AppSettings.shared
+        let alertMetrics = alerts.requiredMetrics
+        let plan = planner.makePlan(input: SamplingPlanInput(
+            fullRefresh: full,
+            refreshInterval: interval,
+            presentationAllowed: lifecyclePolicy.state.presentationAllowed,
+            visibility: visibility,
+            alertMetrics: alertMetrics,
+            fanSafetyActive: fans.mode == .curve || fans.mode == .manual,
+            fanCurveEnabled: s.fanCurveEnabled,
+            batteryPresent: battery.isPresent
+        ))
+        PerformanceDiagnostics.end(planningInterval)
+
+        // SMC/IOHID operations retain their dedicated serial queues and never
+        // wait for the general acquisition batch.
+        if plan.contains(.sensors) { sensors.refresh() }
+        if plan.contains(.fans) {
+            fans.refresh()
+            applyFanCurveIfNeeded()
+        }
+        if full || plan.contains(.sensors) {
+            fans.enforceThermalSafety(peakCelsius: sensors.peakCelsius)
+        }
+
+        let popoverNeedsBattery = visibility.popoverShows(.battery)
+        if plan.contains(.battery),
+           battery.shouldPollFromTick(popoverOpen: popoverNeedsBattery,
+                                      menuBarShowsBattery: visibility.menuBarMetrics.contains(.battery),
+                                      alertNeedsBattery: alertMetrics.contains(.battery)) {
+            battery.refreshFromTick(popoverOpen: popoverNeedsBattery)
+        }
+        if plan.contains(.processes) { processes.refresh(force: full) }
+
+        let hasAcquisition = plan.contains(.cpu) || plan.contains(.memory)
+            || plan.contains(.network) || plan.contains(.gpu)
+            || plan.contains(.diskIO) || plan.contains(.diskVolumes)
+        guard hasAcquisition else {
+            finish(plan: plan, batch: AcquisitionBatch())
+            return
+        }
+
+        // Avoid piling work up when a slow IOKit read crosses a timer boundary.
+        guard !acquisitionInFlight else {
+            if full { pendingFullRefresh = true }
+            return
+        }
+        acquisitionInFlight = true
+        acquisitionQueue.async { [weak self] in
+            guard let self else { return }
+            var batch = AcquisitionBatch()
+            if plan.contains(.cpu) { batch.cpu = self.cpu.sample() }
+            if plan.contains(.memory) { batch.memory = self.memory.sample() }
+            if plan.contains(.network) {
+                batch.network = self.network.sample(
+                    updateInterfaceInfo: plan.contains(.networkInterfaceInfo)
+                )
+            }
+            if plan.contains(.gpu) { batch.gpu = self.gpu.sample() }
+            if plan.contains(.diskIO) || plan.contains(.diskVolumes) {
+                batch.disk = self.disk.sampleIO(includeVolumes: plan.contains(.diskVolumes))
+            }
+            DispatchQueue.main.async { [weak self] in
+                self?.finish(plan: plan, batch: batch)
+            }
+        }
     }
 
-    private func tick(full: Bool) {
-        tickCount += 1
-        let s = AppSettings.shared
-        let vis = visibility
-        let alertMetrics = alerts.requiredMetrics
-        let menuBarTick = full || vis.popoverOpen || tickCount % menuBarSampleStride == 0
-        let menuHasCPU = vis.menuBarMetrics.contains(.cpu)
-        let menuHasMemory = vis.menuBarMetrics.contains(.memory)
-        let menuHasNet = vis.menuBarMetrics.contains(.network)
-        let menuHasGPU = vis.menuBarMetrics.contains(.gpu)
-        let menuHasBattery = vis.menuBarMetrics.contains(.battery)
-        let popoverNeedsCPU = vis.popoverShows(.cpu)
-        let popoverNeedsGPU = vis.popoverShows(.gpu)
-        let popoverNeedsMemory = vis.popoverShows(.memory)
-        let popoverNeedsBattery = vis.popoverShows(.battery)
-        let popoverNeedsDisk = vis.popoverShows(.disk)
-        let popoverNeedsNetwork = vis.popoverShows(.network)
-        let popoverNeedsSensors = vis.popoverShows(.sensors)
-        let popoverNeedsProcesses = popoverNeedsCPU || popoverNeedsMemory
-        let menuNeedsCPU = menuHasCPU && menuBarTick
-        let menuNeedsMemory = menuHasMemory && menuBarTick
-        let menuNeedsNet = menuHasNet && menuBarTick
-        let menuNeedsGPU = menuHasGPU && menuBarTick
-        let needsCPU = full || popoverNeedsCPU || menuNeedsCPU || alertMetrics.contains(.cpu)
-        let needsMemory = full || popoverNeedsMemory || menuNeedsMemory || alertMetrics.contains(.memory)
-        let now = Date()
-        let historyTick = now.timeIntervalSince(lastHistorySample) >= 30
-        if historyTick { lastHistorySample = now }
-        var displayChanged = full || vis.popoverOpen || menuNeedsCPU || menuNeedsMemory || menuNeedsNet || menuNeedsGPU
-        // SAFETY: thermal protection + fan curve depend on continuous sensor sampling.
-        let needsSensors = full || popoverNeedsSensors
-            || fans.mode == .curve || fans.mode == .manual
-            || s.fanCurveEnabled
-            || alertMetrics.contains(.temperature)
-        let needsFans = needsSensors
+    private func finish(plan: SamplingPlan, batch: AcquisitionBatch) {
+        acquisitionInFlight = false
+        if let value = batch.cpu { cpu.apply(value) }
+        if let value = batch.memory { memory.apply(value) }
+        if let value = batch.network { network.apply(value) }
+        if let value = batch.gpu { gpu.apply(value) }
+        if let value = batch.disk { disk.apply(value) }
 
-        if needsCPU || historyTick {
-            cpu.refresh(publish: needsCPU)
-        }
-        if needsMemory || historyTick {
-            memory.refresh(publish: needsMemory)
-        }
-
-        if full || popoverNeedsNetwork || menuNeedsNet || historyTick {
-            if full || popoverNeedsNetwork || menuNeedsNet {
-                // Interface name/IP strings change rarely — rebuild them at most
-                // every 10 ticks; rates stay per-tick fresh.
-                network.refresh(includeInterfaceInfo: full || tickCount % 10 == 0)
-            } else {
-                network.refreshRatesOnly()
-            }
-        }
-
-        if alertMetrics.contains(.disk), tickCount % 60 == 0 {
-            disk.refreshVolumesNow()
-        }
-
-        if full || popoverNeedsGPU || menuNeedsGPU {
-            gpu.refresh()
-        }
-
-        if battery.shouldPollFromTick(popoverOpen: popoverNeedsBattery,
-                                      menuBarShowsBattery: menuHasBattery,
-                                      alertNeedsBattery: alertMetrics.contains(.battery)) {
-            let intervalTicks = popoverNeedsBattery ? 2 : 30
-            if full || popoverNeedsBattery || tickCount % intervalTicks == 0 {
-                battery.refreshFromTick(popoverOpen: popoverNeedsBattery)
-                displayChanged = true
-            }
-        }
-
-        if full || popoverNeedsSensors || needsSensors {
-            if full || popoverNeedsSensors || (tickCount % 3 == 0) || needsSensors && tickCount % 30 == 0 {
-                sensors.refresh()
-            }
-        }
-
-        if full || needsFans {
-            if full || popoverNeedsSensors || tickCount % 3 == 0 {
-                fans.refresh()
-                if needsFans { applyFanCurveIfNeeded() }
-            }
-        }
-
-        if full || popoverNeedsDisk {
-            if full || tickCount % 3 == 0 {
-                disk.refreshIO()
-                displayChanged = true
-            }
-        }
-
-        if full || popoverNeedsProcesses {
-            if full || tickCount % 5 == 0 {
-                processes.refresh()
-            }
-        }
-
-        if historyTick {
+        if plan.contains(.history) {
             let memFrac = memory.total > 0 ? memory.used / memory.total : 0
             HistoryStore.shared.record(cpu: cpu.totalUsage,
                                        memory: memFrac,
                                        netDown: network.downloadRate,
                                        netUp: network.uploadRate)
         }
+        if plan.contains(.alerts), AppSettings.shared.alertsEnabled { evaluateAlerts() }
+        if plan.contains(.snapshot) { publishSnapshot() }
+        if plan.isFullRefresh, !pendingFullRefresh, !fullRefreshCompletions.isEmpty {
+            let callbacks = fullRefreshCompletions
+            fullRefreshCompletions.removeAll()
+            callbacks.forEach { $0(snapshot) }
+        }
 
-        if full || alertMetrics.contains(.temperature) || needsSensors {
-            fans.enforceThermalSafety(peakCelsius: sensors.peakCelsius)
-        }
-        if s.alertsEnabled {
-            evaluateAlerts()
-        }
-        if displayChanged {
-            publishSnapshot()
+        if pendingFullRefresh {
+            pendingFullRefresh = false
+            planner.reset()
+            DispatchQueue.main.async { [weak self] in self?.tick(full: true) }
         }
     }
 
     private func publishSnapshot() {
-        let primaryVolume = disk.volumes.first { $0.id == "/" } ?? disk.volumes.first
-        snapshot = MonitorDisplaySnapshot(
-            cpuUsage: cpu.totalUsage,
-            cpuLoadAverageOne: cpu.loadAverage.one,
-            cpuCoreCount: cpu.cores.count,
-            cpuUptime: cpu.uptime,
-            gpuUtilization: gpu.utilization,
-            gpuVRAMUsed: gpu.vramUsed,
-            gpuVRAMTotal: gpu.vramTotal,
-            gpuName: gpu.name,
-            gpuIsAvailable: gpu.isAvailable,
-            memoryUsed: memory.used,
-            memoryFree: memory.free,
-            memoryTotal: memory.total,
-            memoryPressureLevel: memory.pressureLevel,
-            diskPrimaryFree: primaryVolume?.free,
-            diskPrimaryFraction: primaryVolume?.fraction,
-            diskReadRate: disk.readRate,
-            diskWriteRate: disk.writeRate,
-            networkDownloadRate: network.downloadRate,
-            networkUploadRate: network.uploadRate,
-            networkLocalIP: network.localIP,
-            networkIsConnected: network.isConnected,
-            batteryIsPresent: battery.isPresent,
-            batteryPercentage: battery.percentage,
-            batteryIsCharging: battery.isCharging,
-            batteryIsCharged: battery.isCharged,
-            batteryOnACPower: battery.onACPower,
-            batteryHealthFraction: battery.healthFraction,
-            batteryCycleCount: battery.cycleCount,
-            sensorPeakCelsius: sensors.peakCelsius,
-            sensorsIsAvailable: sensors.isAvailable,
-            fansIsAvailable: fans.isAvailable,
-            fanCount: fans.fans.count,
-            firstFanRPM: fans.fans.first?.rpm
-        )
+        PerformanceDiagnostics.measure(.snapshotCommit) {
+            generationID &+= 1
+            let primaryVolume = disk.volumes.first { $0.id == "/" } ?? disk.volumes.first
+            snapshot = MonitorDisplaySnapshot(
+                generationID: generationID,
+                sampledAtUptimeNanoseconds: DispatchTime.now().uptimeNanoseconds,
+                cpuUsage: cpu.totalUsage,
+                cpuLoadAverageOne: cpu.loadAverage.one,
+                cpuCoreCount: cpu.cores.count,
+                cpuUptime: cpu.uptime,
+                gpuUtilization: gpu.utilization,
+                gpuVRAMUsed: gpu.vramUsed,
+                gpuVRAMTotal: gpu.vramTotal,
+                gpuName: gpu.name,
+                gpuIsAvailable: gpu.isAvailable,
+                memoryUsed: memory.used,
+                memoryFree: memory.free,
+                memoryTotal: memory.total,
+                memoryPressureLevel: memory.pressureLevel,
+                diskPrimaryFree: primaryVolume?.free,
+                diskPrimaryFraction: primaryVolume?.fraction,
+                diskReadRate: disk.readRate,
+                diskWriteRate: disk.writeRate,
+                networkDownloadRate: network.downloadRate,
+                networkUploadRate: network.uploadRate,
+                networkLocalIP: network.localIP,
+                networkIsConnected: network.isConnected,
+                batteryIsPresent: battery.isPresent,
+                batteryPercentage: battery.percentage,
+                batteryIsCharging: battery.isCharging,
+                batteryIsCharged: battery.isCharged,
+                batteryOnACPower: battery.onACPower,
+                batteryHealthFraction: battery.healthFraction,
+                batteryCycleCount: battery.cycleCount,
+                sensorPeakCelsius: sensors.peakCelsius,
+                sensorsIsAvailable: sensors.isAvailable,
+                fansIsAvailable: fans.isAvailable,
+                fanCount: fans.fans.count,
+                firstFanRPM: fans.fans.first?.rpm
+            )
+        }
     }
 
     private func evaluateAlerts() {
@@ -389,5 +417,8 @@ final class MonitorHub: ObservableObject {
         lastCurveApply = Date()
     }
 
-    deinit { timer?.invalidate() }
+    deinit {
+        timer?.invalidate()
+        lifecyclePolicy.stop()
+    }
 }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct NetworkCard: View {
     @ObservedObject var network: NetworkMonitor
+    let snapshot: MonitorDisplaySnapshot
     @ObservedObject private var chartRange = ChartRangeStore.shared
     @State private var downChart: [Double] = []
     @State private var upChart: [Double] = []
@@ -16,35 +17,43 @@ struct NetworkCard: View {
                 CardHeader(icon: "network",
                            title: Module.network.localizedTitle,
                            accent: Theme.ok,
-                           trailing: network.isConnected ? (network.primaryInterface ?? "—") : "Offline".loc,
-                           trailingColor: network.isConnected ? Theme.textSecondary : Theme.danger)
+                           trailing: snapshot.networkIsConnected ? (network.primaryInterface ?? "—") : "Offline".loc,
+                           trailingColor: snapshot.networkIsConnected ? Theme.textSecondary : Theme.danger)
 
                 ChartRangePicker(range: $chartRange.range, accent: Theme.accent)
 
                 HStack(spacing: 12) {
                     rateBlock(symbol: "arrow.down", label: "Download",
-                              rate: network.downloadRate, color: downColor)
+                              rate: snapshot.networkDownloadRate, color: downColor)
                     rateBlock(symbol: "arrow.up", label: "Upload",
-                              rate: network.uploadRate, color: upColor)
+                              rate: snapshot.networkUploadRate, color: upColor)
                 }
 
                 ZStack {
-                    MetricChart(values: downChart, maxValue: nil, color: downColor)
-                    MetricChart(values: upChart, maxValue: nil, color: upColor, fill: false)
+                    MetricChart(values: downChart,
+                                maxValue: nil,
+                                color: downColor,
+                                accessibilityName: "Download history",
+                                accessibilityFormatter: Formatters.rateCompact)
+                    MetricChart(values: upChart,
+                                maxValue: nil,
+                                color: upColor,
+                                fill: false,
+                                accessibilityName: "Upload history",
+                                accessibilityFormatter: Formatters.rateCompact)
                 }
                 .frame(height: 50)
-                .accessibilityLabel("Network throughput chart".loc)
 
                 Divider().overlay(Theme.stroke)
 
                 HStack {
-                    StatPill(label: "Local IP", value: network.localIP ?? "—")
+                    StatPill(label: "Local IP", value: snapshot.networkLocalIP ?? "—")
                     Spacer()
                     HStack(spacing: 5) {
                         Circle()
-                            .fill(network.isConnected ? Theme.ok : Theme.danger)
+                            .fill(snapshot.networkIsConnected ? Theme.ok : Theme.danger)
                             .frame(width: 7, height: 7)
-                        Text(loc: network.isConnected ? "Connected" : "Disconnected")
+                        Text(loc: snapshot.networkIsConnected ? "Connected" : "Disconnected")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(Theme.textSecondary)
                     }
@@ -69,7 +78,7 @@ struct NetworkCard: View {
                 )
             VStack(alignment: .leading, spacing: 1) {
                 Text(label.loc.uppercased())
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(Theme.TypeScale.caption.weight(.semibold))
                     .foregroundColor(Theme.textTertiary)
                 Text(Formatters.rate(rate))
                     .font(.metric(13, weight: .bold))

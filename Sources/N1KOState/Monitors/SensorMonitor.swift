@@ -34,6 +34,7 @@ final class SensorMonitor: ObservableObject {
     @Published private(set) var lastError: String?
     /// Hottest individual sensor in °C (for the card header / summaries).
     @Published private(set) var peakCelsius: Double?
+    @Published private(set) var peakHistory: [Double] = []
 
     /// Shared serial queue so the SMC connection (global static state) is never
     /// hit concurrently by the sensor and fan readers.
@@ -46,6 +47,7 @@ final class SensorMonitor: ObservableObject {
     private var presentSensors: [TemperatureSensor]?
     /// HID temperature reader (nil on platforms that don't expose it).
     private var hid: IOHIDSensors?
+    private let peakHistoryBuffer = RingBuffer<Double>(capacity: 120)
 
     init() {
         open()
@@ -90,38 +92,44 @@ final class SensorMonitor: ObservableObject {
         lastRun = now
         inFlight = true
         queue.async { [weak self] in
-            guard let self else { return }
+            PerformanceDiagnostics.measure(.samplerSensors) {
+                guard let self else { return }
 
-            var raw = self.hid?.readAll() ?? []
-            var temps: [TemperatureReading]
-            var detailed: [TemperatureReading]
+                var raw = self.hid?.readAll() ?? []
+                var temps: [TemperatureReading]
+                var detailed: [TemperatureReading]
 
-            if !raw.isEmpty {
-                temps = SensorMonitor.grouped(raw)
-                detailed = SensorMonitor.individual(raw)
-            } else {
-                // Intel SMC fallback: discover present keys once, then read.
-                if self.presentSensors == nil {
-                    if Self.currentModel() != "unknown", let cached = Self.loadCachedSensors() {
-                        self.presentSensors = cached
-                    } else if let discovered = try? SMCKit.allKnownTemperatureSensors(), !discovered.isEmpty {
-                        self.presentSensors = discovered
-                        Self.saveCachedSensors(discovered)
-                    } else {
-                        self.presentSensors = []
+                if !raw.isEmpty {
+                    temps = SensorMonitor.grouped(raw)
+                    detailed = SensorMonitor.individual(raw)
+                } else {
+                    // Intel SMC fallback: discover present keys once, then read.
+                    if self.presentSensors == nil {
+                        if Self.currentModel() != "unknown", let cached = Self.loadCachedSensors() {
+                            self.presentSensors = cached
+                        } else if let discovered = try? SMCKit.allKnownTemperatureSensors(), !discovered.isEmpty {
+                            self.presentSensors = discovered
+                            Self.saveCachedSensors(discovered)
+                        } else {
+                            self.presentSensors = []
+                        }
                     }
+                    temps = SensorMonitor.readTemperatures(self.presentSensors ?? [])
+                    detailed = temps
+                    raw = temps.map { ($0.label, $0.celsius) }
                 }
-                temps = SensorMonitor.readTemperatures(self.presentSensors ?? [])
-                detailed = temps
-                raw = temps.map { ($0.label, $0.celsius) }
-            }
 
-            let peak = raw.map(\.1).max()
-            DispatchQueue.main.async {
-                self.temperatures = temps
-                self.detailedTemperatures = detailed
-                self.peakCelsius = peak
-                self.inFlight = false
+                let peak = raw.map(\.1).max()
+                DispatchQueue.main.async {
+                    self.temperatures = temps
+                    self.detailedTemperatures = detailed
+                    self.peakCelsius = peak
+                    if let peak {
+                        self.peakHistoryBuffer.append(peak)
+                        self.peakHistory = self.peakHistoryBuffer.elements
+                    }
+                    self.inFlight = false
+                }
             }
         }
     }

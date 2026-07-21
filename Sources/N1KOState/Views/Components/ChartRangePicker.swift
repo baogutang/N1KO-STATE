@@ -19,7 +19,7 @@ struct ChartRangePicker: View {
             ForEach(options) { r in
                 Button(action: { select(r.rawValue) }) {
                     Text(r.rawValue.uppercased())
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(Theme.TypeScale.caption.weight(.semibold))
                         .foregroundColor(displayedRange == r.rawValue ? .white : Theme.textTertiary)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)

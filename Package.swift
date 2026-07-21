@@ -40,6 +40,22 @@ let package = Package(
             name: "FanXPCShared",
             path: "Sources/FanXPCShared"
         ),
+        // Foundation-only Agent domain. It deliberately has no AppKit,
+        // SwiftUI, Sparkle, settings, updater, or monitoring dependency.
+        .target(
+            name: "N1KOAgentCore",
+            path: "Sources/N1KOAgentCore",
+            linkerSettings: [
+                .linkedFramework("Security")
+            ]
+        ),
+        .target(
+            name: "N1KOWindowCore",
+            path: "Sources/N1KOWindowCore",
+            linkerSettings: [
+                .linkedFramework("AppKit")
+            ]
+        ),
         // Privileged helper: a long-running LaunchDaemon that vends the fan
         // control Mach service (run as root, installed once via admin auth).
         .executableTarget(
@@ -54,7 +70,7 @@ let package = Package(
         .executableTarget(
             name: "N1KOState",
             dependencies: [
-                "SMCKit", "IOHIDSensorBridge", "FanXPCShared",
+                "SMCKit", "IOHIDSensorBridge", "FanXPCShared", "N1KOAgentCore", "N1KOWindowCore",
                 .product(name: "Sparkle", package: "Sparkle")
             ],
             path: "Sources/N1KOState",
@@ -63,6 +79,7 @@ let package = Package(
             ],
             linkerSettings: [
                 .linkedFramework("AppKit"),
+                .linkedFramework("ApplicationServices"),
                 .linkedFramework("SwiftUI"),
                 .linkedFramework("IOKit"),
                 .linkedFramework("Metal"),
@@ -70,10 +87,28 @@ let package = Package(
                 .linkedFramework("Security")
             ]
         ),
+        .executableTarget(
+            name: "N1KOAgentBridge",
+            dependencies: ["N1KOAgentCore"],
+            path: "Tools/N1KOAgentBridge"
+        ),
         .testTarget(
             name: "N1KOStateTests",
-            dependencies: ["N1KOState"],
+            dependencies: ["N1KOState", "N1KOAgentCore", "N1KOWindowCore"],
             path: "Tests/N1KOStateTests"
+        ),
+        .executableTarget(
+            name: "N1KOWP4FullscreenHarness",
+            dependencies: ["N1KOWindowCore"],
+            path: "Tools/N1KOWP4FullscreenHarness",
+            linkerSettings: [
+                .linkedFramework("AppKit")
+            ]
+        ),
+        .testTarget(
+            name: "N1KOAgentCoreTests",
+            dependencies: ["N1KOAgentCore"],
+            path: "Tests/N1KOAgentCoreTests"
         )
     ]
 )

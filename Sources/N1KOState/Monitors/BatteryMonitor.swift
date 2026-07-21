@@ -30,6 +30,7 @@ final class BatteryMonitor: ObservableObject {
 
     private(set) var history: [Double] = []
     let historyCapacity = 300
+    private lazy var historyBuffer = RingBuffer<Double>(capacity: historyCapacity)
 
     private var desktopConfirmed = false
     private var notificationInstalled = false
@@ -79,12 +80,14 @@ final class BatteryMonitor: ObservableObject {
 
     func refreshFromTick(popoverOpen: Bool) {
         guard !desktopConfirmed else { return }
-        readPowerSources()
-        if isPresent {
-            history.append(percentage)
-            if history.count > historyCapacity { history.removeFirst(history.count - historyCapacity) }
-            refreshSmartBattery(foreground: popoverOpen)
-            objectWillChange.send()
+        PerformanceDiagnostics.measure(.samplerBattery) {
+            readPowerSources()
+            if isPresent {
+                historyBuffer.append(percentage)
+                history = historyBuffer.elements
+                refreshSmartBattery(foreground: popoverOpen)
+                objectWillChange.send()
+            }
         }
     }
 
@@ -95,9 +98,11 @@ final class BatteryMonitor: ObservableObject {
         guard force || now.timeIntervalSince(lastSmartBatteryRead) >= interval else { return }
         lastSmartBatteryRead = now
         monitorWorkQueue.async { [weak self] in
-            let snapshot = Self.readSmartBatterySnapshot()
-            DispatchQueue.main.async {
-                self?.applySmartBatterySnapshot(snapshot)
+            PerformanceDiagnostics.measure(.samplerBattery) {
+                let snapshot = Self.readSmartBatterySnapshot()
+                DispatchQueue.main.async {
+                    self?.applySmartBatterySnapshot(snapshot)
+                }
             }
         }
     }

@@ -105,22 +105,24 @@ final class FanControlService: ObservableObject {
         inFlight = true
 
         queue.async { [weak self] in
-            guard let self else { return }
-            if !self.probed, (try? SMCKit.fanCount()) != nil {
-                self.useFloat = SMCKit.hasFloatFans()
-                self.probed = true
-            }
+            PerformanceDiagnostics.measure(.samplerFans) {
+                guard let self else { return }
+                if !self.probed, (try? SMCKit.fanCount()) != nil {
+                    self.useFloat = SMCKit.hasFloatFans()
+                    self.probed = true
+                }
 
-            let infos = self.readFans()
-            let usesGlobal = self.useFloat && SMCKit.hasFSModeSwitch()
+                let infos = self.readFans()
+                let usesGlobal = self.useFloat && SMCKit.hasFSModeSwitch()
 
-            DispatchQueue.main.async {
-                self.fans = infos
-                self.isAvailable = !infos.isEmpty
-                self.supportsControl = self.useFloat && !infos.isEmpty
-                self.usesGlobalFanModeSwitch = usesGlobal
-                self.inFlight = false
-                self.enforceThermalSafety(peakCelsius: nil)
+                DispatchQueue.main.async {
+                    self.fans = infos
+                    self.isAvailable = !infos.isEmpty
+                    self.supportsControl = self.useFloat && !infos.isEmpty
+                    self.usesGlobalFanModeSwitch = usesGlobal
+                    self.inFlight = false
+                    self.enforceThermalSafety(peakCelsius: nil)
+                }
             }
         }
     }

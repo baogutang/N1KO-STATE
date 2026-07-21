@@ -1,4 +1,5 @@
 import Foundation
+import N1KOAgentCore
 import os
 
 /// Launch-time diagnostic log mirrored to disk for remote troubleshooting.
@@ -40,10 +41,11 @@ enum DiagLog {
 
     static func log(_ category: String, _ message: String) {
         bootstrap()
-        Logger(subsystem: subsystem, category: category).info("\(message, privacy: .public)")
+        let safeMessage = sanitizedMessage(message)
+        Logger(subsystem: subsystem, category: category).info("\(safeMessage, privacy: .public)")
         let when = Date()
         ioQueue.async {
-            let line = tsFormatter.string(from: when) + " [\(category)] " + message + "\n"
+            let line = tsFormatter.string(from: when) + " [\(category)] " + safeMessage + "\n"
             guard let data = line.data(using: .utf8) else { return }
             if let handle = try? FileHandle(forWritingTo: logFile) {
                 handle.seekToEndOfFile()
@@ -53,6 +55,10 @@ enum DiagLog {
                 try? data.write(to: logFile, options: .atomic)
             }
         }
+    }
+
+    static func sanitizedMessage(_ message: String) -> String {
+        AgentDiagnosticRedactor.redact(text: message)
     }
 
     private static func currentArch() -> String {

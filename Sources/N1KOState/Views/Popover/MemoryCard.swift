@@ -3,13 +3,14 @@ import SwiftUI
 struct MemoryCard: View {
     @ObservedObject var memory: MemoryMonitor
     @ObservedObject var processes: ProcessMonitor
+    let snapshot: MonitorDisplaySnapshot
     @ObservedObject private var chartRange = ChartRangeStore.shared
     @State private var processSort: ProcessSortMode = .memory
     @State private var chartValues: [Double] = []
     @State private var lastLongRangeRefresh = Date.distantPast
 
     private var pressureColor: Color {
-        switch memory.pressureLevel {
+        switch snapshot.memoryPressureLevel {
         case .low: return Theme.ok
         case .medium: return Theme.warn
         case .high: return Theme.danger
@@ -22,20 +23,24 @@ struct MemoryCard: View {
                 CardHeader(icon: "memorychip",
                            title: Module.memory.localizedTitle,
                            accent: Theme.memory,
-                           trailing: Formatters.percent(memory.total > 0 ? memory.used / memory.total : 0),
+                           trailing: Formatters.percent(snapshot.memoryFraction),
                            trailingColor: pressureColor)
 
                 ChartRangePicker(range: $chartRange.range, accent: Theme.accent)
 
-                MetricChart(values: chartValues, maxValue: 1, color: pressureColor)
+                MetricChart(values: chartValues,
+                            maxValue: 1,
+                            color: pressureColor,
+                            accessibilityName: "Memory history",
+                            accessibilityFormatter: Formatters.percent)
                     .frame(height: 40)
                     .accessibilityLabel("Memory usage chart".loc)
 
                 HStack(spacing: 14) {
-                    RingGauge(fraction: memory.total > 0 ? memory.used / memory.total : 0,
+                    RingGauge(fraction: snapshot.memoryFraction,
                               color: pressureColor,
                               lineWidth: 9,
-                              value: Formatters.bytes(memory.used),
+                              value: Formatters.bytes(snapshot.memoryUsed),
                               caption: "USED")
                         .frame(width: 78, height: 78)
 
@@ -45,7 +50,7 @@ struct MemoryCard: View {
                                   help: "Memory that cannot be paged out.")
                         legendRow("Compressed", memory.compressed, Theme.info,
                                   help: "Memory compressed to free physical RAM.")
-                        legendRow("Free", memory.free, Theme.textTertiary)
+                        legendRow("Free", snapshot.memoryFree, Theme.textTertiary)
                     }
                     Spacer(minLength: 0)
                 }
@@ -54,7 +59,7 @@ struct MemoryCard: View {
                     HStack {
                         SectionLabel(text: "Pressure")
                         Spacer()
-                        Text(loc: memory.pressureLevel.rawValue)
+                        Text(loc: snapshot.memoryPressureLevel.rawValue)
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundColor(pressureColor)
                     }
@@ -80,7 +85,7 @@ struct MemoryCard: View {
                     ProcessListSection(cpuList: processes.topByCPU,
                                        memList: processes.topByMemory,
                                        sortMode: processSort,
-                                       totalMemory: memory.total,
+                                       totalMemory: snapshot.memoryTotal,
                                        accent: Theme.memory,
                                        onSortToggle: { processSort = processSort == .cpu ? .memory : .cpu })
                 }

@@ -3,6 +3,12 @@ import Combine
 import Metal
 import IOKit
 
+struct GPUModuleSnapshot: Equatable {
+    let utilization: Double
+    let vramUsed: Double
+    let history: [Double]
+}
+
 final class GPUMonitor: ObservableObject {
 
     private(set) var name: String = "GPU"
@@ -13,6 +19,7 @@ final class GPUMonitor: ObservableObject {
     private(set) var isAvailable = false
 
     let historyCapacity = 300
+    private lazy var historyBuffer = RingBuffer<Double>(capacity: historyCapacity)
     private let device: MTLDevice?
     /// main thread only (tick-driven)
     private var cachedService: io_service_t = 0
@@ -20,33 +27,52 @@ final class GPUMonitor: ObservableObject {
     /// this, or machines with no usable accelerator pay the sweep every tick.
     private var lastDiscovery = Date.distantPast
     private let discoveryBackoff: TimeInterval = 60
+    private var sampledUtilization: Double = 0
+    private var sampledVRAMUsed: Double = 0
 
     init() {
         device = MTLCreateSystemDefaultDevice()
         if let d = device {
             name = d.name
             vramTotal = Double(d.recommendedMaxWorkingSetSize)
+            sampledVRAMUsed = Double(d.currentAllocatedSize)
+            vramUsed = sampledVRAMUsed
             isAvailable = true
         }
         lastDiscovery = .distantPast
-        discoverAcceleratorService()
     }
 
     deinit {
         if cachedService != 0 { IOObjectRelease(cachedService) }
     }
 
-    func refresh() {
-        if let stats = readStatsFromCache() {
-            utilization = min(max(stats.util, 0), 1)
-            if stats.memUsed > 0 { vramUsed = stats.memUsed }
-        } else if let d = device {
-            vramUsed = Double(d.currentAllocatedSize)
+    func sample() -> GPUModuleSnapshot {
+        PerformanceDiagnostics.measure(.samplerGPU) {
+            var nextUtilization = sampledUtilization
+            var nextVRAMUsed = sampledVRAMUsed
+            if let stats = readStatsFromCache() {
+                nextUtilization = min(max(stats.util, 0), 1)
+                if stats.memUsed > 0 { nextVRAMUsed = stats.memUsed }
+            } else if let d = device {
+                nextVRAMUsed = Double(d.currentAllocatedSize)
+            }
+            sampledUtilization = nextUtilization
+            sampledVRAMUsed = nextVRAMUsed
+            historyBuffer.append(nextUtilization)
+            return GPUModuleSnapshot(utilization: nextUtilization,
+                                     vramUsed: nextVRAMUsed,
+                                     history: historyBuffer.elements)
         }
-        history.append(utilization)
-        if history.count > historyCapacity { history.removeFirst(history.count - historyCapacity) }
-        objectWillChange.send()
     }
+
+    func apply(_ sample: GPUModuleSnapshot, publish: Bool = true) {
+        if publish { objectWillChange.send() }
+        utilization = sample.utilization
+        vramUsed = sample.vramUsed
+        history = sample.history
+    }
+
+    func refresh() { apply(sample()) }
 
     private func discoverAcceleratorService() {
         guard Date().timeIntervalSince(lastDiscovery) >= discoveryBackoff else { return }

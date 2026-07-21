@@ -5,13 +5,21 @@ import AppKit
 import Darwin
 import DiskArbitration
 
-struct VolumeInfo: Identifiable {
+struct VolumeInfo: Identifiable, Equatable {
     let id: String        // mount path
     let name: String
     let total: Double
     let free: Double
     var used: Double { max(total - free, 0) }
     var fraction: Double { total > 0 ? used / total : 0 }
+}
+
+struct DiskModuleSnapshot: Equatable {
+    let volumes: [VolumeInfo]?
+    let readRate: Double
+    let writeRate: Double
+    let readHistory: [Double]
+    let writeHistory: [Double]
 }
 
 struct VolumeFilterTraits {
@@ -36,18 +44,22 @@ final class DiskMonitor: ObservableObject {
     private(set) var writeHistory: [Double] = []
 
     let historyCapacity = 300
+    private lazy var readHistoryBuffer = RingBuffer<Double>(capacity: historyCapacity)
+    private lazy var writeHistoryBuffer = RingBuffer<Double>(capacity: historyCapacity)
 
     private var lastRead: UInt64 = 0
     private var lastWrite: UInt64 = 0
     private var lastTime = Date()
     private var primed = false
-    private var lastVolumeRefresh = Date.distantPast
+    private var sampledReadRate: Double = 0
+    private var sampledWriteRate: Double = 0
     private let volumeRefreshInterval: TimeInterval = 60
+    private var nextVolumeReadUptimeNanoseconds: UInt64 = 0
+    private let volumeQueue = DispatchQueue(label: "com.n1ko-state.disk-volumes", qos: .utility)
     private var workspaceObservers: [NSObjectProtocol] = []
 
     func startVolumeWatching() {
-        volumes = DiskMonitor.readVolumes()
-        lastVolumeRefresh = Date()
+        refreshVolumesNow()
         let nc = NSWorkspace.shared.notificationCenter
         let handler: (Notification) -> Void = { [weak self] _ in self?.refreshVolumesNow() }
         workspaceObservers = [
@@ -58,39 +70,76 @@ final class DiskMonitor: ObservableObject {
     }
 
     func refreshVolumesNow() {
-        volumes = DiskMonitor.readVolumes()
-        lastVolumeRefresh = Date()
+        volumeQueue.async { [weak self] in
+            let volumes = PerformanceDiagnostics.measure(.samplerDisk) {
+                DiskMonitor.readVolumes()
+            }
+            DispatchQueue.main.async {
+                self?.applyVolumes(volumes)
+            }
+        }
+    }
+
+    private func applyVolumes(_ values: [VolumeInfo]) {
         objectWillChange.send()
+        volumes = values
     }
 
     /// IO throughput only (volume list is event-driven + 60s free-space refresh).
-    func refreshIO() {
-        let (r, w) = DiskMonitor.totalIO()
-        let now = Date()
-        let dt = now.timeIntervalSince(lastTime)
-        if primed && dt > 0 {
-            readRate = r >= lastRead ? Double(r - lastRead) / dt : 0
-            writeRate = w >= lastWrite ? Double(w - lastWrite) / dt : 0
-        }
-        lastRead = r; lastWrite = w; lastTime = now; primed = true
+    func sampleIO(includeVolumes: Bool = false) -> DiskModuleSnapshot {
+        PerformanceDiagnostics.measure(.samplerDisk) {
+            let (r, w) = DiskMonitor.totalIO()
+            let now = Date()
+            let dt = now.timeIntervalSince(lastTime)
+            var nextReadRate = sampledReadRate
+            var nextWriteRate = sampledWriteRate
+            if primed && dt > 0 {
+                nextReadRate = r >= lastRead ? Double(r - lastRead) / dt : 0
+                nextWriteRate = w >= lastWrite ? Double(w - lastWrite) / dt : 0
+            }
+            sampledReadRate = nextReadRate
+            sampledWriteRate = nextWriteRate
+            lastRead = r; lastWrite = w; lastTime = now; primed = true
 
-        readHistory.append(readRate); trim(&readHistory)
-        writeHistory.append(writeRate); trim(&writeHistory)
-
-        if now.timeIntervalSince(lastVolumeRefresh) >= volumeRefreshInterval {
-            refreshVolumesNow()
-        } else {
-            objectWillChange.send()
+            readHistoryBuffer.append(nextReadRate)
+            writeHistoryBuffer.append(nextWriteRate)
+            let uptime = DispatchTime.now().uptimeNanoseconds
+            let shouldReadVolumes = includeVolumes || uptime >= nextVolumeReadUptimeNanoseconds
+            if shouldReadVolumes {
+                nextVolumeReadUptimeNanoseconds = uptime &+ UInt64(volumeRefreshInterval * 1_000_000_000)
+            }
+            return DiskModuleSnapshot(
+                volumes: shouldReadVolumes ? DiskMonitor.readVolumes() : nil,
+                readRate: nextReadRate,
+                writeRate: nextWriteRate,
+                readHistory: readHistoryBuffer.elements,
+                writeHistory: writeHistoryBuffer.elements
+            )
         }
+    }
+
+    func apply(_ sample: DiskModuleSnapshot, publish: Bool = true) {
+        if publish { objectWillChange.send() }
+        if let volumes = sample.volumes {
+            self.volumes = volumes
+        }
+        readRate = sample.readRate
+        writeRate = sample.writeRate
+        readHistory = sample.readHistory
+        writeHistory = sample.writeHistory
+    }
+
+    func refreshIO() { apply(sampleIO()) }
+
+    func resetBaseline() {
+        primed = false
+        sampledReadRate = 0
+        sampledWriteRate = 0
     }
 
     /// Legacy full refresh (popover open / tests).
     func refresh() {
         refreshIO()
-    }
-
-    private func trim(_ a: inout [Double]) {
-        if a.count > historyCapacity { a.removeFirst(a.count - historyCapacity) }
     }
 
     deinit {

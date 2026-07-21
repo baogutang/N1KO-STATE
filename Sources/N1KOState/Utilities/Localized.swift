@@ -21,6 +21,12 @@ final class LocalizationManager {
         }
         bundle = b
     }
+
+#if DEBUG
+    func useBundleForTesting(_ bundle: Bundle) {
+        self.bundle = bundle
+    }
+#endif
 }
 
 /// Tiny localization helper.

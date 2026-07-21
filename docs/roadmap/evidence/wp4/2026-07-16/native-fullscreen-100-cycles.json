@@ -1,0 +1,34 @@
+{
+  "completed" : true,
+  "cyclesCompleted" : 100,
+  "cyclesRequested" : 100,
+  "desktopFramesObservedAfterDidEnter" : 0,
+  "desktopHasFullScreenAuxiliary" : false,
+  "desktopHasFullScreenNone" : true,
+  "desktopRestoreFailures" : 0,
+  "displayBounds" : [
+    [
+      0,
+      0
+    ],
+    [
+      2560,
+      1440
+    ]
+  ],
+  "displayID" : 2,
+  "elapsedSeconds" : 161.292055666,
+  "fullscreenSamples" : 300,
+  "revealPanelConstructed" : false,
+  "screenFrame" : [
+    [
+      0,
+      0
+    ],
+    [
+      2560,
+      1440
+    ]
+  ],
+  "screenSafeAreaTop" : 0
+}

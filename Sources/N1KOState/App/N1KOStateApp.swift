@@ -1,14 +1,15 @@
-import SwiftUI
+import AppKit
 
-/// Entry point. The menu-bar icon is an `NSStatusItem` (see `MenuBarStatusController`)
-/// because SwiftUI `MenuBarExtra` often fails to show a label on recent macOS.
+/// AppKit entry point. PresentationCoordinator is the only Quick Panel and
+/// Settings authority; there is no second SwiftUI Settings scene lifecycle.
 @main
-struct N1KOStateApp: App {
-    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-
-    var body: some Scene {
-        Settings {
-            SettingsView(fans: appDelegate.hub.fans, hub: appDelegate.hub, initialTab: nil)
-        }
+enum N1KOStateApp {
+    @MainActor
+    static func main() {
+        let application = NSApplication.shared
+        let delegate = AppDelegate()
+        application.delegate = delegate
+        application.run()
+        withExtendedLifetime(delegate) {}
     }
 }

@@ -2,11 +2,12 @@ import SwiftUI
 
 struct GPUCard: View {
     @ObservedObject var gpu: GPUMonitor
+    let snapshot: MonitorDisplaySnapshot
 
     private let accent = Theme.gpu
 
     private var vramFraction: Double {
-        gpu.vramTotal > 0 ? gpu.vramUsed / gpu.vramTotal : 0
+        snapshot.gpuVRAMTotal > 0 ? snapshot.gpuVRAMUsed / snapshot.gpuVRAMTotal : 0
     }
 
     var body: some View {
@@ -15,15 +16,19 @@ struct GPUCard: View {
                 CardHeader(icon: "display",
                            title: "GPU",
                            accent: accent,
-                           trailing: gpu.isAvailable ? Formatters.percent(gpu.utilization) : nil,
-                           trailingColor: Theme.semantic(for: gpu.utilization))
+                           trailing: snapshot.gpuIsAvailable ? Formatters.percent(snapshot.gpuUtilization) : nil,
+                           trailingColor: Theme.semantic(for: snapshot.gpuUtilization))
 
-                if !gpu.isAvailable {
+                if !snapshot.gpuIsAvailable {
                     Text(loc: "No discrete GPU metrics on this device.")
                         .font(.system(size: 11))
                         .foregroundColor(Theme.textTertiary)
                 } else {
-                MetricChart(values: gpu.history, maxValue: 1, color: accent)
+                MetricChart(values: gpu.history,
+                            maxValue: 1,
+                            color: accent,
+                            accessibilityName: "GPU history",
+                            accessibilityFormatter: Formatters.percent)
                     .frame(height: 48)
 
                 HStack(spacing: 14) {
@@ -35,9 +40,9 @@ struct GPUCard: View {
                         .frame(width: 72, height: 72)
 
                     VStack(alignment: .leading, spacing: 7) {
-                        legendRow("Chip", gpu.name)
-                        legendRow("VRAM Used", Formatters.bytes(gpu.vramUsed))
-                        legendRow("VRAM Total", Formatters.bytes(gpu.vramTotal))
+                        legendRow("Chip", snapshot.gpuName)
+                        legendRow("VRAM Used", Formatters.bytes(snapshot.gpuVRAMUsed))
+                        legendRow("VRAM Total", Formatters.bytes(snapshot.gpuVRAMTotal))
                     }
                     Spacer(minLength: 0)
                 }

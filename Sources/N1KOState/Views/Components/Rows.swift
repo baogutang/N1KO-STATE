@@ -10,7 +10,7 @@ struct StatPill: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label.loc.uppercased())
-                .font(.system(size: 9, weight: .semibold))
+                .font(Theme.TypeScale.caption.weight(.semibold))
                 .foregroundColor(Theme.textTertiary)
             Text(value)
                 .font(.metric(13))
@@ -73,7 +73,7 @@ struct SectionLabel: View {
     let text: String
     var body: some View {
         Text(text.loc.uppercased())
-            .font(.system(size: 9.5, weight: .semibold))
+            .font(Theme.TypeScale.caption.weight(.semibold))
             .foregroundColor(Theme.textTertiary)
             .frame(maxWidth: .infinity, alignment: .leading)
     }

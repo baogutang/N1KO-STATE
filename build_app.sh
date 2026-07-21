@@ -82,11 +82,36 @@ if [[ -f Resources/AppIcon.icns ]]; then
     cp Resources/AppIcon.icns "$APP_DIR/Contents/Resources/AppIcon.icns"
 fi
 
+# Apache-2.0 Island audio reused at the pinned da130d6 snapshot.
+if [[ -d Resources/Sounds ]]; then
+    echo "==> Bundling pinned Island sounds..."
+    mkdir -p "$APP_DIR/Contents/Resources/Sounds"
+    cp Resources/Sounds/*.wav "$APP_DIR/Contents/Resources/Sounds/"
+fi
+
+# Human-readable third-party attribution for the adapted Agent Core sources.
+if [[ -f THIRD_PARTY_NOTICES.md ]]; then
+    mkdir -p "$APP_DIR/Contents/Resources/ThirdPartyNotices"
+    cp THIRD_PARTY_NOTICES.md "$APP_DIR/Contents/Resources/ThirdPartyNotices/NOTICE.md"
+fi
+if [[ -d ThirdPartyLicenses ]]; then
+    mkdir -p "$APP_DIR/Contents/Resources/ThirdPartyNotices/Licenses"
+    cp ThirdPartyLicenses/* "$APP_DIR/Contents/Resources/ThirdPartyNotices/Licenses/"
+fi
+
 # Privileged fan-control helper
 HELPER="$BIN_PATH/FanHelper"
 if [[ -f "$HELPER" ]]; then
     echo "==> Bundling fan helper (n1ko-fanctl)..."
     cp "$HELPER" "$APP_DIR/Contents/MacOS/n1ko-fanctl"
+fi
+
+# Per-user Agent hook bridge. Hook configuration points only to this
+# N1KO-owned executable; it authenticates to the private 0600 socket.
+AGENT_BRIDGE="$BIN_PATH/N1KOAgentBridge"
+if [[ -f "$AGENT_BRIDGE" ]]; then
+    echo "==> Bundling Agent bridge (n1ko-agent-bridge)..."
+    cp "$AGENT_BRIDGE" "$APP_DIR/Contents/MacOS/n1ko-agent-bridge"
 fi
 
 # Localizations
@@ -120,6 +145,7 @@ else
 fi
 
 HELPER_BIN="$APP_DIR/Contents/MacOS/n1ko-fanctl"
+AGENT_BRIDGE_BIN="$APP_DIR/Contents/MacOS/n1ko-agent-bridge"
 SPARKLE_BIN="$APP_DIR/Contents/Frameworks/Sparkle.framework"
 if [[ -d "$SPARKLE_BIN" ]]; then
     codesign "${SIGN_ARGS[@]}" "$SPARKLE_BIN" 2>/dev/null || \
@@ -128,6 +154,10 @@ fi
 if [[ -f "$HELPER_BIN" ]]; then
     codesign "${SIGN_ARGS[@]}" -i "${BUNDLE_ID}.helper" "$HELPER_BIN" 2>/dev/null || \
         echo "   (helper codesign skipped/failed)"
+fi
+if [[ -f "$AGENT_BRIDGE_BIN" ]]; then
+    codesign "${SIGN_ARGS[@]}" -i "${BUNDLE_ID}.agent-bridge" "$AGENT_BRIDGE_BIN" 2>/dev/null || \
+        echo "   (Agent bridge codesign skipped/failed)"
 fi
 codesign "${SIGN_ARGS[@]}" -i "$BUNDLE_ID" "$APP_DIR/Contents/MacOS/$PRODUCT" 2>/dev/null || true
 codesign "${SIGN_ARGS[@]}" -i "$BUNDLE_ID" "$APP_DIR" 2>/dev/null || \

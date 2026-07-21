@@ -1,0 +1,5 @@
+[
+  {"id": 1, "name": "cpu-a", "cpu": 90.0, "memBytes": 10.0},
+  {"id": 2, "name": "cpu-b", "cpu": 80.0, "memBytes": 20.0},
+  {"id": 3, "name": "memory", "cpu": 0.1, "memBytes": 10000.0}
+]

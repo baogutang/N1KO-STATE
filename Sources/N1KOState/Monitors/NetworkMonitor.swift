@@ -2,6 +2,16 @@ import Foundation
 import Combine
 import Darwin
 
+struct NetworkModuleSnapshot: Equatable {
+    let downloadRate: Double
+    let uploadRate: Double
+    let downHistory: [Double]
+    let upHistory: [Double]
+    let primaryInterface: String?
+    let localIP: String?
+    let isConnected: Bool
+}
+
 final class NetworkMonitor: ObservableObject {
 
     private(set) var downloadRate: Double = 0
@@ -13,58 +23,89 @@ final class NetworkMonitor: ObservableObject {
     private(set) var isConnected = false
 
     let historyCapacity = 300
+    private lazy var downHistoryBuffer = RingBuffer<Double>(capacity: historyCapacity)
+    private lazy var upHistoryBuffer = RingBuffer<Double>(capacity: historyCapacity)
 
     private var lastDown: UInt64 = 0
     private var lastUp: UInt64 = 0
     private var lastTime = Date()
     private var primed = false
     private var refreshCount = 0
+    private var sampledDownloadRate: Double = 0
+    private var sampledUploadRate: Double = 0
+    private var sampledPrimaryInterface: String?
+    private var sampledLocalIP: String?
+    private var sampledIsConnected = false
 
     func refresh(includeInterfaceInfo: Bool = true) {
-        sampleAll(updateInterfaceInfo: includeInterfaceInfo)
-        objectWillChange.send()
+        apply(sample(updateInterfaceInfo: includeInterfaceInfo))
     }
 
     func refreshRatesOnly() {
-        sampleAll(updateInterfaceInfo: false)
-        objectWillChange.send()
+        apply(sample(updateInterfaceInfo: false))
     }
 
-    private func sampleAll(updateInterfaceInfo: Bool) {
-        refreshCount += 1
-        let updateInfo = updateInterfaceInfo || refreshCount % 10 == 1
-        let snapshot = NetworkMonitor.interfaceSnapshot(updateInterfaceInfo: updateInfo)
-        let now = Date()
-        let dt = now.timeIntervalSince(lastTime)
+    func sample(updateInterfaceInfo: Bool) -> NetworkModuleSnapshot {
+        PerformanceDiagnostics.measure(.samplerNetwork) {
+            refreshCount += 1
+            let updateInfo = updateInterfaceInfo || refreshCount % 10 == 1
+            let snapshot = NetworkMonitor.interfaceSnapshot(updateInterfaceInfo: updateInfo)
+            let now = Date()
+            let dt = now.timeIntervalSince(lastTime)
 
-        // A forced refresh (popover opening) can land right after a timer tick;
-        // dividing a few bytes by a near-zero dt would print absurd rate spikes,
-        // so keep the previous rates until a meaningful interval has passed.
-        if primed && dt >= 0.2 {
-            let dDown = snapshot.rx >= lastDown ? Double(snapshot.rx - lastDown) : 0
-            let dUp = snapshot.tx >= lastUp ? Double(snapshot.tx - lastUp) : 0
-            downloadRate = dDown / dt
-            uploadRate = dUp / dt
-            lastDown = snapshot.rx
-            lastUp = snapshot.tx
-            lastTime = now
-        } else if !primed {
-            lastDown = snapshot.rx
-            lastUp = snapshot.tx
-            lastTime = now
-            primed = true
+            // A forced refresh (popover opening) can land right after a timer tick;
+            // dividing a few bytes by a near-zero dt would print absurd rate spikes,
+            // so keep the previous rates until a meaningful interval has passed.
+            if primed && dt >= 0.2 {
+                let dDown = snapshot.rx >= lastDown ? Double(snapshot.rx - lastDown) : 0
+                let dUp = snapshot.tx >= lastUp ? Double(snapshot.tx - lastUp) : 0
+                sampledDownloadRate = dDown / dt
+                sampledUploadRate = dUp / dt
+                lastDown = snapshot.rx
+                lastUp = snapshot.tx
+                lastTime = now
+            } else if !primed {
+                lastDown = snapshot.rx
+                lastUp = snapshot.tx
+                lastTime = now
+                primed = true
+            }
+
+            if updateInfo {
+                sampledLocalIP = snapshot.localIP
+                sampledPrimaryInterface = snapshot.primaryInterface
+                sampledIsConnected = snapshot.localIP != nil
+            }
+
+            downHistoryBuffer.append(sampledDownloadRate)
+            upHistoryBuffer.append(sampledUploadRate)
+            return NetworkModuleSnapshot(
+                downloadRate: sampledDownloadRate,
+                uploadRate: sampledUploadRate,
+                downHistory: downHistoryBuffer.elements,
+                upHistory: upHistoryBuffer.elements,
+                primaryInterface: sampledPrimaryInterface,
+                localIP: sampledLocalIP,
+                isConnected: sampledIsConnected
+            )
         }
+    }
 
-        if updateInfo {
-            localIP = snapshot.localIP
-            primaryInterface = snapshot.primaryInterface
-            isConnected = snapshot.localIP != nil
-        }
+    func apply(_ sample: NetworkModuleSnapshot, publish: Bool = true) {
+        if publish { objectWillChange.send() }
+        downloadRate = sample.downloadRate
+        uploadRate = sample.uploadRate
+        downHistory = sample.downHistory
+        upHistory = sample.upHistory
+        primaryInterface = sample.primaryInterface
+        localIP = sample.localIP
+        isConnected = sample.isConnected
+    }
 
-        downHistory.append(downloadRate)
-        if downHistory.count > historyCapacity { downHistory.removeFirst(downHistory.count - historyCapacity) }
-        upHistory.append(uploadRate)
-        if upHistory.count > historyCapacity { upHistory.removeFirst(upHistory.count - historyCapacity) }
+    func resetBaseline() {
+        primed = false
+        sampledDownloadRate = 0
+        sampledUploadRate = 0
     }
 
     private struct InterfaceSnapshot {

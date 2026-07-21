@@ -1,0 +1,21 @@
+status=running
+evidence_class=calibration
+scenario=monitoring-only
+performance_scenario=menu-bar-only
+agent_enabled=0
+synthetic_session_seed=0
+warmup_seconds=3
+duration_seconds=30
+sample_interval_seconds=2
+history_path=isolated/history.json
+preferences_home=isolated/preferences-home
+agent_support=isolated/AgentCore
+codex_rollouts=isolated/codex-sessions
+checkout=09cde29c24d20f8b97f0fd2995a686fac0cb3ab7
+branch=main
+macos=15.7.7 (24G720)
+hardware=Mac16,10, cpu=10, memory=17179869184
+started_utc=2026-07-21T03:30:44Z
+app_exit_status=0
+finished_utc=2026-07-21T03:31:19Z
+status=CALIBRATION_PASS

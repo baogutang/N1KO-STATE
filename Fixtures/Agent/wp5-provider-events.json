@@ -1,0 +1,23 @@
+[
+  {"profileID":"claude-hooks","provider":"claude","payload":{"session_id":"claude-1","hook_event_name":"SessionStart","cwd":"/tmp/claude"}},
+  {"profileID":"codex-hooks","provider":"codex","payload":{"session_id":"codex-1","hook_event_name":"SessionStart","cwd":"/tmp/codex"}},
+  {"profileID":"gemini-hooks","provider":"gemini","payload":{"session_id":"gemini-1","hook_event_name":"BeforeAgent","cwd":"/tmp/gemini"}},
+  {"profileID":"qwen-code-hooks","provider":"qwen","payload":{"session_id":"qwen-1","hook_event_name":"UserPromptSubmit","cwd":"/tmp/qwen","terminal_bundle_identifier":"com.apple.Terminal","tmux_session":"agent","tmux_window":"2","tmux_pane":"1","remote_host":"build.example.test"}},
+  {"profileID":"kimi-hooks","provider":"kimi","payload":{"session_id":"kimi-1","hook_event_name":"SessionStart","cwd":"/tmp/kimi"}},
+  {"profileID":"hermes-hooks","provider":"hermes","payload":{"session_id":"hermes-1","hook_event_name":"SessionStart","cwd":"/tmp/hermes"}},
+  {"profileID":"pi-hooks","provider":"pi","payload":{"session_id":"pi-1","hook_event_name":"session_start","cwd":"/tmp/pi"}},
+  {"profileID":"opencode-hooks","provider":"opencode","payload":{"session_id":"opencode-1","hook_event_name":"UserPromptSubmit","cwd":"/tmp/opencode"}},
+  {"profileID":"openclaw-hooks","provider":"openclaw","payload":{"session_id":"openclaw-1","hook_event_name":"command:new","cwd":"/tmp/openclaw"}},
+  {"profileID":"qoder-hooks","provider":"qoder","payload":{"session_id":"qoder-1","hook_event_name":"SessionStart","cwd":"/tmp/qoder"}},
+  {"profileID":"qoder-cli-hooks","provider":"qoder-cli","payload":{"session_id":"qoder-cli-1","hook_event_name":"SessionStart","cwd":"/tmp/qoder-cli"}},
+  {"profileID":"qoder-cn-hooks","provider":"qoder-cn","payload":{"session_id":"qoder-cn-1","hook_event_name":"SessionStart","cwd":"/tmp/qoder-cn","terminal_bundle_identifier":"com.aliyun.lingma.ide"}},
+  {"profileID":"qoder-cn-cli-hooks","provider":"qoder-cn-cli","payload":{"session_id":"qoder-cn-cli-1","hook_event_name":"SessionStart","cwd":"/tmp/qoder-cn-cli"}},
+  {"profileID":"qoderwork-hooks","provider":"qoder-work","payload":{"session_id":"qoder-work-1","hook_event_name":"SessionStart","cwd":"/tmp/qoder-work"}},
+  {"profileID":"codebuddy-hooks","provider":"codebuddy","payload":{"session_id":"codebuddy-1","hook_event_name":"SessionStart","cwd":"/tmp/codebuddy"}},
+  {"profileID":"codebuddy-cli-hooks","provider":"codebuddy-cli","payload":{"session_id":"codebuddy-cli-1","hook_event_name":"SessionStart","cwd":"/tmp/codebuddy-cli"}},
+  {"profileID":"workbuddy-hooks","provider":"workbuddy","payload":{"session_id":"workbuddy-1","hook_event_name":"SessionStart","cwd":"/tmp/workbuddy"}},
+  {"profileID":"cursor-hooks","provider":"cursor","payload":{"session_id":"cursor-1","hook_event_name":"beforeSubmitPrompt","cwd":"/tmp/cursor"}},
+  {"profileID":"copilot-hooks","provider":"copilot","payload":{"session_id":"copilot-1","hook_event_name":"sessionStart","cwd":"/tmp/copilot"}},
+  {"profileID":"trae-runtime","provider":"trae","payload":{"session_id":"trae-1","hook_event_name":"SessionStart","cwd":"/tmp/trae"}},
+  {"profileID":"jetbrains-runtime","provider":"jetbrains","payload":{"session_id":"jetbrains-1","hook_event_name":"SessionStart","cwd":"/tmp/jetbrains"}}
+]
