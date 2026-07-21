@@ -3,72 +3,48 @@
     <channel>
         <title>N1KO-STATE</title>
         <item>
-            <title>1.0.17</title>
-            <pubDate>Thu, 02 Jul 2026 01:57:52 +0000</pubDate>
-            <sparkle:version>117</sparkle:version>
-            <sparkle:shortVersionString>1.0.17</sparkle:shortVersionString>
+            <title>1.0.18</title>
+            <pubDate>Tue, 21 Jul 2026 04:00:32 +0000</pubDate>
+            <sparkle:version>118</sparkle:version>
+            <sparkle:shortVersionString>1.0.18</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[# N1KO-STATE v1.0.17
+            <description sparkle:format="markdown"><![CDATA[# N1KO-STATE v1.0.18
 
-**Settings redesign & gauge dashboard polish** — unified settings cards, live previews, and a cleaner gauges popover.
+This release completes the performance/native-UI foundation and integrates the Agent Center plus a source-level Ping Island migration into N1KO-STATE's single application architecture.
 
-**设置页重设计 & 仪表盘优化** — 统一卡片组件、实时预览，以及更清爽的仪表盘弹窗。
+## Highlights
 
----
+- Added N1KO-owned Agent sessions for Claude, Codex, Gemini, Qwen, Qoder, Kimi, OpenCode, Hermes and other audited clients.
+- Migrated Ping Island's compact notch, hover/click expansion, session list/detail, questions, completion state, mascots, detachment and sound-pack settings behind N1KO-owned adapters.
+- Bundled the 13 approved upstream sound assets with pinned hashes and complete Apache-2.0 LICENSE/NOTICE attribution.
+- Added native Claude launch/input/termination through a private pseudo-terminal and authenticated Codex app-server launch/follow-up/archive through an owned stdio channel.
+- Added exact public process-tree/tmux focus suppression and Qoder CN desktop/CLI compatibility from Ping Island v0.26.0.
+- Kept the persistent Island out of native fullscreen Spaces on notchless displays; only the separate public-API reveal panel can appear after deliberate top-edge intent.
+- Reworked monitor publication, bounded history, sampling lifecycle, Quick Panel and settings while preserving alerts, fan control and thermal-safety behavior.
+- Added redacted local diagnostics, migration rollback, identity/license/private-API gates and isolated performance/soak tooling.
 
-## Download / 下载
+## Verification
 
-| Asset | Description |
-|-------|-------------|
-| **N1KO-STATE.dmg** | Universal binary (Apple Silicon + Intel). Drag to Applications. |
-| **N1KO-STATE-sparkle.zip** | In-app updater archive used by Sparkle. Normal manual installs should use the DMG. |
-| **appcast.xml** | Sparkle update feed for automatic update checks. |
+- 138 automated tests passed; three live-environment gates were skipped explicitly, while the installed Codex app-server acceptance ran and passed.
+- Native Release build, smoke test, localization/plist lint, identity, ownership, license, sound hash, macOS 12 minimum, strict signature and private-API gates passed.
+- Final 30-second isolated calibrations passed: monitoring-only 0.091% awake CPU / 1.57 wakeups/s; Agent Core with 200 sessions 0.086% / 1.41 wakeups/s, with no growing thread, FD, socket or Agent-resource counts.
 
-**Install note:** If macOS blocks the ad-hoc signed app on first launch, run `xattr -cr /Applications/N1KO-STATE.app` in Terminal. You can also right-click **N1KO-STATE.app** → **Open** on first launch.
-
-**安装说明：** 如果首次打开被 macOS 拦截，优先在「终端」执行 `xattr -cr /Applications/N1KO-STATE.app`。也可以右键 **N1KO-STATE.app** → **打开**（仅首次需要）。
-
----
-
-## What's New / 本版本内容
-
-### Settings / 设置
-
-- Redesigned settings UI with in-card section headers, pill selectors, and row-based advanced controls.
-- Language picker now includes System, English, Simplified Chinese, and Traditional Chinese.
-- Appearance picker now includes System, Light, and Dark.
-- Menu Bar page keeps Metrics + Live Preview side by side, with Appearance full width below.
-- Live previews use the real menu-bar renderer and the actual popover dashboard.
-
-- 设置页采用卡片内标题、分段选择器与行式高级控件。
-- 语言支持：跟随系统、English、简体中文、繁體中文。
-- 外观支持：跟随系统、浅色、深色。
-- 菜单栏页保持「指标 ∥ 实时预览」上排 + 「外观」全宽下排。
-- 实时预览使用真实菜单栏渲染器与真实弹窗仪表盘。
-
-### Gauges Popover / 仪表盘弹窗
-
-- Compact in-ring details with shorter labels and values (Run, Stress, 13.7G, 1d14h, etc.).
-- Neutral card surfaces, spring ring animation, and tighter gauge grid spacing.
-- Header summary strip and fixed settings/quit icon hit targets.
-
-- 环内详情更紧凑（运行、压力、13.7G、1d14h 等）。
-- 中性卡片底色、弹簧环动画、更紧凑的网格间距。
-- 顶栏摘要条，设置/退出按钮固定 28×28 点击区域。
-
-### Versioning / 版本同步
-
-- Updated app version metadata to `1.0.17` / build `117`.
-
-- 应用版本元数据更新为 `1.0.17` / build `117`。
+The two 24-hour soak runs and cross-hardware/manual accessibility/fullscreen matrices are not claimed by this release; see the repository roadmap for the exact evidence boundary.
 
 ---
 
-## Full changelog / 完整变更
+本版本完成性能/原生 UI 基础重构，并把 Agent Center 与同源迁移的 Ping Island 交互整合进 N1KO-STATE 的单一应用架构。
 
-**Full changelog:** [v1.0.17 tag](https://github.com/baogutang/N1KO-STATE/releases/tag/v1.0.17)
+- 支持 Claude、Codex、Gemini、Qwen、Qoder、Kimi、OpenCode、Hermes 等客户端与会话。
+- 接入紧凑岛、悬停/点击展开、会话列表/详情、提问、完成、宠物、拖拽分离和音效包设置。
+- 支持 N1KO 自有 Claude 原生会话与 Codex 认证 stdio app-server 双向操作。
+- 同步 Ping Island v0.26.0 的 Qoder CN 桌面版/CLI 能力，并补齐进程树/tmux 聚焦抑制。
+- 保留无刘海屏公共 API 双窗口全屏修复，不使用私有 WindowServer API。
+- 138 项自动化测试通过；完整原生构建与发布门禁通过。
+
+**Full changelog:** [v1.0.18 tag](https://github.com/baogutang/N1KO-STATE/releases/tag/v1.0.18)
 ]]></description>
-            <enclosure url="https://github.com/baogutang/N1KO-STATE/releases/download/v1.0.17/N1KO-STATE-sparkle.zip" length="3642914" type="application/octet-stream" sparkle:edSignature="lePoxp7ZgcWOymfCEnj1wGR6TkcQmpEuWStkZRrrCyZb9rfrAwURugCP9GJa/GOF37z1LLXokqiBENIYdtJICQ=="/>
+            <enclosure url="https://github.com/baogutang/N1KO-STATE/releases/download/v1.0.18/N1KO-STATE-sparkle.zip" length="11676228" type="application/octet-stream" sparkle:edSignature="E30Qb9PlbZlJWVN6j3Sktzlxm7HJ4DE7i957eTU3q/xT/qlxEiDBrU0evbIdz6gXEBQKzAHsPmJCFyFSINmHDg=="/>
         </item>
     </channel>
 </rss>
