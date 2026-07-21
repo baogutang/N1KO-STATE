@@ -101,6 +101,9 @@ let package = Package(
             name: "N1KOWP4FullscreenHarness",
             dependencies: ["N1KOWindowCore"],
             path: "Tools/N1KOWP4FullscreenHarness",
+            swiftSettings: [
+                .unsafeFlags(["-parse-as-library"])
+            ],
             linkerSettings: [
                 .linkedFramework("AppKit")
             ]
